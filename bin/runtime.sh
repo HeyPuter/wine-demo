@@ -11,10 +11,12 @@ slot; run cargo build --release -p gexc --features gex-kernel/x86,gex-xlate/x86,
 slot; GEX_ARCH=x86 run sh shims/kernel/build.sh > $L/kernel.log 2>&1
 slot; GEX_SHARED=1 GEX_ARCH=x86 run sh shims/browser/build.sh > $L/browser.log 2>&1
 slot; GEX_MEM64=1 GEX_SHARED=1 GEX_ARCH=x86 run sh shims/browser/build.sh > $L/browser-m64.log 2>&1
+[ -z "${KEEP_NAMES:-}" ] || export GEX_KEEP_NAMES=1
 rm -rf "$WD_OUT/page"; run sh web/build-eject-page.sh "$WD_OUT/page" > $L/page.log 2>&1
 # build-eject-page.sh copies the shims as built: a release page strips their custom sections, DWARF and the
 # name section, which nothing in the runtime reads (web/build-all.sh's step; KEEP_NAMES=1 keeps them for a
-# debug site). Not the seeds, whose gex.* sections the runtime reads. The eject strips only DWARF.
+# debug site, and GEX_KEEP_NAMES=1 for gex's own step). Not the seeds, whose gex.* sections the runtime
+# reads. The eject strips only DWARF. Once GEX's build-eject-page.sh strips release shims itself, this goes.
 if [ -z "${KEEP_NAMES:-}" ]; then
   for w in "$WD_OUT"/page/gex/gex_browser*.shared.wasm "$WD_OUT"/page/gex/gex_kernel*.wasm; do
     wasm-tools strip -a "$w" -o "$w.strip" && mv -f "$w.strip" "$w"
