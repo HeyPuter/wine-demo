@@ -1,0 +1,44 @@
+From 5e2f16bb439e25561e0b82c25d7b47e3cfe036c9 Mon Sep 17 00:00:00 2001
+From: velzie <kveonl98@gmail.com>
+Date: Mon, 2 Nov 2026 22:10:22 -0500
+Subject: [PATCH] explorer: Give the Start menu's SHGetFileInfo an absolute
+ PIDL.
+
+add_shell_item() passed an item's PIDL, which is relative to its parent folder, so every
+shortcut in a submenu got the default icon.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_e0aa53aa95eb4b86910519b4d14812a5
+---
+ programs/explorer/startmenu.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/programs/explorer/startmenu.c b/programs/explorer/startmenu.c
+index 33a0d0c0c9c..6369a6d1ee9 100644
+--- a/programs/explorer/startmenu.c
++++ b/programs/explorer/startmenu.c
+@@ -189,6 +189,7 @@ static struct menu_item* add_shell_item(struct menu_item* parent, LPITEMIDLIST p
+     SFGAOF flags;
+     SHFILEINFOW sfi;
+     HIMAGELIST himl;
++    LPITEMIDLIST abs_pidl;
+ 
+     item = calloc( 1, sizeof(struct menu_item) );
+ 
+@@ -210,7 +211,12 @@ static struct menu_item* add_shell_item(struct menu_item* parent, LPITEMIDLIST p
+             IShellFolder_BindToObject(parent->folder, pidl, NULL, &IID_IShellFolder, (void *)&item->folder);
+     }
+ 
+-    himl = (HIMAGELIST)SHGetFileInfoW((LPCWSTR)pidl, 0, &sfi, sizeof(sfi), SHGFI_PIDL|SHGFI_SYSICONINDEX|SHGFI_SMALLICON);
++    /* pidl is relative to the parent's folder; SHGetFileInfo takes an absolute one */
++    item->parent = parent;
++    item->pidl = pidl;
++    abs_pidl = build_pidl(item);
++    himl = (HIMAGELIST)SHGetFileInfoW((LPCWSTR)abs_pidl, 0, &sfi, sizeof(sfi), SHGFI_PIDL|SHGFI_SYSICONINDEX|SHGFI_SMALLICON);
++    CoTaskMemFree(abs_pidl);
+     if (himl)
+     {
+         item->icon_himl = himl;
+-- 
+2.39.5
+

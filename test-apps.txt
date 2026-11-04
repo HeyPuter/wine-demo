@@ -1,0 +1,10 @@
+# The upstream downloads the site and its checks use (bin/test-apps.sh fetches them into TEST_APPS):
+# FILE  SHA256  URL. Nothing here is built by us; the page ships 7z2408-x64.exe, 7z2408-x86.exe and
+# putty-x86.exe in Downloads and putty-x64.exe in Program Files, the audit accounts for every file by these.
+7z2408-x64.exe  67cb9d3452c9dd974b04f4a5fd842dbcba8184f2344ff72e3662d7cdb68b099b  https://www.7-zip.org/a/7z2408-x64.exe
+7z2408-x64.msi  98330e7e6db3507b444d576dc437a9ac4d82333a88a6bb6ef36a91fe3d85fa92  https://www.7-zip.org/a/7z2408-x64.msi
+7z2408-x86.exe  faa87251336d864b877a5e6c3e9c9a5e250318be2fdfc8a42ceadb3a956e0405  https://www.7-zip.org/a/7z2408.exe
+npp.8.6.9.portable.x64.zip  c1478faf2a2ec8c78c9d92b22445d53027c85d142165015cf9ed0aca80b13679  https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.portable.x64.zip
+npp.8.6.9.portable.x86.zip  045b5989fe3cb03aa1977d6b897e672928bf14ceddc089b2196bf383d6195173  https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.portable.zip
+putty-x64.exe  d01fdb5aae8f112526040a39b0bfb9e27d813003178645e65f8d1cfdb2a26c87  https://the.earth.li/~sgtatham/putty/0.85/w64/putty.exe
+putty-x86.exe  4c70267ca03a00ea761ec358498b990a7221decb36eace9b7dbe6a751be0fb3b  https://the.earth.li/~sgtatham/putty/0.85/w32/putty.exe

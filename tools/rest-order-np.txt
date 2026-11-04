@@ -1,0 +1,99 @@
+/pfx/drive_c/Program Files/7-Zip/7zz.exe
+/pfx/drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/7-Zip File Manager.lnk
+/pfx/drive_c/Program Files/7-Zip/7zFM.exe
+/pfx/drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/Dillo.lnk
+/pfx/drive_c/Program Files/Dillo/dillo.exe
+/pfx/drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/Notepad++.lnk
+/pfx/drive_c/Program Files/Notepad++/notepad++.exe
+/pfx/drive_c/Program Files/Notepad++/notepad++.exe.wasm
+/pfx/drive_c/windows/system32/unicows.dll
+/w64/lib/wine/x86_64-windows/unicows.dll
+/w64/lib/wine/x86_64-windows/unicows.dll.wasm
+/w64/lib/wine/x86_64-windows/avicap32.dll.wasm
+/w64/lib/wine/x86_64-windows/comdlg32.dll.wasm
+/w64/lib/wine/x86_64-windows/mpr.dll.wasm
+/w64/lib/wine/x86_64-windows/msvfw32.dll.wasm
+/w64/lib/wine/x86_64-windows/winmm.dll.wasm
+/w64/lib/wine/x86_64-windows/msacm32.dll.wasm
+/w64/lib/wine/x86_64-windows/oledlg.dll.wasm
+/w64/lib/wine/x86_64-windows/rasapi32.dll.wasm
+/w64/lib/wine/x86_64-windows/secur32.dll.wasm
+/w64/lib/wine/x86_64-windows/bcrypt.dll.wasm
+/w64/lib/wine/x86_64-windows/sensapi.dll.wasm
+/w64/lib/wine/x86_64-windows/version.dll.wasm
+/w64/lib/wine/x86_64-windows/winspool.drv.wasm
+/w64/lib/wine/x86_64-windows/compstui.dll.wasm
+/pfx/drive_c/windows/system32/avicap32.dll
+/w64/lib/wine/x86_64-windows/avicap32.dll
+/pfx/drive_c/windows/system32/msvfw32.dll
+/w64/lib/wine/x86_64-windows/msvfw32.dll
+/pfx/drive_c/windows/system32/winmm.dll
+/w64/lib/wine/x86_64-windows/winmm.dll
+/pfx/drive_c/windows/system32/msacm32.dll
+/w64/lib/wine/x86_64-windows/msacm32.dll
+/pfx/drive_c/windows/system32/version.dll
+/w64/lib/wine/x86_64-windows/version.dll
+/pfx/drive_c/windows/system32/oledlg.dll
+/w64/lib/wine/x86_64-windows/oledlg.dll
+/pfx/drive_c/windows/system32/comdlg32.dll
+/w64/lib/wine/x86_64-windows/comdlg32.dll
+/pfx/drive_c/windows/system32/winspool.drv
+/w64/lib/wine/x86_64-windows/winspool.drv
+/pfx/drive_c/windows/system32/compstui.dll
+/w64/lib/wine/x86_64-windows/compstui.dll
+/pfx/drive_c/windows/system32/rasapi32.dll
+/w64/lib/wine/x86_64-windows/rasapi32.dll
+/pfx/drive_c/windows/system32/secur32.dll
+/w64/lib/wine/x86_64-windows/secur32.dll
+/pfx/drive_c/windows/system32/sensapi.dll
+/w64/lib/wine/x86_64-windows/sensapi.dll
+/pfx/drive_c/windows/system32/mpr.dll
+/w64/lib/wine/x86_64-windows/mpr.dll
+/pfx/drive_c/windows/system.ini
+/pfx/drive_c/windows/system32/kerberos.dll
+/w64/lib/wine/x86_64-windows/kerberos.dll
+/w64/lib/wine/x86_64-windows/kerberos.dll.wasm
+/pfx/drive_c/windows/system32/msv1_0.dll
+/w64/lib/wine/x86_64-windows/msv1_0.dll
+/w64/lib/wine/x86_64-windows/msv1_0.dll.wasm
+/w64/lib/wine/x86_64-windows/netapi32.dll.wasm
+/w64/lib/wine/x86_64-windows/dnsapi.dll.wasm
+/w64/lib/wine/x86_64-windows/iphlpapi.dll.wasm
+/w64/lib/wine/x86_64-windows/nsi.dll.wasm
+/w64/lib/wine/x86_64-windows/ws2_32.dll.wasm
+/w64/lib/wine/x86_64-windows/netutils.dll.wasm
+/pfx/drive_c/windows/system32/netapi32.dll
+/w64/lib/wine/x86_64-windows/netapi32.dll
+/pfx/drive_c/windows/system32/iphlpapi.dll
+/w64/lib/wine/x86_64-windows/iphlpapi.dll
+/pfx/drive_c/windows/system32/dnsapi.dll
+/w64/lib/wine/x86_64-windows/dnsapi.dll
+/pfx/drive_c/windows/system32/nsi.dll
+/w64/lib/wine/x86_64-windows/nsi.dll
+/pfx/drive_c/windows/system32/ws2_32.dll
+/w64/lib/wine/x86_64-windows/ws2_32.dll
+/pfx/drive_c/windows/system32/netutils.dll
+/w64/lib/wine/x86_64-windows/netutils.dll
+/pfx/drive_c/windows/system32/wkscli.dll
+/w64/lib/wine/x86_64-windows/wkscli.dll
+/w64/lib/wine/x86_64-windows/wkscli.dll.wasm
+/pfx/drive_c/users/gex/AppData/Roaming/Notepad++/langs.xml
+/pfx/drive_c/Program Files/Notepad++/langs.model.xml
+/pfx/drive_c/Program Files/Notepad++/stylers.model.xml
+/pfx/drive_c/users/gex/AppData/Roaming/Notepad++/stylers.xml
+/pfx/drive_c/users/gex/AppData/Roaming/Notepad++/shortcuts.xml
+/pfx/drive_c/windows/system32/bcrypt.dll
+/w64/lib/wine/x86_64-windows/bcrypt.dll
+/pfx/drive_c/users/gex/AppData/Roaming/Notepad++/contextMenu.xml
+/pfx/drive_c/windows/system32/dwmapi.dll
+/w64/lib/wine/x86_64-windows/dwmapi.dll
+/w64/lib/wine/x86_64-windows/dwmapi.dll.wasm
+/pfx/drive_c/windows/system32/wintrust.dll
+/w64/lib/wine/x86_64-windows/wintrust.dll
+/w64/lib/wine/x86_64-windows/wintrust.dll.wasm
+/w64/lib/wine/x86_64-windows/crypt32.dll.wasm
+/w64/lib/wine/x86_64-windows/ncrypt.dll.wasm
+/pfx/drive_c/windows/system32/crypt32.dll
+/w64/lib/wine/x86_64-windows/crypt32.dll
+/pfx/drive_c/windows/system32/ncrypt.dll
+/w64/lib/wine/x86_64-windows/ncrypt.dll

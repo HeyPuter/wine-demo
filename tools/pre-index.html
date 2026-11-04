@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>windemo (record)</title>
+<style>html,body{margin:0;height:100%;background:#3a6ea5;color:#ccc;font:12px monospace}#stage{position:fixed;inset:0}#say{position:fixed;right:4px;top:2px}</style></head>
+<body><div id="stage"></div><div id="say"></div>
+<script type="module">
+import { start } from './app.mjs';
+const say = (t) => { document.getElementById('say').textContent = t; };
+const q = new URLSearchParams(location.search);
+const switches = { cgen: '1', cgenurl: '/cgen', ...Object.fromEntries(q) };
+try {
+  const app = await start({
+    container: document.getElementById('stage'),
+    size: 'fit',
+    filesystem: 'memory',
+    baseUrl: new URL('./', location.href),
+    wisp: 'wss://anura.pro/',
+    // The program's [gex-record] lines (wineboot's volatile keys) to the console, for record-wine32.mjs.
+    onLog: (() => { let part = ''; return (t) => { const ls = (part + t).split('\n'); part = ls.pop(); for (const l of ls) if (l.startsWith('[gex-record]')) console.log(l); }; })(),
+    build: {
+      tar: ['/bundle.tar'], exe: '/w64/lib/wine/x86_64-unix/wine',
+      argv: ['C:\\windows\\explorer.exe', '/desktop=shell', 'cmd.exe', '/k', 'start', 'explorer.exe', 'C:\\users\\gex\\Desktop'],
+      env: ['WINEPREFIX=/pfx', 'WINEDEBUG=err+all,fixme-all', 'XDG_RUNTIME_DIR=/tmp', 'WAYLAND_DISPLAY=wayland-0',
+            'USER=gex', 'HOME=/home/gex', 'WINEGEX_DOOR=1', 'WINEGEX_WOW64=1', 'WINEGEX_FIT_DESKTOP=1', 'WINEGEX_RECORD_HARDWARE=1', 'WINEDLLOVERRIDES=mscoree=;mshtml='],
+      cwd: '/pfx/drive_c/users/gex', size: 'fit',
+      mtimes: true, featuresOff: [], compositor: true, aot: null, jitFallback: true,
+      gl: false, glBackend: 'wgpu', d3d: false, hostx: false, mem64: false,
+      pack: null, zstd: './vendor/zstddec-stream.mjs', preload: null, lazy: null, switches,
+    },
+  });
+  globalThis.__app = app;
+  addEventListener('resize', () => app.resize('fit'));
+  say('running');
+  say(`exited (${await app.exited})`);
+} catch (e) { say('failed: ' + (e?.stack ?? e)); }
+</script></body></html>

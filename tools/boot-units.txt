@@ -1,0 +1,28 @@
+# The images whose units the page compiles at boot (eject-site --boot-units); every
+# other unit (wineboot, services, plugplay, winedevice, rpcss and the DLLs only they
+# load, windowscodecs, propsys, ...) goes in the fill, compiled when a process maps it.
+/w64/lib/wine/x86_64-windows/sechost.dll
+/w64/lib/wine/x86_64-windows/advapi32.dll
+/w64/lib/wine/x86_64-windows/cryptbase.dll
+/w64/lib/wine/x86_64-windows/rpcrt4.dll
+/w64/lib/wine/x86_64-windows/win32u.dll
+/w64/lib/wine/x86_64-windows/user32.dll
+/w64/lib/wine/x86_64-windows/imm32.dll
+/w64/lib/wine/x86_64-windows/gdi32.dll
+/w64/lib/wine/x86_64-windows/combase.dll
+/w64/lib/wine/x86_64-windows/coml2.dll
+/w64/lib/wine/x86_64-windows/ole32.dll
+/w64/lib/wine/x86_64-windows/shcore.dll
+/w64/lib/wine/x86_64-windows/shlwapi.dll
+/w64/lib/wine/x86_64-windows/shell32.dll
+/w64/lib/wine/x86_64-windows/oleaut32.dll
+/w64/lib/wine/x86_64-windows/explorer.exe
+/w64/lib/wine/x86_64-windows/tzres.dll
+/w64/lib/wine/x86_64-windows/uxtheme.dll
+/w64/lib/wine/x86_64-windows/comctl32_v6.dll
+/w64/lib/wine/x86_64-windows/actxprxy.dll
+/w64/lib/wine/x86_64-windows/conhost.exe
+/w64/lib/wine/x86_64-windows/cmd.exe
+/w64/lib/wine/x86_64-windows/msimg32.dll
+/w64/lib/wine/x86_64-windows/start.exe
+/w64/lib/wine/x86_64-windows/explorerframe.dll
