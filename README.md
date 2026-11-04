@@ -55,7 +55,7 @@ This runs the following steps in order. Each step is also a target of its own.
 3. `test-apps` (`bin/test-apps.sh`) fetches the upstream downloads above.
 4. `prefix` (`bin/mkapps.sh`) makes `work/pfx-apps`: the gate's WoW64 prefix plus the apps, PuTTY, the Start menu shortcuts and the "Print to file" printer. It builds `tools/prt/addprinter.c` with mingw for this step only.
 5. `bundle` (`bin/mkbundle.sh`) makes `pre/bundle.tar`: the stripped dist, the page prefix and the XKB data. It then runs the audit.
-6. `pipeline` (`bin/pipeline.sh TAG SITE`) serves `pre/` on `PORT` and records it twice on the bench box. Between the two recordings it builds the function-tier units (`bin/units.sh`). It then ejects the site from the second recording (`bin/site.sh`) and serves `WD_OUT/SITE` on `PORT`.
+6. `pipeline` (`bin/pipeline.sh TAG SITE`) serves `pre/` on `PORT` and records it twice on the bench box. Between the two recordings it builds the function-tier units (`bin/units.sh`). It then ejects the site from the second recording (`bin/site.sh`) and serves `WD_OUT/SITE` on `PORT`. The site's shims and kernel ship without names or DWARF; set `KEEP_NAMES=1` for a debug site.
 
 ## Checking a site
 
