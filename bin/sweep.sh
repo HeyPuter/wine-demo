@@ -1,6 +1,6 @@
 #!/bin/bash
 # sweep.sh TAG SECS KEYS [ENV...]: one sweep run against URL (env.sh; q-smoke.sh, tag sw-TAG), the guest's
-# opened files at the end. Programs menu rows (x 170): con 539, fm 557, dillo 575, np 593, putty 611.
+# opened files at the end. Programs menu rows: env.sh MENU_ROWS (row NAME).
 . "$(dirname "$0")/../env.sh"; S=$WD_OUT; t=${1:?TAG} secs=${2:?SECS} k=${3:?KEYS}; shift 3
 E=$(printf '%s' '(async () => await __ntOpened())()' | base64 -w0)
 bash "$WDR/bin/q-smoke.sh" sw-$t $URL $secs 2 SMOKE_SPKI=$SPKI SMOKE_PRELOAD_FILE=./start-preload.js SMOKE_OUT_W=1300 SMOKE_OUT_H=713 \

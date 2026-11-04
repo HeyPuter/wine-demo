@@ -21,10 +21,10 @@ launch)
   for n in np fm dillo putty con; do echo "launch $n: $(wins ro-$n | sed 's/"C:[^"]*cmd.exe" //;s/"Desktop" //')$(grep -ac 'threw' runs/out-ro-$n/console.txt) traps"; done;;
 banner)
   # 7zz's help scrolls its banner out of view: drag the console's scrollbar thumb to the top first
-  bash $B/q-smoke.sh $t-ban $URL 125 2 "${C[@]}" "SMOKE_KEYS=90:click:20:703,93:click:30:612,97:click:170:608,112:drag:620:155:620:30" > /dev/null 2>&1
+  bash $B/q-smoke.sh $t-ban $URL 125 2 "${C[@]}" "SMOKE_KEYS=90:click:20:703,93:click:30:612,97:click:170:$(row con),112:drag:620:155:620:30" > /dev/null 2>&1
   echo "banner: $(ls -t runs/out-$t-ban/s-*.png | head -n1)";;
 prefs)
-  bash $B/sweep.sh $t-pref 175 "92:click:20:703,95:click:30:612,98:click:170:593,122:click:279:41,125:click:290:61" SMOKE_TCPU=500 | head -1
+  bash $B/sweep.sh $t-pref 175 "92:click:20:703,95:click:30:612,98:click:170:$(row np),122:click:279:41,125:click:290:61" SMOKE_TCPU=500 | head -1
   echo "prefs: Preferences $(at sw-$t-pref 'click:290:61' '"Preferences"')";;
 c2) bash $B/redo-c2.sh $URL $t 2>&1 | grep -v REDO-DONE;;
 win32)

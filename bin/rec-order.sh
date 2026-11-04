@@ -6,7 +6,7 @@
 . "$(dirname "$0")/../env.sh"; S=$WD_OUT; url=${1:?URL}; out=${2:?OUT}
 E=$(printf '%s' '(async () => await __ntOpened())()' | base64 -w0)
 # name:y of its row in the Programs menu (136x96 at 108,599)
-for a in np:665 fm:627 dillo:646 putty:684 con:608; do
+for n in np fm dillo putty con; do a=$n:$(row $n)
   n=${a%%:*} y=${a##*:}
   bash "$WDR/bin/q-smoke.sh" ro-$n "$url" 150 2 SMOKE_SPKI=$SPKI SMOKE_PRELOAD_FILE=./start-preload.js SMOKE_OUT_W=1300 SMOKE_OUT_H=713 \
     "SMOKE_KEYS=90:click:20:703,93:click:30:612,97:click:170:$y" SMOKE_EVAL_AT=88,150 SMOKE_EVAL_AT_B64=$E

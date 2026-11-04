@@ -39,10 +39,16 @@ WDR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 : "${SPKI:=kdN8wUUfVJkOdtI4Fx/Vq9S/uSMrieV3Ulu1UoEAA54=}"
 # Wine's FreeType headers for tools' sfnt2fon (bin/mkfon.sh); empty: the gate's first deps64 tree.
 : "${FREETYPE_INC:=}"
+# The Start menu's Programs rows the checks click (x 170), NAME:Y, as the Wine in the dist lays them out:
+# its menu sits on the taskbar's top edge. With the work-area fix (wd/work-area, round G) the rows are
+# con:539 fm:557 dillo:575 np:593 putty:611.
+: "${MENU_ROWS:=con:608 fm:627 dillo:646 np:665 putty:684}"
 export WDR SANDBOX WD_OUT WD_HOT GEX GEXC GATE_W64 APPS APPS_RECIPE TEST_APPS DROPS TOOLCHAIN_ENV NODE_BIN MINGW_CC \
-  BENCH BENCH_HOST BENCH_SSH BENCH_ROOT SITE_HOST PORT SERVE_DIR SPKI FREETYPE_INC
+  BENCH BENCH_HOST BENCH_SSH BENCH_ROOT SITE_HOST PORT SERVE_DIR SPKI FREETYPE_INC MENU_ROWS
 URL=https://$SITE_HOST:$PORT/
 # rel PATH: PATH (under SANDBOX) as the bench host's commands name it, from its copy's root.
 rel() { realpath -m --relative-to="$SANDBOX" "$1"; }
+# row NAME: the y of NAME's row in the Programs menu (MENU_ROWS)
+row() { local a; for a in $MENU_ROWS; do [ "${a%%:*}" = "$1" ] && { echo "${a#*:}"; return; }; done; echo "no menu row for $1" >&2; exit 2; }
 need_gex() { [ -n "$GEX" ] && [ -d "$GEX/shims" ] || { echo "${0##*/}: set GEX to a gex checkout" >&2; exit 2; }; }
 mkdir -p "$WD_OUT/logs"
