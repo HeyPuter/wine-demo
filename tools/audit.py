@@ -53,7 +53,10 @@ ALLOWED = [r'(.*/)?(system|user|userdef)\.reg', r'\.update-timestamp', r'dll-bas
            r'drive_c/windows/system32/winevulkan\.json', r'drive_c/windows/system32/drivers/etc/(services|hosts|networks|protocol)',
            r'drive_c/users/[^/]+/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/7-Zip/[^/]+\.lnk',
            r'drive_c/users/gex/Desktop/Read me\.txt', r'drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/[^/]+\.lnk',
-           r'lib/wine/x86_64-unix/(wine|wineserver)(\.64)?(\.wasm)?', r'lib/wine/x86_64-windows/winepe(\.[0-9a-f]+\.cwasm|\.wasm)',
+           r'lib/wine/x86_64-unix/(wine|wineserver)(\.64)?(\.wasm)?', 
+           # the loader's lazy Unix side of winegstreamer (link-wine64.sh WINE64_MEDIA=lazy) and the list that keeps it
+           # out of a site's boot bundle (wine64-dist.sh)
+           r'lib/wine/x86_64-unix/(winegstreamer\.so|gex-rest-only)', r'lib/wine/x86_64-windows/winepe(\.[0-9a-f]+\.cwasm|\.wasm)',
            r'lib/wine/(x86_64|i386)-windows/[^/]+\.a', r'lib/wine/x86_64-windows/[^/]+\.[0-9a-f]+\.cwasm',
            r'drive_c/windows/syswow64/winevulkan\.json', r'share/wine/wine\.inf', r'etc/ssl/certs/ca-certificates\.crt']
 # this repo's tools/fonts
