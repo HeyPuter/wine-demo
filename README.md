@@ -21,11 +21,11 @@ This repo holds only the pipeline. Its outputs go to `WD_OUT`, never into the re
 
 ## Inputs
 
-1. **A gex checkout** (`GEX`). Its `web/node_modules` must be in place, either from `npm ci` in `web/` or as a link to another tree's.
+1. **A gex checkout** (`GEX`). Its `page/node_modules` must be in place, either from `npm ci` in `page/` or as a link to another tree's.
 2. **A gate Wine dist** (`DIST`): a native-i386 WoW64 dist, `GATE_W64/dist64-K-...-wow64-...-nN64-N32-sS`. The gate also builds what `bin/dist.sh` derives from its name: the wasm64 tree `b64-K-*-wow64`, the native dirs `pen64-K-N64` and `pen32-K-N32`, the sysroot, and the WoW64 prefix stamped for its `wine.inf`.
 3. **The apps** (`APPS`): WN's drop-in of 7-Zip, Notepad++ and Dillo built with gexcc's Windows target. It contains `files/`, `programs.list`, `licenses/` and `SHA256SUMS`.
    - The recipe is the sandbox's `apps/` (`APPS_RECIPE`): `build-all.sh` fetches and builds the apps, and `package.sh` lays out the drop-in.
-   - `make apps` runs both. It needs `GEXCC_WIN`, a gexcc-win install (from gex's `tools/gexcc/windows/install.sh`, plus `build-cxx-win.sh` for C++), and `LLVM_SRC` for the libc++ licenses. See `APPS_RECIPE/common.sh`.
+   - `make apps` runs both. It needs `GEXCC_WIN`, a gexcc-win install (from gex's `toolchain/gexcc/windows/install.sh`, plus `build-cxx-win.sh` for C++), and `LLVM_SRC` for the libc++ licenses. See `APPS_RECIPE/common.sh`.
 4. **The upstream downloads** (`TEST_APPS`, fetched by `make test-apps`). Each is checked against its SHA-256, which is also listed in `test-apps.txt`:
 
    | File | Download | SHA-256 |

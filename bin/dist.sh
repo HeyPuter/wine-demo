@@ -23,7 +23,7 @@ if [ -d w64/dist ]; then mv w64/dist w64/dist-prev; [ ! -f w64/dist.env ] || mv 
 cp -a $DIST w64/dist; chmod -R u+w w64/dist
 E=$WD_OUT/w64/pen-ea; rm -rf $E; mkdir -p $E/native work/tmp-dist
 (cd $E && env GEX_WASM64_SYSROOT=$SR PELINK_EXPORT_ALL=1 TMPDIR=$WD_OUT/work/tmp-dist WINE64_SPLIT_DLLS="$(echo $(cat $P64/split.txt))" \
-  systemd-run --user --scope -q -p MemoryMax=16G -p TasksMax=2048 nice -n 10 $GEX/tools/wine-wasm/stage-native64.sh $B64 $WSRC $E/native $CORE > stage.log 2> stage.err) \
+  systemd-run --user --scope -q -p MemoryMax=16G -p TasksMax=2048 nice -n 10 $GEX/wine/stage-native.sh $B64 $WSRC $E/native $CORE > stage.log 2> stage.err) \
   || { tail -5 $E/stage.err; exit 1; }
 rm -rf work/tmp-dist
 # skeletons and the file set must be the gate's; only the modules change
@@ -33,7 +33,7 @@ lost=$(comm -23 <(ex $P64/native/winepe.wasm) <(ex $E/native/winepe.wasm) | wc -
 [ $lost = 0 ] || { echo "dist: the restaged core lost $lost exports"; exit 1; }
 echo "core exports: $(ex $P64/native/winepe.wasm | wc -l) -> $(ex $E/native/winepe.wasm | wc -l)"
 cp -p $E/native/*.wasm w64/dist/lib/wine/x86_64-windows/
-(cd w64/dist/lib/wine/x86_64-windows && ls $E/native/*.wasm | sed 's#.*/##' | nice -n 10 xargs -r -P8 -n 16 sh -c 'for f; do python3 "$0" "$f" "$f.s" && mv "$f.s" "$f" || exit 1; done' $GEX/tools/gexcc/windows/stripnames.py)
-printf 'SOURCE=%s\nWINE_SRC=%s\nWINMD_DIR=%s/include\nNATIVE_DIR=%s/native:%s/native\nSTRIPNAMES=%s/tools/gexcc/windows/stripnames.py\nPREFIX=%s\n# x86-64 core restaged with PELINK_EXPORT_ALL=1 (%s)\n' \
+(cd w64/dist/lib/wine/x86_64-windows && ls $E/native/*.wasm | sed 's#.*/##' | nice -n 10 xargs -r -P8 -n 16 sh -c 'for f; do python3 "$0" "$f" "$f.s" && mv "$f.s" "$f" || exit 1; done' $GEX/toolchain/gexcc/windows/stripnames.py)
+printf 'SOURCE=%s\nWINE_SRC=%s\nWINMD_DIR=%s/include\nNATIVE_DIR=%s/native:%s/native\nSTRIPNAMES=%s/toolchain/gexcc/windows/stripnames.py\nPREFIX=%s\n# x86-64 core restaged with PELINK_EXPORT_ALL=1 (%s)\n' \
   $DIST $WSRC $B64 $E $P32 $GEX $PFX $E > w64/dist.env
 echo "dist: w64/dist from $(basename $DIST)"

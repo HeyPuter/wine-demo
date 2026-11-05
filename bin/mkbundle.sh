@@ -6,7 +6,7 @@
 set -euo pipefail
 . "$(dirname "$0")/../env.sh"; need_gex; S=$WD_OUT; W=$GEX; cd $S
 rm -rf stage; mkdir -p stage pre
-GRAPHICS=wayland $W/tools/wine-wasm/page-prefix.sh work/pfx-apps w64/dist stage/pfx > logs/page-prefix.log 2>&1
+GRAPHICS=wayland $W/wine/page-prefix.sh work/pfx-apps w64/dist stage/pfx > logs/page-prefix.log 2>&1
 c=stage/pfx/drive_c
 # The page runs as user gex. The template's prefix was made as the build machine's user (C:\users\claude),
 # whose Downloads Wine links to that user's real ~/Downloads: none of it goes in, and its registry paths

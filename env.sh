@@ -50,5 +50,5 @@ URL=https://$SITE_HOST:$PORT/
 rel() { realpath -m --relative-to="$SANDBOX" "$1"; }
 # row NAME: the y of NAME's row in the Programs menu (MENU_ROWS)
 row() { local a; for a in $MENU_ROWS; do [ "${a%%:*}" = "$1" ] && { echo "${a#*:}"; return; }; done; echo "no menu row for $1" >&2; exit 2; }
-need_gex() { [ -n "$GEX" ] && [ -d "$GEX/shims" ] || { echo "${0##*/}: set GEX to a gex checkout" >&2; exit 2; }; }
+need_gex() { [ -n "$GEX" ] && [ -d "$GEX/hosts" ] || { echo "${0##*/}: set GEX to a gex checkout" >&2; exit 2; }; }
 mkdir -p "$WD_OUT/logs"
