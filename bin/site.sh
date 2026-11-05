@@ -15,7 +15,9 @@ nice -n 10 $GEXC eject runs/$rec --out $P --web-src $W/page --unit-cache units >
 python3 -I - $P/user/eject.json "$@" <<'PY'
 import json, sys
 p = sys.argv[1]; d = json.load(open(p))
-d['features'].update(gl=False, translation=True)
+# GL kept (Wine's Direct3D is wined3d on GL): Mesa is started by the first process that opens opengl32
+# (nt.json gl_lazy), never on the way to the desktop.
+d['features'].update(gl=True, translation=True)
 d.update(bundle='split', cold='none', resources='trim', helpers='strip', wineboot='skip', desktop='explorer')
 for kv in sys.argv[2:]:
     k, v = kv.split('=', 1); d[k] = v

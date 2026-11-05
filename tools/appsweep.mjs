@@ -10,7 +10,8 @@
 //   {id, drop, install, launch, usable, first_error, times}
 // Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader).
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, rmSync, appendFileSync, openSync, readFileSync, statSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, appendFileSync, openSync, readFileSync, statSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { Cdp, browserWsUrl } from './cdp.mjs';
 
@@ -237,7 +238,14 @@ const nDrop = drops.length;
 const data = { items: [], files: plan.drop, dragOperationsMask: 1 };
 for (const t of ['dragEnter', 'dragOver', 'drop']) { await s('Input.dispatchDragEvent', { type: t, x: 900, y: 400, data }).catch((e) => log('drag ' + t + ': ' + e.message)); await sleep(200); }
 log('dropped ' + plan.drop.join(' '));
-const bytes = plan.drop.reduce((a, p) => { try { return a + statSync(p).size; } catch { return a; } }, 0);
+// every dropped file's size, a folder's files included (its own stat is a few KB)
+const treeBytes = (p) => {
+  try {
+    const st = statSync(p);
+    return st.isDirectory() ? readdirSync(p).reduce((a, n) => a + treeBytes(join(p, n)), 0) : st.size;
+  } catch { return 0; }
+};
+const bytes = plan.drop.reduce((a, p) => a + treeBytes(p), 0);
 for (const end = now() + 60 + bytes / 2e6; now() < end && drops.length === nDrop;) await sleep(500);
 if (drops.length === nDrop) { res.drop = 'fail'; res.first_error = firstErr(t1) ?? 'no [drop] report'; done(); }
 res.drop = 'ok'; res.times.drop = +(now() - t1).toFixed(1);
