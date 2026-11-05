@@ -268,7 +268,9 @@ if (plan.install) {
   res.times.install = Math.round(now() - t2);
   if (res.install !== 'ok') { res.first_error = firstErr(t2) ?? `installer exit status ${rc}`; done(); }
   if (plan.check) {
-    await cmd(`if exist "${plan.check}" (title HAVE) else (title NOFILE)`);
+    // a file the install writes, or (cmd:...) a command that succeeds only after it (a registry value):
+    // an installer's exit status alone passes one that installed nothing ("already installed")
+    await cmd(plan.check.startsWith('cmd:') ? `(${plan.check.slice(4)}) >nul 2>&1 && (title HAVE) || (title NOFILE)` : `if exist "${plan.check}" (title HAVE) else (title NOFILE)`);
     const c = await waitWin('^(HAVE|NOFILE)$', 60);
     if (c?.title !== 'HAVE') {
       // the x64 Program Files mix-up (the CPU seen as x86): the files under C:\Files or C:\System64

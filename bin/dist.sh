@@ -12,7 +12,7 @@ what="wasm64 wow64 tree"; B64=$(one $(ls -d $G/b64-$K-*-wow64 2>/dev/null))
 nk=$(basename $DIST | sed 's/.*-n\([0-9a-f]*\)-\([0-9a-f]*\)-s[0-9a-f]*$/\1 \2/')
 what="x86-64 native dir"; P64=$(one $(ls -d $G/pen64-$K-${nk% *} 2>/dev/null))
 what="i386 native dir"; P32=$(one $(ls -d $G/pen32-$K-${nk#* } 2>/dev/null))
-what="sysroot"; SR=$(one $(grep -o "$(dirname $G)/sr64-[0-9a-f-]*" $P64.log | sort -u))/sysroot
+what="sysroot"; SR=$(one $(grep -o "/[^ ]*/sr64-[0-9a-f-]*" $P64.log | sort -u))/sysroot
 stamp=$(stat -c %Y $DIST/share/wine/wine.inf)
 what="WoW64 prefix stamped $stamp"; PFX=$(one $(for p in $G/pfs64-*-wow64-*/pfx; do [ "$(tr -d "\r\n" < $p/.update-timestamp 2>/dev/null)" = "$stamp" ] && echo $p; done))
 WSRC=$(sed -n 's/^srcdir = //p' $B64/Makefile)
