@@ -5,7 +5,7 @@ taskbar (q-smoke.sh with SMOKE_KEYS from start-page.sh); the menu is a window mo
 Start click and gone after each taskbar click, Programs a window more again (its submenu, right of the menu)
 with the shortcuts; then the double-click on Read me must bring Notepad's window. Also says how long the first
 menu took to map (it loaded every Control Panel applet before explorer skipped that check).
-Then the keyboard (start-page.py CONSOLE OUT): the line typed into Notepad and the Down in the file manager each
+Then the keyboard (start-page.py CONSOLE OUT): the line typed into Notepad and the Space in the file manager each
 change their part of the screen (the page screenshots r-*-Ns.png beside CONSOLE, the last one before the input
 against one 3 s after it), and cmd's "copy nul typed.txt" makes the guest open typed.txt (OUT's eval line), and after its taskbar
 button minimized and restored it, "copy nul typed2.txt" typed2.txt."""
@@ -63,12 +63,14 @@ def shots():
     return sorted(out)
 
 
-def changed(start, end, box):
-    """Pixels of box (x0, y0, x1, y1) that differ between the last shot before start and the first 3 s after end."""
+def changed(start, end, until, box):
+    """Pixels of box (x0, y0, x1, y1) that differ between the last shot before start and the last one from 1 s
+    after end to 1 s before until (the next input, which may raise another window over the box; shots are named
+    by whole seconds)."""
     from PIL import Image, ImageChops
     s = shots()
     a = [f for at, f in s if at < start]
-    b = [f for at, f in s if at >= end + 3]
+    b = [f for at, f in s if end + 1 <= at < until - 1][-1:]
     if not a or not b:
         return None
     d = ImageChops.difference(Image.open(a[-1]).convert('RGB').crop(box), Image.open(b[0]).convert('RGB').crop(box))
@@ -77,16 +79,21 @@ def changed(start, end, box):
 
 inputs = []
 for line in open(sys.argv[1], errors='replace'):
-    m = re.match(r'\s*([0-9.]+) \[smoke\] (type:\S+|key "ArrowDown"|key "Enter")', line)
+    m = re.match(r'\s*([0-9.]+) \[smoke\] (type:\S+|key "ArrowDown"|key " "|key "Enter"|click:\S+|dblclick:\S+)', line)
     if m:
         inputs.append((float(m.group(1)), m.group(2)))
+
+
+def after(at):
+    """When the input after the one at at came (the end of the run if none)."""
+    return min([t for t, k in inputs if t > at] or [1e9])
 typed = [at for at, k in inputs if k == 'type:typed+in+notepad']
-down = [at for at, k in inputs if k == 'key "ArrowDown"']
+down = [at for at, k in inputs if k in ('key " "', 'key "ArrowDown"')]
 # (a type: line is written once its last key is in, about 2 s after its first: the shot before is one from
 # before the click into Notepad)
 for what, at, lead, box in (('a line typed into Notepad', typed, 5, (20, 178, 260, 200)),
-                            ('Down in the file manager selects its first row', down, 0.5, (157, 108, 630, 126))):
-    n = changed(at[0] - lead, at[0], box) if at else None
+                            ('Space in the file manager selects its first row', down, 0.5, (157, 108, 630, 126))):
+    n = changed(at[0] - lead, at[0], after(at[0]), box) if at else None
     good = bool(n and n > 30)
     ok &= good
     print(f'start-page: {"ok" if good else "FAIL"} {what}: {n if n is not None else "no input or no screenshots"} pixels changed')
