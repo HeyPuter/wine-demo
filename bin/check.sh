@@ -6,6 +6,9 @@
 #   banner   7zz's console banner (the first line should read 7-Zip ... Igor Pavlov, no stray glyphs)
 #   prefs    Notepad++'s Settings > Preferences: click to window
 #   c2       the file manager's copy/paste/rename, 7-Zip FM's add and test, the cross-process drop, Dillo (redo-c2.sh)
+#   nocl     the start check again, the site served by tools/serve-nocl.mjs (no Content-Length, Range ignored,
+#            text gzipped) on NOCL_PORT (default 4384): it must start there too; and how many times the page
+#            took the rest bundle whole (a host that ignores Range gives nothing less)
 #   win32    the Win32 drops under WoW64 (DROPS: make drops): putty-x86.exe; the 7-Zip x86 installer, Install,
 #            then the installed 7zFM.exe opening test.zip; Notepad++ x86 portable (notepad++.exe)
 set -uo pipefail; . "$(dirname "$0")/../env.sh"; B=$WDR/bin; cd "$WD_OUT"
@@ -16,6 +19,16 @@ wins() { grep -a '\[wins\]' runs/out-$1/console.txt | tail -n1 | tr '|' '\n' | g
 at() { awk -v k="$2" -v w="$3" '$0 ~ "\\[smoke\\] " k {t=$1} /\[wins\]/ && index($0, w) && t != "" {printf "%.1f s (%.1f -> %.1f)", $1 - t, t, $1; exit}' runs/out-$1/console.txt; }
 for st in $STEPS; do case $st in
 start) bash $B/start-page.sh $t-sp $URL 2>&1 | grep -a '^start-page' | cut -c1-160;;
+nocl)
+  np=${NOCL_PORT:-4384}; site=$(ls -d $WD_OUT/s* 2>/dev/null | grep -i "/s${t#s}$" | head -1); site=${NOCL_SITE:-$site}
+  [ -d "$site" ] || { echo "nocl: no site for $t (NOCL_SITE=DIR)"; exit 1; }
+  lg=$WD_OUT/logs/nocl-$t.log; : > $lg
+  systemctl --user stop windemo-nocl-$np 2>/dev/null; systemctl --user reset-failed windemo-nocl-$np 2>/dev/null
+  systemd-run --user --unit windemo-nocl-$np -E SERVE_LOG=$lg -E SERVE_CERT_DIR=$SERVE_DIR/tools /usr/bin/nice -n 5 $NODE_BIN/node $WDR/tools/serve-nocl.mjs "$site" $np 0.0.0.0 > /dev/null 2>&1
+  sleep 2
+  bash $B/start-page.sh $t-nocl https://$SITE_HOST:$np/ 2>&1 | grep -a '^start-page' | sed 's/^start-page/nocl start-page/' | cut -c1-160
+  systemctl --user stop windemo-nocl-$np
+  echo "nocl: $(grep -c . $lg) answers, none with a length; the rest bundle whole $(grep -c ' /project/build/web/rest.bin' $lg) times ($(awk '/ \/project\/build\/web\/rest.bin/ {s+=$3} END {printf "%.1f", s/1e6}' $lg) MB)";;
 launch)
   bash $B/rec-order.sh $URL work/$t-order.txt > logs/$t-order.txt 2>&1
   for n in np fm dillo putty con; do echo "launch $n: $(wins ro-$n | sed 's/"C:[^"]*cmd.exe" //;s/"Desktop" //')$(grep -ac 'threw' runs/out-ro-$n/console.txt) traps"; done;;
