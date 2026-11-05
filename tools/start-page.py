@@ -56,10 +56,17 @@ print(f'start-page: {"ok" if np else "FAIL"} Notepad after the double-click on R
 
 
 def shots():
+    """(time, file) of each readout shot: its time from the console's "[smoke] shot N" line (smoke.mjs), else
+    the whole second in its name, which is when its turn began, before that turn's inputs."""
+    at = {}
+    for line in open(sys.argv[1], errors='replace'):
+        m = re.match(r'\s*([0-9.]+) \[smoke\] shot (\d+)$', line)
+        if m:
+            at[int(m.group(2))] = float(m.group(1))
     out = []
     for f in glob.glob(os.path.join(os.path.dirname(sys.argv[1]), 'r-*-*s.png')):
-        m = re.search(r'-(\d+)s\.png$', f)
-        out.append((int(m.group(1)), f))
+        m = re.search(r'-(\d+)-(\d+)s\.png$', f)
+        out.append((at.get(int(m.group(1)), int(m.group(2))), f))
     return sorted(out)
 
 
@@ -97,6 +104,28 @@ for what, at, lead, box in (('a line typed into Notepad', typed, 5, (20, 178, 26
     good = bool(n and n > 30)
     ok &= good
     print(f'start-page: {"ok" if good else "FAIL"} {what}: {n if n is not None else "no input or no screenshots"} pixels changed')
+# cmd minimized by its taskbar button (the second click on it): its button no longer shows it active (the
+# pressed, highlighted look) in the shots until the click that restores it, as on Windows, where the
+# minimize activates the next window.
+cmdb = [at for at, k in inputs if k.startswith('click:130:703')]
+
+
+def lit(f, x0=60, x1=212, y=698):
+    from PIL import Image
+    im = Image.open(f).convert('RGB')
+    px = [im.getpixel((x, y)) for x in range(x0 + 30, x1 - 4, 3)]
+    return sum(1 for r, g, b in px if b > 200 and r < 120) > len(px) * 0.6
+
+
+if len(cmdb) >= 3:
+    sh = [f for at, f in shots() if cmdb[1] + 1 <= at < cmdb[2] - 1]
+    n = sum(1 for f in sh if lit(f))
+    good = bool(sh) and n == 0
+    ok &= good
+    print(f'start-page: {"ok" if good else "FAIL"} cmd minimized by its taskbar button: its button shown active in {n} of {len(sh)} shots before the restore')
+else:
+    ok = False
+    print('start-page: FAIL cmd minimized by its taskbar button: no clicks on it')
 ev = ''
 if len(sys.argv) > 2 and os.path.exists(sys.argv[2]):
     ev = ' '.join(l.split('"typed"', 1)[1] for l in open(sys.argv[2], errors='replace') if 'smoke-eval' in l and '"typed"' in l)

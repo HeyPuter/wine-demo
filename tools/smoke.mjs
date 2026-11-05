@@ -255,6 +255,8 @@ while ((Date.now() - t0) / 1000 < Number(secs)) {
       const r = (await s('Runtime.evaluate', { expression: READOUT, returnByValue: true, awaitPromise: true }).catch(() => null))?.result?.value;
       if (r?.b64) writeFileSync(`${outDir}/r-${String(n).padStart(3, '0')}-${t}s.png`, png(r.w, r.h, Buffer.from(r.b64, 'base64')));
     }
+    // (the shot's own time: t is the second its turn began, before the inputs and evals above)
+    appendFileSync(`${outDir}/console.txt`, stamp() + ` [smoke] shot ${String(n).padStart(3, '0')}\n`);
     n++;
   } catch (e) { console.log(`${t}s HUNG: ${e.message}`); appendFileSync(`${outDir}/console.txt`, stamp() + ' [smoke] HUNG ' + e.message + '\n'); continue; }
   let mem = '';

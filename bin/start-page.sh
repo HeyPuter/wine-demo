@@ -7,7 +7,8 @@
 # 144 s and Space at 148 s (it selects the focused first row, the only one: Down has no row to move to; the
 # selection must show), cmd raised at 152 s and
 # "copy nul typed.txt" typed and entered (the guest must open C:\users\gex\typed.txt); then cmd's taskbar
-# button at 165 s (it is active: minimized) and again at 170 s (restored, and active again), and
+# button at 165 s (it is active: minimized, and its button no longer shows it active) and again at 170 s
+# (restored, and active again), and
 # "copy nul typed2.txt" at 174 s, which must reach cmd too (typed2.txt; the eval at 190 s).
 . "$(dirname "$0")/../env.sh"; S=$WD_OUT; t=${1:?TAG} u=${2:?URL}
 E=$(printf '%s' '(async () => ["typed", (await __ntOpened()).filter((f) => /typed2?\.txt/i.test(typeof f === "string" ? f : JSON.stringify(f)))])()' | base64 -w0)
