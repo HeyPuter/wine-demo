@@ -20,7 +20,9 @@ p = sys.argv[1]; d = json.load(open(p))
 d['features'].update(gl=True, translation=True)
 d.update(bundle='split', cold='none', resources='trim', helpers='strip', wineboot='skip', desktop='explorer')
 for kv in sys.argv[2:]:
-    k, v = kv.split('=', 1); d[k] = v
+    k, v = kv.split('=', 1)
+    if k.startswith('features.'): d['features'][k[9:]] = v == 'true'  # features.gl=false
+    else: d[k] = v
 json.dump(d, open(p, 'w'), indent=2)
 PY
 cp $WDR/tools/index.html $P/user/index.html

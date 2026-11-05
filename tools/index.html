@@ -246,8 +246,15 @@
     // ?persist=0: nothing kept between visits; by default the guest's
     // files are kept in this browser's origin private file system (OPFS).
     const keep = q.get('persist') !== '0';
+    // Wine's own line for a program that wants more address space than the page has (a 64-bit Chromium or
+    // Electron app's reservation): shown, not left to look like any other crash.
+    const said = (text) => {
+      for (const l of String(text).split('\n')) {
+        if (/needs more than 16 GiB of address space/.test(l)) show(`${l.replace(/^wine: /, '')}: this program is not supported here (its 32-bit build may be)`);
+      }
+    };
     const app = await start({
-      container: document.body, size: 'fit', onProgress: progress, ...(wisp ? { wisp } : {}),
+      container: document.body, size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
       filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory',
     });
     globalThis.__app = app;
