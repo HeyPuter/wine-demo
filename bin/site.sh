@@ -22,6 +22,15 @@ for kv in sys.argv[2:]:
 json.dump(d, open(p, 'w'), indent=2)
 PY
 cp $WDR/tools/index.html $P/user/index.html
+# The project's runtime shims are GEX's web/public/gex as built (hard links), names and all: GEX's own strip
+# (build-eject-page.sh) covers its page/ copies, not these. A release site ships them without their custom
+# sections, DWARF and the name section, which nothing in the runtime reads. New files, never a write through the
+# links. Not the seeds, whose gex.* sections the runtime reads. KEEP_NAMES=1 keeps them (a debug site).
+if [ -z "${KEEP_NAMES:-}" ]; then
+  for w in $P/runtime/web/gex/gex_browser*.shared.wasm $P/runtime/web/gex/gex_kernel*.wasm; do
+    wasm-tools strip -a "$w" -o "$w.strip" && mv -f "$w.strip" "$w"
+  done
+fi
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/web/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
 python3 -I - $out/project/build/web/nt.json <<'PY'
