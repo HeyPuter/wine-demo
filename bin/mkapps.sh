@@ -65,4 +65,33 @@ if [ "${PRINTER:-1}" != 0 ]; then
   grep -q '^addprinter: ' logs/mkapps-printer.log || { echo "mkapps: no printer (logs/mkapps-printer.log)"; exit 1; }
   pr='"Print to file"'
 fi
-echo "mkapps: $P, $n shortcuts, printer $pr"
+# The visual style (THEME, default luna: windemo's own, theme/luna; aero: Wine's stock one), applied as
+# winecfg's Desktop tab does (theme/apply.c: uxtheme's ApplyTheme), which writes its colors and metrics.
+th=${THEME:-luna}
+if [ "$th" != aero ]; then
+  [ "$th" = luna ] || { echo "mkapps: THEME is luna or aero, not $th"; exit 1; }
+  b64=$(sed -n 's/^WINMD_DIR=//p' w64/dist.env); b64=${b64%/include}
+  tools=$(sed -n 's/^toolsdir = //p' $b64/Makefile); wsrc=$(sed -n 's/^WINE_SRC=//p' w64/dist.env)
+  $WDR/theme/luna/build.sh $wsrc $tools work/luna > logs/mkapps-luna.log 2>&1 || { tail -5 logs/mkapps-luna.log; exit 1; }
+  td="$c/windows/resources/themes/luna"; mkdir -p "$td"; cp work/luna/luna.msstyles "$td/"
+  $MINGW_CC -municode -O2 -o work/apply-theme.exe $WDR/theme/apply.c
+  cp work/apply-theme.exe $c/apply-theme.exe
+  (cd $c && timeout -k 10 300 systemd-run --user --scope -q -p TasksMax=1024 -p MemoryMax=16G nice -n 10 \
+    $G run --env WINEPREFIX=$P --env WINEGEX_WOW64=1 --env WINEDEBUG=err+all,fixme-all --env USER=gex \
+    $S/w64/dist/lib/wine/x86_64-unix/wine 'C:\apply-theme.exe' 'C:\windows\resources\themes\luna\luna.msstyles') > logs/mkapps-theme.log 2>&1
+  rm -f $c/apply-theme.exe
+  grep -q '^apply: C:' logs/mkapps-theme.log && grep -q 'luna.msstyles' $P/user.reg || { echo "mkapps: the theme did not apply (logs/mkapps-theme.log)"; exit 1; }
+  python3 -I - $P/user.reg work/luna/colors.txt <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+cols = dict(l.strip().split('=', 1) for l in open(sys.argv[2]) if '=' in l)
+i = s.index('[Control Panel\\\\Colors]'); j = s.index('\n\n', i)
+sec = s[i:j]
+for k, v in cols.items():
+    sec, n = re.subn(rf'^"{k}"="[0-9 ]*"$', f'"{k}"="{v}"', sec, flags=re.M)
+    if not n:
+        sec += f'\n"{k}"="{v}"'
+open(p, 'w', encoding='utf-8').write(s[:i] + sec + s[j:])
+PY
+fi
+echo "mkapps: $P, $n shortcuts, printer $pr, theme $th"
