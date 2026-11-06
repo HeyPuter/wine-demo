@@ -42,7 +42,7 @@ case $DIST in *-twin)
   cp -p $T64/*.wasm.m64 w64/dist/lib/wine/x86_64-windows/
   echo "twin: $(ls $T64/*.wasm.m64 | wc -l) memory64 modules from $(basename $T64)";;
 esac
-(cd w64/dist/lib/wine/x86_64-windows && { ls $E/native/*.wasm | sed 's#.*/##'; ls *.wasm.m64 2>/dev/null; } | nice -n 10 xargs -r -P8 -n 16 sh -c 'for f; do python3 "$0" "$f" "$f.s" && mv "$f.s" "$f" || exit 1; done' $GEX/toolchain/gexcc/windows/stripnames.py)
+(cd w64/dist/lib/wine/x86_64-windows && { ls $E/native/*.wasm | sed 's#.*/##'; ls *.wasm.m64 2>/dev/null || true; } | nice -n 10 xargs -r -P8 -n 16 sh -c 'for f; do python3 "$0" "$f" "$f.s" && mv "$f.s" "$f" || exit 1; done' $GEX/toolchain/gexcc/windows/stripnames.py)
 printf 'SOURCE=%s\nWINE_SRC=%s\nWINMD_DIR=%s/include\nNATIVE_DIR=%s/native:%s/native%s\nSTRIPNAMES=%s/toolchain/gexcc/windows/stripnames.py\nPREFIX=%s\n# x86-64 core restaged with PELINK_EXPORT_ALL=1 (%s)\n' \
   $DIST $WSRC $B64 $E $P32 "${T64:+:$T64}" $GEX $PFX $E > w64/dist.env
 echo "dist: w64/dist from $(basename $DIST)"

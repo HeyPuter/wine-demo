@@ -76,7 +76,7 @@ python3 -I - stage/pfx/system.reg <<'PY'
 import re, sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()
 s, n = re.subn(r'(\[Software\\\\(?:Wow6432Node\\\\)?Microsoft\\\\Windows NT\\\\CurrentVersion\\\\AeDebug\][^\n]*\n(?:[^\n\[][^\n]*\n)*?)"Debugger"=[^\n]*\n', r'\1', s)
-assert n == 2, f'AeDebug Debugger values: {n}, want 2'
+assert n in (0, 2), f'AeDebug Debugger values: {n}, want 2 (or 0: a prefix that has none)'
 open(p, 'w', encoding='utf-8').write(s)
 PY
 # The keyboard's XKB data (Debian's xkb-data, MIT): winewayland compiles the compositor's keymap
