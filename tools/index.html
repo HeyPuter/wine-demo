@@ -51,6 +51,14 @@
   #copies .copy .fill { height: 100%; width: 0; background: var(--bar); }
   #copies .copy.err { color: var(--err); }
   #copies .copy button { float: right; margin-left: 8px; background: none; border: 0; color: #aaa; cursor: pointer; font: inherit; }
+  /* The files' store open in another tab: the choice, over the loading screen. */
+  #busy { position: fixed; inset: 0; z-index: 2147483647; display: none; align-items: center; justify-content: center;
+          background: rgba(0, 0, 0, 0.6); }
+  #busy.on { display: flex; }
+  #busy .box { width: min(420px, calc(100vw - 32px)); padding: 20px; border-radius: 6px; background: #1d2026; line-height: 1.45; }
+  #busy p { margin: 0 0 16px; }
+  #busy .wait { color: var(--dim); font-size: 12px; }
+  #busy button { padding: 6px 14px; border-radius: 4px; border: 1px solid #555; background: #2a2d33; color: var(--fg); font: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -58,6 +66,13 @@
 <div id="fetching" aria-live="polite"></div>
 <div id="dropzone">Drop to copy to the Wine Desktop</div>
 <div id="copies" aria-live="polite"></div>
+<div id="busy" role="alertdialog" aria-labelledby="busy-text">
+  <div class="box">
+    <p id="busy-text">windemo is open in another tab: close it to keep your files here, or continue without saving.</p>
+    <p class="wait">Waiting for the other tab to close…</p>
+    <button type="button">Continue without saving</button>
+  </div>
+</div>
 <div id="loading" role="progressbar" aria-live="polite">
   <div class="box">
     <div class="row"><span class="phase">Loading</span><span class="time">0 s</span></div>
@@ -253,10 +268,22 @@
         if (/needs more than 16 GiB of address space/.test(l)) show(`${l.replace(/^wine: /, '')}: this program is not supported here (its 32-bit build may be)`);
       }
     };
+    // The files' store is held by one tab at a time: another tab of windemo
+    // has it. Closing that one goes on here by itself (start() waits for
+    // it, and aborts `signal`); the button runs this tab without saving.
+    const busy = document.getElementById('busy');
+    let unsaved = false;
+    const onStoreBusy = ({ signal }) => new Promise((resolve) => {
+      busy.classList.add('on');
+      const done = (v) => { busy.classList.remove('on'); resolve(v); };
+      busy.querySelector('button').onclick = () => { unsaved = true; done('memory'); };
+      signal.addEventListener('abort', () => done('wait'), { once: true });
+    });
     const app = await start({
       container: document.body, size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
-      filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory',
+      filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy,
     });
+    if (unsaved) console.log('[windemo] open in another tab: this one keeps no files');
     globalThis.__app = app;
     dropFiles(app);
     // A library that says nothing of its progress: no loading screen to keep.
