@@ -53,7 +53,8 @@ ALLOWED = [r'(.*/)?(system|user|userdef)\.reg', r'\.update-timestamp', r'dll-bas
            r'drive_c/windows/system32/winevulkan\.json', r'drive_c/windows/system32/drivers/etc/(services|hosts|networks|protocol)',
            r'drive_c/users/[^/]+/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/7-Zip/[^/]+\.lnk',
            r'drive_c/users/gex/Desktop/Read me\.txt', r'drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/[^/]+\.lnk',
-           r'lib/wine/x86_64-unix/(wine|wineserver)(\.64)?(\.wasm)?', 
+           # the memory64 twin's loader too (wine/dist.sh WINE64_TWIN=1: wine.m64)
+           r'lib/wine/x86_64-unix/(wine|wineserver)(\.64|\.m64)?(\.wasm)?', 
            # the loader's lazy Unix side of winegstreamer (link-wine64.sh WINE64_MEDIA=lazy) and the list that keeps it
            # out of a site's boot bundle (wine64-dist.sh)
            # and the SDL2 side module winebus dlopens (link-wine64.sh, SDL2 built from source by wine64-deps.sh)
@@ -131,7 +132,7 @@ def stripped_hashes(d):
     stripnames.py unless WINE64_STRIP=0), made in a scratch directory."""
     import concurrent.futures, tempfile
     tmp = tempfile.mkdtemp(prefix='audit-strip-', dir=os.environ.get('WD_HOT') or None)
-    mods = [os.path.join(d, n) for n in os.listdir(d) if n.endswith('.wasm')]
+    mods = [os.path.join(d, n) for n in os.listdir(d) if n.endswith(('.wasm', '.wasm.m64'))]  # a twin's memory64 modules too
 
     def one(i_p):
         i, p = i_p
