@@ -51,6 +51,14 @@
   #copies .copy .fill { height: 100%; width: 0; background: var(--bar); }
   #copies .copy.err { color: var(--err); }
   #copies .copy button { float: right; margin-left: 8px; background: none; border: 0; color: #aaa; cursor: pointer; font: inherit; }
+  /* A program that crashed: its windows are gone; a note names it and says why, until closed (or 30 s). */
+  #crashes { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2147483645; display: flex;
+             flex-direction: column; gap: 6px; width: min(420px, calc(100vw - 32px)); pointer-events: none; }
+  #crashes .crash { padding: 8px 12px; border-radius: 4px; background: rgba(0, 0, 0, 0.82); color: #eee;
+                    border-left: 3px solid var(--err); font: 13px system-ui, sans-serif; pointer-events: auto; }
+  #crashes .crash .what { font-weight: 600; overflow-wrap: anywhere; }
+  #crashes .crash .why { margin-top: 2px; color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
+  #crashes .crash button { float: right; margin-left: 8px; background: none; border: 0; color: #aaa; cursor: pointer; font: inherit; }
   /* The files' store open in another tab: the choice, over the loading screen. */
   #busy { position: fixed; inset: 0; z-index: 2147483647; display: none; align-items: center; justify-content: center;
           background: rgba(0, 0, 0, 0.6); }
@@ -66,6 +74,7 @@
 <div id="fetching" aria-live="polite"></div>
 <div id="dropzone">Drop to copy to the Wine Desktop</div>
 <div id="copies" aria-live="polite"></div>
+<div id="crashes" role="status" aria-live="polite"></div>
 <div id="busy" role="alertdialog" aria-labelledby="busy-text">
   <div class="box">
     <p id="busy-text">windemo is open in another tab: close it to keep your files here, or continue without saving.</p>
@@ -194,6 +203,28 @@
     }
   };
 
+  // A program that crashed (start()'s onCrash: gex ended it and closed its windows): a note at the top
+  // that names it and says what happened, as Wine put it.
+  const crashes = document.getElementById('crashes');
+  const crashed = ({ pid, name, reason, code }) => {
+    const box = document.createElement('div');
+    box.className = 'crash';
+    const close = document.createElement('button');
+    close.title = 'Close';
+    close.textContent = '\u2715';
+    close.onclick = () => box.remove();
+    const what = document.createElement('div');
+    what.className = 'what';
+    what.textContent = `${name || `Process ${pid}`} crashed`;
+    const why = document.createElement('div');
+    why.className = 'why';
+    why.textContent = reason || (code ? `exception ${code}` : 'it ended unexpectedly');
+    box.append(close, what, why);
+    crashes.append(box);
+    console.log('[crash]', JSON.stringify({ pid, name, reason, code }));
+    setTimeout(() => box.remove(), 30000);
+  };
+
   // Files and folders dropped on the page: copied into the guest with their
   // tree, into the Wine user's Desktop folder (C:\users\gex\Desktop), and
   // offered to the window they were dropped on.
@@ -286,7 +317,7 @@
       // The wallpaper covers the desktop, its hills always showing; until it is decoded, the
       // theme's colour, else its sky's.
       background: { color: DESKTOP_COLOUR ?? '#4f7de6', image: 'wallpaper.webp', anchor: 'bottom' },
-      filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy,
+      filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy, onCrash: crashed,
     });
     if (unsaved) console.log('[windemo] open in another tab: this one keeps no files');
     globalThis.__app = app;

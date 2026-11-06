@@ -70,6 +70,15 @@ s = re.sub(r'\[Software\\\\(?:Wow6432Node\\\\)?Microsoft\\\\Windows\\\\CurrentVe
 assert len(s) < n, 'no Unix root namespace key'
 open(p, 'w', encoding='utf-8').write(s)
 PY
+# No debugger for a crashed program (Wine's default is winedbg, which held its windows for seconds): gex
+# ends it, its windows go, and the page says it crashed (index.html, start()'s onCrash).
+python3 -I - stage/pfx/system.reg <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+s, n = re.subn(r'(\[Software\\\\(?:Wow6432Node\\\\)?Microsoft\\\\Windows NT\\\\CurrentVersion\\\\AeDebug\][^\n]*\n(?:[^\n\[][^\n]*\n)*?)"Debugger"=[^\n]*\n', r'\1', s)
+assert n == 2, f'AeDebug Debugger values: {n}, want 2'
+open(p, 'w', encoding='utf-8').write(s)
+PY
 # The keyboard's XKB data (Debian's xkb-data, MIT): winewayland compiles the compositor's keymap
 # against /usr/share/X11/xkb in every process; without it no key reaches a window.
 mkdir -p stage/usr/share/X11; cp -rL /usr/share/X11/xkb stage/usr/share/X11/
