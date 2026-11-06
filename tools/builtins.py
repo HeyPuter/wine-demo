@@ -62,6 +62,11 @@ for dp, _, fn in os.walk(os.path.join(pfx, 'drive_c')):
         if os.path.exists(p + '.wasm'):
             done['gexcc app'] += 1
             continue
+        # A visual style (windemo's luna, theme/luna) is winegcc's resource-only DLL with the builtin stub:
+        # no Wine module of that name, and the placeholder that stood for one left the theme 512 bytes.
+        if n.lower().endswith('.msstyles'):
+            done['visual style'] += 1
+            continue
         with open(p, 'rb') as f:
             a = machine(f.read(4096))
         if not a:
