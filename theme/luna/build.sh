@@ -8,7 +8,7 @@ mkdir -p "$O"; rm -rf "${O:?}/b"; mkdir "$O/b"
 python3 -I "$D/luna.py" "$A" "$O"
 python3 -I "$D/raster.py" "$O"
 cp "$A"/*.bmp "$O/b/"; cp "$O"/bmp/*.bmp "$O/b/"; cp "$O/luna.rc" "$O/b/"
-"$T/tools/wrc/wrc" --nls-dir="$W/nls" -I"$W/include" -I"$T/include" -I"$O/b" -I"$A" -o "$O/luna.res" "$O/b/luna.rc"
+"$T/tools/wrc/wrc" -u --nostdinc --nls-dir="$W/nls" -I"$W/include" -I"$T/include" -I"$O/b" -I"$A" -o "$O/luna.res" "$O/b/luna.rc"
 "$T/tools/winegcc/winegcc" -b x86_64-w64-mingw32 --winebuild "$T/tools/winebuild/winebuild" -shared -nostdlib \
   -Wb,--data-only "$O/luna.res" -o "$O/luna.msstyles"
 echo "luna: $O/luna.msstyles ($(stat -c %s "$O/luna.msstyles") bytes)"
