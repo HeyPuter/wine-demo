@@ -539,7 +539,7 @@ COLORS = {
 }
 for k, v in COLORS.items():
     rc = re.sub(rf'"{k} = [0-9 ]+\\r\\n"', lambda m, k=k, v=v: f'"{k} = {v}\\r\\n"', rc, count=1)
-rc = rc.replace('"CaptionFont = Tahoma, 10, bold\\r\\n"', '"CaptionFont = Tahoma, 9, bold\\r\\n"').replace('"CaptionBarHeight = 25\\r\\n"', '"CaptionBarHeight = 26\\r\\n"')
+rc = rc.replace('"CaptionFont = Tahoma, 10, bold\\r\\n"', '"CaptionFont = Tahoma, 9, bold\\r\\n"').replace('"CaptionBarHeight = 25\\r\\n"', '"CaptionBarHeight = 26\\r\\nCaptionBarWidth = 25\\r\\n"')
 rc = rc.replace('"FlatMenus = true\\r\\n"', '"FlatMenus = true\\r\\n"')
 # white caption text; green progress in blocks
 rc = rc.replace('"[Window.Caption]\\r\\n"', '"[Window.Caption]\\r\\n"', 1)
