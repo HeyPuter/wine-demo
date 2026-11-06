@@ -90,7 +90,7 @@
   // resize(), state }. The loading screen below is this page's: start()
   // only says how far along it is (onProgress).
   import { start } from './app.mjs';
-  // The desktop's colour behind the windows (site.sh: the theme's Background), or the default.
+  // The desktop's colour behind the wallpaper (site.sh: the theme's Background), or null.
   const DESKTOP_COLOUR = null;
   const error = document.getElementById('error');
   const show = (e) => { error.textContent = String(e?.message ?? e); };
@@ -283,7 +283,9 @@
     });
     const app = await start({
       container: document.body, size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
-      ...(DESKTOP_COLOUR ? { background: DESKTOP_COLOUR } : {}),
+      // The wallpaper covers the desktop, its hills always showing; until it is decoded, the
+      // theme's colour, else its sky's.
+      background: { color: DESKTOP_COLOUR ?? '#4f7de6', image: 'wallpaper.webp', anchor: 'bottom' },
       filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy,
     });
     if (unsaved) console.log('[windemo] open in another tab: this one keeps no files');

@@ -48,6 +48,9 @@ open(sys.argv[3], 'w').write(page.replace('const DESKTOP_COLOUR = null;', f'cons
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+# The desktop's wallpaper (theme/wallpaper.webp: Puter's desktop art, WebP quality 100, 67 KB against the
+# 2.2 MB PNG), beside the page, which starts fetching it as it starts.
+cp $WDR/theme/wallpaper.webp $out/wallpaper.webp
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
 p = sys.argv[1]; d = json.load(open(p))
