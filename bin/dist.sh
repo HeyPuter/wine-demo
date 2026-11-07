@@ -6,11 +6,11 @@
 # DIST_PREFIX names it when more than one is (wine/dist.sh's WINE64_PREFIX).
 set -euo pipefail; . "$(dirname "$0")/../env.sh"; need_gex
 DIST=$(realpath "${1:?DIST}"); G=$GATE_W64; cd "$WD_OUT"
-K=$(basename "$DIST" | sed -n 's/^dist64-\([0-9a-f]\{12\}\)-.*-wow64-.*-n[0-9a-f]*-[0-9a-f]*-s[0-9a-f]*\(-twin\)\{0,1\}$/\1/p')
+K=$(basename "$DIST" | sed -n 's/^dist64-\([0-9a-f]\{12\}\)-.*-wow64-.*-n[0-9a-f]*-[0-9a-f]*-s[0-9a-f]*\(-twin[0-9a-f]*\)\{0,1\}$/\1/p')
 [ -n "$K" ] || { echo "dist: $DIST is not a native-i386 WoW64 dist (dist64-K-...-wow64-...-nN64-N32-sS)"; exit 1; }
 one() { [ $# = 1 ] && [ -e "$1" ] || { echo "dist: want one $what, got: $*" >&2; exit 1; }; echo "$1"; }
 what="wasm64 wow64 tree"; B64=$(one $(ls -d $G/b64-$K-*-wow64 2>/dev/null))
-nk=$(basename $DIST | sed 's/.*-n\([0-9a-f]*\)-\([0-9a-f]*\)-s[0-9a-f]*\(-twin\)\{0,1\}$/\1 \2/')
+nk=$(basename $DIST | sed 's/.*-n\([0-9a-f]*\)-\([0-9a-f]*\)-s[0-9a-f]*\(-twin[0-9a-f]*\)\{0,1\}$/\1 \2/')
 what="x86-64 native dir"; P64=$(one $(ls -d $G/pen64-$K-${nk% *} 2>/dev/null))
 what="i386 native dir"; P32=$(one $(ls -d $G/pen32-$K-${nk#* } 2>/dev/null))
 what="sysroot"; SR=$(one $(grep -o "/[^ ]*/sr64-[0-9a-f-]*" $P64.log | sort -u))/sysroot
@@ -34,13 +34,14 @@ lost=$(comm -23 <(ex $P64/native/winepe.wasm) <(ex $E/native/winepe.wasm) | wc -
 [ $lost = 0 ] || { echo "dist: the restaged core lost $lost exports"; exit 1; }
 echo "core exports: $(ex $P64/native/winepe.wasm | wc -l) -> $(ex $E/native/winepe.wasm | wc -l)"
 cp -p $E/native/*.wasm w64/dist/lib/wine/x86_64-windows/
-# a twin's memory64 modules (NAME.wasm.m64, which a process with a 64-bit memory loads in NAME.wasm's place):
-# wine/dist.sh leaves them in the twin's native dir (its WINE64_NATIVE), not in the install
+# a twin (dist64-...-twinM, M its memory64 core's key) carries its memory64 modules (NAME.wasm.m64, which a
+# process with a 64-bit memory loads in NAME.wasm's place) in the install; its native dir (pen64-...-twinM)
+# is what the audit reads them from
 T64=
-case $DIST in *-twin)
-  what="twin native dir"; T64=$(one $(ls -d $G/pen64-$K-${nk% *}-twin* 2>/dev/null | grep -v '\.log$'))
-  cp -p $T64/*.wasm.m64 w64/dist/lib/wine/x86_64-windows/
-  echo "twin: $(ls $T64/*.wasm.m64 | wc -l) memory64 modules from $(basename $T64)";;
+case $DIST in *-twin*)
+  [ -n "$(ls w64/dist/lib/wine/x86_64-windows/*.wasm.m64 2>/dev/null)" ] || { echo "dist: $DIST is a twin without its memory64 modules (a wine/dist.sh before they went into the install)"; exit 1; }
+  what="twin native dir"; T64=$(one $(ls -d $G/pen64-$K-${nk% *}-${DIST##*-} 2>/dev/null))
+  echo "twin: $(ls w64/dist/lib/wine/x86_64-windows/*.wasm.m64 | wc -l) memory64 modules, native dir $(basename $T64)";;
 esac
 (cd w64/dist/lib/wine/x86_64-windows && { ls $E/native/*.wasm | sed 's#.*/##'; ls *.wasm.m64 2>/dev/null || true; } | nice -n 10 xargs -r -P8 -n 16 sh -c 'for f; do python3 "$0" "$f" "$f.s" && mv "$f.s" "$f" || exit 1; done' $GEX/toolchain/gexcc/windows/stripnames.py)
 printf 'SOURCE=%s\nWINE_SRC=%s\nWINMD_DIR=%s/include\nNATIVE_DIR=%s/native:%s/native%s\nSTRIPNAMES=%s/toolchain/gexcc/windows/stripnames.py\nPREFIX=%s\n# x86-64 core restaged with PELINK_EXPORT_ALL=1 (%s)\n' \
