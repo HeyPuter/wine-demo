@@ -223,6 +223,10 @@ const run = async (steps) => {
 
 // 1. boot: the desktop and its cmd window
 cmdWin = await waitWin('cmd\\.exe$', 300);
+// The windows there before the install: a timeout notes the others by title (a box's title says what stopped
+// it, as Blender's "Unsupported CPU" did; its picture is the dialog-N-box.png the error-box wait crops).
+const startWins = new Set((await wins()).map((w) => w.id));
+const newWins = async () => { const t = (await wins()).filter((w) => !startWins.has(w.id) && w.title).map((w) => `"${w.title}" ${w.w}x${w.h}`); if (t.length) res.notes.push('windows at the timeout: ' + t.join(', ')); };
 if (!cmdWin || !(await waitWin('^Desktop$', 60))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 res.times.desktop = Math.round(now());
 await sleep(3000);
@@ -262,7 +266,7 @@ if (plan.install) {
   await cmd(`${plan.install} & title RC!errorlevel!`);
   const w = await waitWin('^RC-?\\d+$', plan.timeout?.install ?? 900);
   await shot('installed');
-  if (!w) { res.install = bailed ? 'error box' : 'timeout'; res.first_error = bailed ?? firstErr(t2) ?? `no exit in ${plan.timeout?.install ?? 900} s`; done(); }
+  if (!w) { await newWins(); res.install = bailed ? 'error box' : 'timeout'; res.first_error = bailed ?? firstErr(t2) ?? `no exit in ${plan.timeout?.install ?? 900} s`; done(); }
   const rc = Number(w.title.slice(2));
   res.install = (plan.okrc ?? [0, 3010, 1641]).includes(rc) ? 'ok' : `rc ${rc}`;
   res.times.install = Math.round(now() - t2);
@@ -299,7 +303,7 @@ const t3 = now();
 const seen = new Set((await wins()).map((w) => w.id));
 await cmd(`title launching & ${plan.launch}`);
 const app = await waitWin(plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+', plan.timeout?.launch ?? 180, seen);
-if (!app) { await shot('launch'); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
+if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
 res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app.title;
 await sleep(plan.settle ?? 6000);
 const a = await shot('app');
