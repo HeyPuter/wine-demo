@@ -270,8 +270,12 @@ if (plan.install) {
   if (plan.check) {
     // a file the install writes, or (cmd:...) a command that succeeds only after it (a registry value):
     // an installer's exit status alone passes one that installed nothing ("already installed")
-    await cmd(plan.check.startsWith('cmd:') ? `(${plan.check.slice(4)}) >nul 2>&1 && (title HAVE) || (title NOFILE)` : `if exist "${plan.check}" (title HAVE) else (title NOFILE)`);
-    const c = await waitWin('^(HAVE|NOFILE)$', 60);
+    const check = plan.check.startsWith('cmd:') ? `(${plan.check.slice(4)}) >nul 2>&1 && (title HAVE) || (title NOFILE)` : `if exist "${plan.check}" (title HAVE) else (title NOFILE)`;
+    await cmd(check);
+    let c = await waitWin('^(HAVE|NOFILE)$', 60);
+    // No answer at all: the line went elsewhere (an installer's child, still exiting, took the focus;
+    // WinRAR's uninstall.exe /setup), not a missing file. Typed once more.
+    if (!c) { res.notes.push('the check had no answer: typed again'); await cmd(check); c = await waitWin('^(HAVE|NOFILE)$', 60); }
     if (c?.title !== 'HAVE') {
       // the x64 Program Files mix-up (the CPU seen as x86): the files under C:\Files or C:\System64
       await cmd('if exist "C:\\Files\\*" (title CFILES) else if exist "C:\\System64\\*" (title CSYS64) else (title NOWHERE)');
