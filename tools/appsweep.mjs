@@ -105,7 +105,7 @@ const wins = async () => {
 let lastList = '';
 const watch = async () => { const l = (await wins()).map((w) => `${w.id} ${w.w}x${w.h}@${w.x},${w.y} "${w.title}"`).join('|'); if (l !== lastList) { lastList = l; line('[wins] ' + l); } };
 const CRASH = /crash|error|exception|problem|fatal|not responding/i;
-const DIALOG = /crash|error|warning|exception|fail|problem|cannot|unable|fatal|crash|not found|invalid/i;
+const DIALOG = /crash|error|warning|exception|fail|problem|cannot|unable|fatal|crash|not found|invalid|unsupported|not supported|requires/i;
 const dialogs = new Map();
 let bailed = null;
 const crop = (sh, w, name) => {
