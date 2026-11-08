@@ -206,7 +206,7 @@
   // A program that crashed (start()'s onCrash: gex ended it and closed its windows): a note at the top
   // that names it and says what happened, as Wine put it.
   const crashes = document.getElementById('crashes');
-  const crashed = ({ pid, name, reason, code }) => {
+  const note = (whatText, whyText, ms) => {
     const box = document.createElement('div');
     box.className = 'crash';
     const close = document.createElement('button');
@@ -215,14 +215,32 @@
     close.onclick = () => box.remove();
     const what = document.createElement('div');
     what.className = 'what';
-    what.textContent = `${name || `Process ${pid}`} crashed`;
-    const why = document.createElement('div');
-    why.className = 'why';
-    why.textContent = reason || (code ? `exception ${code}` : 'it ended unexpectedly');
-    box.append(close, what, why);
+    what.textContent = whatText;
+    box.append(close, what);
+    if (whyText) {
+      const why = document.createElement('div');
+      why.className = 'why';
+      why.textContent = whyText;
+      box.append(why);
+    }
     crashes.append(box);
+    if (ms) setTimeout(() => box.remove(), ms);
+  };
+  // Wine's server failed (a crash of its own, as gex reports it): every program goes with it, and the
+  // session's end is that, not its first program's exit status, whichever is heard first.
+  let serverFailed = false;
+  let exitShown = null;
+  const serverFailure = () => {
+    if (serverFailed) return;
+    serverFailed = true;
+    if (exitShown !== null && error.textContent === exitShown) error.textContent = '';
+    note("Windows session ended: Wine's server failed");
+    console.log('[crash]', JSON.stringify({ server: true }));
+  };
+  const crashed = ({ pid, name, reason, code }) => {
+    if (/(^|[\\/])wineserver$/.test(name ?? '')) return serverFailure();
+    note(`${name || `Process ${pid}`} crashed`, reason || (code ? `exception ${code}` : 'it ended unexpectedly'), 30000);
     console.log('[crash]', JSON.stringify({ pid, name, reason, code }));
-    setTimeout(() => box.remove(), 30000);
   };
 
   // Files and folders dropped on the page: copied into the guest with their
@@ -331,7 +349,7 @@
       clearTimeout(resizing);
       resizing = setTimeout(() => app.resize?.('fit'), 250);
     });
-    app.exited.then((status) => { if (status) show(`The program exited (${status}).`); }, show);
+    app.exited.then((status) => { if (status && !serverFailed) show((exitShown = `The program exited (${status}).`)); }, show);
   } catch (e) {
     progress({ phase: 'failed' });
     show(e);
