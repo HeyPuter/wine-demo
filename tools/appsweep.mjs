@@ -5,7 +5,7 @@
 // PLAN: {id, drop: [host paths], install: "cmd line" | null, interactive: [steps] | null, launch: "cmd line",
 //        title: "regex" (the program's window; default any new window), timeout: {install, launch} s}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
-//        {type: "text"}, {click: [x, y]}, {sleep: s}, {shot: name}, {gone: "regex", t}
+//        {type: "text"}, {click: [x, y]}, {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t}
 // Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
 // Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader).
@@ -180,8 +180,8 @@ const alt = async (ch) => {
 };
 const READOUT = `(async()=>{const c=globalThis.__gexCompositor;return c?.readoutBase64?await c.readoutBase64():null;})()`;
 let lastShot = null;
-const shot = async (name) => {
-  const r = await ev(READOUT).catch(() => null);
+const shot = async (name, page = false) => {
+  const r = page ? null : await ev(READOUT).catch(() => null);
   if (r?.b64) { const b = Buffer.from(r.b64, 'base64'); writeFileSync(`${outDir}/${name}.png`, png(r.w, r.h, b)); lastShot = { w: r.w, h: r.h, b }; log('shot ' + name); return lastShot; }
   const p = await s('Page.captureScreenshot', { format: 'png' }).catch(() => null);
   if (p) writeFileSync(`${outDir}/${name}.png`, Buffer.from(p.data, 'base64'));
@@ -215,7 +215,7 @@ const run = async (steps) => {
     else if (st.type) await type(st.type);
     else if (st.click) await click(...st.click);
     else if (st.sleep) await sleep(st.sleep * 1000);
-    else if (st.shot) await shot(st.shot);
+    else if (st.shot) await shot(st.shot, st.page);
     await sleep(st.pause ?? 400);
   }
   return null;
