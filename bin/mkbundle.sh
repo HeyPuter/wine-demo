@@ -31,8 +31,12 @@ grep -q '^\[Console\]' stage/pfx/user.reg || printf '\n[Console] 1791289000\n"Sc
 cp $WDR/tools/desktop-readme.txt "$c/users/gex/Desktop/Read me.txt"
 # Wine's PE files without their debug sections (about half the download): the dist as w64/dist-s, and the
 # prefix's copies of the builtins, which stay byte-identical to it. page-prefix.sh above keeps w64/dist, the
-# path the template's registry names.
-[ w64/dist-s -nt w64/dist ] || { rm -rf w64/dist-s; cp -a w64/dist w64/dist-s; $WDR/bin/strip-pe.sh w64/dist-s; touch w64/dist-s; }
+# path the template's registry names. Made again whenever the dist's content (every file's bytes, every link)
+# or strip-pe.sh differs from what it was made from (w64/dist-s.key), not by the directories' times: a file
+# replaced inside the dist leaves those as they were.
+key=$( { (cd w64/dist && { find . -type f -print0 | xargs -0 -P8 -n64 sha256sum; find . -type l -printf '%p -> %l\n'; }) | LC_ALL=C sort; sha256sum $WDR/bin/strip-pe.sh | cut -c1-64; } | sha256sum | cut -c1-16)
+[ -d w64/dist-s ] && [ "$(cat w64/dist-s.key 2>/dev/null)" = "$key" ] || {
+  rm -rf w64/dist-s w64/dist-s.key; cp -a w64/dist w64/dist-s; $WDR/bin/strip-pe.sh w64/dist-s; echo $key > w64/dist-s.key; }
 # The loader's and the server's wasm modules ship inside their ELF containers (wasm-elf.py), byte for byte;
 # the loose copies and the loader's memory64 module from before lowering (wcc64's OUT.64.wasm) are build
 # outputs nothing opens.
