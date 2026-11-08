@@ -3,9 +3,10 @@
 // and its exit status comes back as cmd's window title; then the installed program is started and must show
 // a window, and one interaction (a click in it and a few keys) must leave it alive.
 // PLAN: {id, drop: [host paths], install: "cmd line" | null, interactive: [steps] | null, launch: "cmd line",
-//        title: "regex" (the program's window; default any new window), timeout: {install, launch} s}
+//        title: "regex" (the program's window; default any new window), timeout: {install, launch} s,
+//        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
-//        {type: "text"}, {click: [x, y]}, {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t}
+//        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t}
 // Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
 // Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader).
@@ -73,7 +74,7 @@ const ev = async (x) => (await s('Runtime.evaluate', { expression: x, returnByVa
 const errs = [];
 let phase = 'boot';
 const ERR = /threw|RuntimeError|unreachable|trap|gex-console-error|\berr:|wine: |Unhandled exception|page fault|abort|assert|not implemented|unimplemented function|Bad format|failed/i;
-const QUIET = /\[wins\]|\[sweep\]|\[drop\]|native wasm32 module for|fixme:|\[sig\] pid \d+ sends signal|no function-tier unit/;
+const QUIET = /memory reaches \d+ MiB for |\[sig\] pid \d+ takes a signal|\[wins\]|\[sweep\]|\[drop\]|native wasm32 module for|fixme:|\[sig\] pid \d+ sends signal|no function-tier unit/;
 const line = (t) => {
   appendFileSync(`${outDir}/console.txt`, stamp() + ' ' + t + '\n');
   if (!QUIET.test(t) && ERR.test(t)) errs.push({ t: now(), phase, text: t.slice(0, 300) });
@@ -213,6 +214,7 @@ const run = async (steps) => {
     else if (st.alt) await alt(st.alt);
     else if (st.tap) { const vk = { Alt: 18, Control: 17, Shift: 16 }[st.tap]; const code = st.tap + 'Left'; await kd('keyDown', st.tap, code, vk, 0); await sleep(120); await kd('keyUp', st.tap, code, vk, 0); log('tap ' + st.tap); }
     else if (st.type) await type(st.type);
+    else if (st.click && st.in) { const r = new RegExp(st.in); const w = (await wins()).find((x) => r.test(x.title)); if (!w) return `no window /${st.in}/ to click in`; await click(w.x + st.click[0], w.y + st.click[1]); }
     else if (st.click) await click(...st.click);
     else if (st.sleep) await sleep(st.sleep * 1000);
     else if (st.shot) await shot(st.shot, st.page);
@@ -302,6 +304,8 @@ if (!plan.launch) done();
 const t3 = now();
 const seen = new Set((await wins()).map((w) => w.id));
 await cmd(`title launching & ${plan.launch}`);
+// the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
+if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
 const app = await waitWin(plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+', plan.timeout?.launch ?? 180, seen);
 if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
 res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app.title;
