@@ -12,6 +12,9 @@ TITLE=Desktop timeout 2400 $B/q-record.sh ${t}b $URL 20; grep -a 'wine32-session
 grep -aq 'rc=0' logs/rec-${t}b.txt || { echo "pipeline: the second recording failed (logs/rec-${t}b.txt)"; exit 1; }
 $B/site.sh rec-${t}b $out > logs/site-$out.out 2>&1 || { tail -3 logs/site-$out.out; echo "pipeline: site.sh failed"; exit 1; }
 tail -1 logs/site-$out.out | cut -c1-300
+# site.sh asks for GL; a GEX page without Mesa's replay (ports/mesa/build.sh) builds without it, and then
+# every Direct3D and OpenGL program fails on the site
+case $(tail -1 logs/site-$out.out) in *"features off: "*gl[,\;]*) echo "pipeline: $out has no GL (GEX's page has no Mesa: logs/build-$out.log)"; exit 1;; esac
 $B/serve.sh $out
 # The site as a visitor loads it (its own index.html, whose start() options pre/'s page never passes): the
 # desktop must come up, or the pipeline fails (a page that reports Failed never gets there).
