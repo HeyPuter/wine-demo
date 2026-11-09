@@ -4,7 +4,8 @@
 // a window, and one interaction (a click in it and a few keys) must leave it alive.
 // PLAN: {id, drop: [host paths], install: "cmd line" | null, interactive: [steps] | null, launch: "cmd line",
 //        title: "regex" (the program's window; default any new window), timeout: {install, launch} s,
-//        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms, settle_shots: s}
+//        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms, settle_shots: s,
+//        dismiss: [{in: regex, alt|key}] (boxes answered while waiting, named in the notes), okrc: [codes], use: [steps]}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
 //        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
@@ -129,7 +130,13 @@ const waitWin = async (re, secs, not = null) => {
     // an error box (a small window titled as one): its picture, and after 45 s of it the wait ends
     const e = all.find((x) => DIALOG.test(x.title) && x.w < 800 && x.h < 500);
     if (e) {
-      if (!dialogs.has(e.id)) { dialogs.set(e.id, now()); const sh = await shot('dialog-' + dialogs.size); if (sh) crop(sh, e, 'dialog-' + dialogs.size + '-box'); log(`dialog "${e.title}" ${e.w}x${e.h}@${e.x},${e.y}`); res.dialog = res.dialog ?? `"${e.title}" box (dialog-${dialogs.size}-box.png)`; }
+      if (!dialogs.has(e.id)) {
+        dialogs.set(e.id, now()); const sh = await shot('dialog-' + dialogs.size); if (sh) crop(sh, e, 'dialog-' + dialogs.size + '-box'); log(`dialog "${e.title}" ${e.w}x${e.h}@${e.x},${e.y}`); res.dialog = res.dialog ?? `"${e.title}" box (dialog-${dialogs.size}-box.png)`;
+        // plan.dismiss: [{in: title regex, alt: key}]: a box the plan expects (a bundled installer's crash it
+        // cannot avoid) answered with its button's key, named in the notes, and the wait goes on
+        const d = (plan.dismiss ?? []).find((x) => new RegExp(x.in).test(e.title));
+        if (d) { await click(e.x + Math.floor(e.w / 2), e.y + 12); await sleep(500); if (d.alt) await alt(d.alt); else await key(d.key); res.notes.push(`dismissed "${e.title}" (dialog-${dialogs.size}-box.png) with ${d.alt ? 'Alt+' + d.alt : d.key}`); }
+      }
       else if (now() - dialogs.get(e.id) > 45) { const sh = await shot('dialog-' + dialogs.size); if (sh) crop(sh, e, 'dialog-' + dialogs.size + '-box'); bailed = `an error box "${e.title}" (dialog-${dialogs.size}-box.png)`; return null; }
     }
     await sleep(500);
@@ -199,12 +206,34 @@ const diff = (a, b, w) => {
   return n;
 };
 const firstErr = (from) => errs.find((e) => e.t >= from)?.text ?? null;
-// cmd: the boot's console window, brought forward by a click on it, then a line typed and Enter
+// cmd: the boot's console window, brought forward by a click on a point of it no other window covers (the
+// compositor's own hit test), then a line typed and Enter. Covered all over (an installer opened a window on
+// top of it): its taskbar button first.
 let cmdWin = null;
+const hit = (x, y) => ev(`(async()=>(await globalThis.__gexCompositor?.windowAt?.(${x},${y}))?.key??null)()`).catch(() => null);
 const cmd = async (text) => {
   const w = (await wins()).find((x) => x.id === cmdWin.id) ?? cmdWin;
-  await click(w.x + Math.min(300, w.w / 2), w.y + Math.min(200, w.h / 2));
+  const own = (k) => typeof k === 'string' && k.split(':')[0] === String(w.id).split(':')[0];
+  let at = null;
+  const pts = [[Math.min(300, w.w / 2), Math.min(200, w.h / 2)], ...[[0.25, 0.3], [0.75, 0.3], [0.25, 0.8], [0.75, 0.8], [0.5, 0.97], [0.95, 0.5], [0.5, 0.02]].map(([fx, fy]) => [w.w * fx, w.h * fy])];
+  for (const [dx, dy] of pts) {
+    const x = Math.round(w.x + dx), y = Math.round(w.y + dy);
+    if (own(await hit(x, y))) { at = [x, y]; break; }
+  }
+  if (at) await click(...at);
+  else {
+    // its taskbar button: the first after Start, the console being the first window the boot opens
+    const bar = (await wins()).find((x) => x.w >= 400 && x.h <= 40 && x.y > 0 && !x.title);
+    if (bar) { await click(bar.x + 160, bar.y + Math.floor(bar.h / 2)); await sleep(700); }
+    const x = Math.round(w.x + pts[0][0]), y = Math.round(w.y + pts[0][1]);
+    const up = own(await hit(x, y));
+    log(`cmd window covered: its taskbar button clicked, ${up ? 'now on top' : 'still covered'}`);
+    if (up) await click(x, y);
+    await sleep(700); await shot('cmd-raised');
+  }
   await sleep(700);
+  // Esc first: what an earlier line left half typed (a window that took the keyboard in the middle of it) goes
+  await key('Escape'); await sleep(200);
   await type(text); await sleep(200); await key('Enter');
 };
 const run = async (steps) => {
@@ -249,7 +278,7 @@ const newWins = async () => { const t = (await wins()).filter((w) => !startWins.
 if (!cmdWin || !(await waitWin('^Desktop$', 60))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 res.times.desktop = Math.round(now());
 await sleep(3000);
-await shot('desktop');
+const deskList = await wins(), desk = await shot('desktop');
 // the file manager opens over cmd: close it (its title bar's close box), so a click on cmd reaches cmd
 const fm = (await wins()).find((w) => w.title === 'Desktop');
 if (fm) { await click(fm.x + fm.w - 14, fm.y + 15); await sleep(1500); }
@@ -335,7 +364,8 @@ if (plan.title) {
 if (!started) await cmd(`title launching & ${plan.launch}`);
 // the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
-const app = await waitWin(plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+', plan.timeout?.launch ?? 180, seen);
+const appRe = plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+';
+let app = await waitWin(appRe, plan.timeout?.launch ?? 180, seen);
 if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
 res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app.title;
 // settle_shots: a picture every that many seconds of the settle, named by the seconds since the window came
@@ -344,6 +374,16 @@ if (plan.settle_shots) {
   const t5 = now(), step = plan.settle_shots * 1000;
   for (let k = 1; k * step <= (plan.settle ?? 6000); k++) { await sleep(Math.max(0, t5 * 1000 + k * step - now() * 1000)); await shot(`settle-${Math.round(now() - t3 - res.times.launch)}s`); }
 } else await sleep(plan.settle ?? 6000);
+// A first window that closed in the settle (a splash) hands over to the program's next one of the same title,
+// the largest that came since the launch
+{
+  const ws = await wins();
+  if (!ws.some((w) => w.id === app.id)) {
+    const r = new RegExp(appRe);
+    const next = ws.filter((w) => !seen.has(w.id) && w.title && r.test(w.title)).sort((x, y) => y.w * y.h - x.w * x.h)[0];
+    if (next) { res.notes.push(`its first window (${app.w}x${app.h} "${app.title}") closed; the next, ${next.w}x${next.h} "${next.title}", is used`); app = next; res.window = app.title; }
+  }
+}
 const a = await shot('app');
 
 // 5. one interaction: a click in the window's middle, then the plan's keys (default: a few letters, Enter)
@@ -375,7 +415,31 @@ if (!plan.use && changed === 0) {
 }
 await watch();
 const still = (await wins()).some((w) => w.id === app.id);
-res.usable = !still ? 'window gone' : why ? why : changed === 0 ? 'no change' : 'ok';
+// Drawn: the share of the program's window (on screen) whose pixels differ from the desktop as it was before
+// anything ran, at its first picture; a window more than half undrawn, or one colour over 97% of it (a GL
+// window still black or white), is not used, whatever changed after
+const drawn = (() => {
+  if (!desk || !a || desk.w !== a.w) return null;
+  const x0 = Math.max(0, live.x), y0 = Math.max(0, live.y), x1 = Math.min(a.w, live.x + live.w), y1 = Math.min(a.h, live.y + live.h);
+  // Only pixels where the desktop picture shows the wallpaper say whether the program drew: over another
+  // window an unpainted one and a painted one can look the same (white over white). Too few such pixels: all count.
+  const under = (x, y) => deskList.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
+  let walls = 0;
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (!under(x, y)) walls++;
+  const wallOnly = walls >= ((x1 - x0) * (y1 - y0)) / 10;
+  let n = 0, tot = 0, all = 0; const hist = new Map();
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    const i = (y * a.w + x) * 4; all++;
+    const c = (a.b[i] << 16) | (a.b[i + 1] << 8) | a.b[i + 2]; hist.set(c, (hist.get(c) ?? 0) + 1);
+    if (wallOnly && under(x, y)) continue;
+    tot++;
+    if (Math.abs(a.b[i] - desk.b[i]) + Math.abs(a.b[i + 1] - desk.b[i + 1]) + Math.abs(a.b[i + 2] - desk.b[i + 2]) > 24) n++;
+  }
+  return tot ? { frac: n / tot, over: tot / all, top: Math.max(...hist.values()) / all } : null;
+})();
+if (drawn) res.notes.push(`drawn: ${Math.round(drawn.frac * 100)}% of its ${live.w}x${live.h} window, measured over the ${Math.round(drawn.over * 100)}% of it on wallpaper in the desktop picture (most common colour ${Math.round(drawn.top * 100)}%)`);
+const undrawn = drawn && (drawn.frac <= 0.5 || drawn.top > 0.97);
+res.usable = !still ? 'window gone' : why ? why : undrawn ? `not drawn (${Math.round(drawn.frac * 100)}% of its window, ${Math.round(drawn.top * 100)}% one colour)` : changed === 0 ? 'no change' : 'ok';
 res.changed_px = changed;
 if (res.usable !== 'ok') res.first_error = firstErr(t4) ?? res.usable;
 res.err_lines = errs.filter((e) => e.t >= t2).length; res.first_err_line = firstErr(t2);
