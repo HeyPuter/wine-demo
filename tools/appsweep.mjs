@@ -4,7 +4,7 @@
 // a window, and one interaction (a click in it and a few keys) must leave it alive.
 // PLAN: {id, drop: [host paths], install: "cmd line" | null, interactive: [steps] | null, launch: "cmd line",
 //        title: "regex" (the program's window; default any new window), timeout: {install, launch} s,
-//        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms}
+//        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms, settle_shots: s}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
 //        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
@@ -338,7 +338,12 @@ if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.
 const app = await waitWin(plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+', plan.timeout?.launch ?? 180, seen);
 if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
 res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app.title;
-await sleep(plan.settle ?? 6000);
+// settle_shots: a picture every that many seconds of the settle, named by the seconds since the window came
+// (settle-90s), to tell from them when a slow program's own screen (a game's main menu) is up
+if (plan.settle_shots) {
+  const t5 = now(), step = plan.settle_shots * 1000;
+  for (let k = 1; k * step <= (plan.settle ?? 6000); k++) { await sleep(Math.max(0, t5 * 1000 + k * step - now() * 1000)); await shot(`settle-${Math.round(now() - t3 - res.times.launch)}s`); }
+} else await sleep(plan.settle ?? 6000);
 const a = await shot('app');
 
 // 5. one interaction: a click in the window's middle, then the plan's keys (default: a few letters, Enter)
