@@ -319,8 +319,20 @@ if (plan.install) {
 phase = 'launch';
 if (!plan.launch) done();
 const t3 = now();
-const seen = new Set((await wins()).map((w) => w.id));
-await cmd(`title launching & ${plan.launch}`);
+let seen = new Set((await wins()).map((w) => w.id));
+// An installer's last page may start the program itself (a "Run ..." box, checked): a window of the
+// program's (plan.title) that the install opened, within 20 s of it ending, is that start, and the program
+// is not started a second time (a second copy can find the first one's settings file in use)
+let started = false;
+if (plan.title) {
+  const r = new RegExp(plan.title);
+  for (const end = now() + 20; now() < end && !started;) {
+    started = (await wins()).some((w) => !startWins.has(w.id) && r.test(w.title));
+    if (!started) await sleep(1000);
+  }
+  if (started) { log('the install started the program'); seen = startWins; }
+}
+if (!started) await cmd(`title launching & ${plan.launch}`);
 // the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
 const app = await waitWin(plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+', plan.timeout?.launch ?? 180, seen);
@@ -332,8 +344,19 @@ const a = await shot('app');
 // 5. one interaction: a click in the window's middle, then the plan's keys (default: a few letters, Enter)
 phase = 'use';
 const t4 = now();
-const live = (await wins()).find((w) => w.id === app.id) ?? app;
-await click(live.x + Math.floor(live.w / 2), live.y + Math.floor(live.h / 2));
+const now4 = await wins();
+const live = now4.find((w) => w.id === app.id) ?? app;
+// Windows that came up beside the program's own (an updater's offer, a tip of the day) are left alone: the
+// click goes to a point of the program's window none of them covers, so the keys after it go to the program
+const others = now4.filter((w) => w.id !== app.id && !startWins.has(w.id) && w.title && w.w > 32 && w.h > 32
+  && !(plan.title && new RegExp(plan.title).test(w.title)));
+if (others.length) res.notes.push('other windows, left alone: ' + others.map((w) => `"${w.title}" ${w.w}x${w.h}`).join(', '));
+const covered = (x, y) => others.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
+const at = [[1, 2], [1, 4], [3, 4]].flatMap(([fy, dy]) => [[1, 2], [1, 4], [3, 4]].map(([fx, dx]) =>
+  [live.x + Math.floor(live.w * fx / dx), live.y + Math.floor(live.h * fy / dy)]))
+  .find(([x, y]) => !covered(x, y) && x < W && y < H);
+if (others.length && !at) res.notes.push("every point tried in the program's window is covered");
+await click(...(at ?? [live.x + Math.floor(live.w / 2), live.y + Math.floor(live.h / 2)]));
 await sleep(800);
 // the menu bar (Alt, Down) first; a window without one, typed into
 const full = { x: 0, y: 0, w: W, h: H };
