@@ -6,7 +6,8 @@
 //        title: "regex" (the program's window; default any new window), timeout: {install, launch} s,
 //        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
-//        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t}
+//        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
+//        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
 // Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
 // Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader).
@@ -210,6 +211,22 @@ const run = async (steps) => {
   for (const st of steps ?? []) {
     if (st.wait) { const w = await waitWin(st.wait, st.t ?? 120); if (!w) return `no window /${st.wait}/ in ${st.t ?? 120} s`; await sleep(1500); }
     else if (st.gone) { const r = new RegExp(st.gone); let gone = false; for (const end = now() + (st.t ?? 600); now() < end && !gone;) { await watch(); gone = !(await wins()).some((x) => r.test(x.title)); if (!gone) await sleep(1000); } if (!gone) return `/${st.gone}/ still open after ${st.t ?? 600} s`; }
+    else if (st.press) {
+      // st.press (a key) every st.every s (default 6), st.alt first when given, until no window matches
+      // st.until (an installer's pages), st.t s at most; a shot press-N before each of the first 30
+      const r = new RegExp(st.until); let n = 0;
+      for (const end = now() + (st.t ?? 900); ; n++) {
+        await watch();
+        // (gone twice, 5 s apart: one installer window closing before its next opens is not the end)
+        if (!(await wins()).some((x) => r.test(x.title))) { await sleep(5000); if (!(await wins()).some((x) => r.test(x.title))) break; }
+        if (now() >= end) return `/${st.until}/ still open after ${st.t ?? 900} s (${n} presses)`;
+        if (n < 30) await shot(`press-${n}`);
+        if (st.alt) await alt(st.alt);
+        await key(st.press);
+        await sleep((st.every ?? 6) * 1000);
+      }
+      log(`${st.press}: /${st.until}/ gone after ${n} presses`);
+    }
     else if (st.key) await key(st.key);
     else if (st.alt) await alt(st.alt);
     else if (st.tap) { const vk = { Alt: 18, Control: 17, Shift: 16 }[st.tap]; const code = st.tap + 'Left'; await kd('keyDown', st.tap, code, vk, 0); await sleep(120); await kd('keyUp', st.tap, code, vk, 0); log('tap ' + st.tap); }
