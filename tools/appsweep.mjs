@@ -16,7 +16,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, appendFileSync, openSync, readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
-import { Cdp, browserWsUrl } from './cdp.mjs';
+import { Cdp } from './cdp.mjs';
 
 const [url, outDir, planPath] = process.argv.slice(2);
 const plan = JSON.parse(readFileSync(planPath, 'utf8'));
@@ -47,7 +47,6 @@ function png(w, h, rgba) {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw, { level: 3 })), chunk('IEND', Buffer.alloc(0))]);
 }
 
-const port = 9471 + Math.floor(Math.random() * 2000);
 const prof = `${outDir}/profile`;
 rmSync(prof, { recursive: true, force: true });
 const chrome = spawn(process.env.CHROME || '/usr/bin/chromium', [
@@ -56,15 +55,21 @@ const chrome = spawn(process.env.CHROME || '/usr/bin/chromium', [
   '--ozone-platform=headless', '--ozone-override-screen-size=1300,800', '--window-size=1300,800',
   process.env.SMOKE_SPKI ? `--ignore-certificate-errors-spki-list=${process.env.SMOKE_SPKI}` : '--ignore-certificate-errors',
   '--disable-hang-monitor', '--no-first-run', '--no-default-browser-check', '--remote-allow-origins=*',
-  `--remote-debugging-port=${port}`, `--user-data-dir=${prof}`, 'about:blank',
+  '--remote-debugging-port=0', `--user-data-dir=${prof}`, 'about:blank',
 ], { stdio: ['ignore', openSync(`${outDir}/chrome.out`, 'a'), openSync(`${outDir}/chrome.err`, 'a')] });
 writeFileSync(`${outDir}/chrome.pid`, String(chrome.pid));
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => done('killed by ' + sig));
 for (const e of ['uncaughtException', 'unhandledRejection']) process.on(e, (x) => done('driver: ' + (x?.message ?? x)));
 
 let ws = null;
-for (let i = 0; i < 50 && !ws; i++) { await sleep(200); ws = await browserWsUrl(port); }
-if (!ws) done('chromium did not start');
+// Chromium picks its own debugging port and names it in the profile (a port of ours could be another job's), and
+// gets a minute: several starting at once on a loaded host have taken more than 10 s.
+let exited = false; chrome.on('exit', () => { exited = true; });
+for (let i = 0; i < 300 && !ws && !exited; i++) {
+  await sleep(200);
+  try { const [p, path] = readFileSync(`${prof}/DevToolsActivePort`, 'utf8').split('\n'); if (path) ws = `ws://127.0.0.1:${p}${path}`; } catch {}
+}
+if (!ws) done(exited ? 'chromium exited at its start' : 'chromium did not start in 60 s');
 const cdp = await Cdp.connect(ws);
 const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
 const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
