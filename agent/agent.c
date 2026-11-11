@@ -135,8 +135,10 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     WNDCLASSW wc = { 0 };
     wc.lpfnWndProc = DefWindowProcW; wc.hInstance = inst; wc.lpszClassName = L"WindemoAgent";
     RegisterClassW(&wc);
+    /* owned by a window never shown, so no taskbar shows a button for it (the page reads its title) */
+    HWND owner = CreateWindowExW(WS_EX_TOOLWINDOW, L"WindemoAgent", L"", WS_POPUP, 0, 0, 0, 0, NULL, NULL, inst, NULL);
     status = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"WindemoAgent", L"windemo-job - idle", WS_POPUP,
-                             0, 0, 1, 1, NULL, NULL, inst, NULL);
+                             0, 0, 1, 1, owner, NULL, inst, NULL);
     ShowWindow(status, SW_SHOWNOACTIVATE);
     CreateDirectoryW(L"C:\\windemo", NULL); CreateDirectoryW(QUEUE, NULL);
     for (;;)

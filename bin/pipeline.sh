@@ -17,9 +17,10 @@ tail -1 logs/site-$out.out | cut -c1-300
 case $(tail -1 logs/site-$out.out) in *"features off: "*gl[,\;]*) echo "pipeline: $out has no GL: GEX's page has no Mesa (make runtime, or GEX's page/build.sh --mp --gl-only; logs/build-$out.log)"; exit 1;; esac
 $B/serve.sh $out
 # The site as a visitor loads it (its own index.html, whose start() options pre/'s page never passes): the
-# desktop must come up, or the pipeline fails (a page that reports Failed never gets there).
+# desktop (its taskbar, behind the launcher) must come up, or the pipeline fails (a page that reports Failed never
+# gets there).
 bash $B/q-smoke.sh site-$t $URL 150 30 SMOKE_PRELOAD_FILE=./ttd-preload.js > /dev/null 2>&1
 r=$(python3 -I $WDR/tools/ttd.py runs/out-site-$t 2>&1); echo "site check: $r" | cut -c1-300
-case $r in *", Desktop "[0-9]*) ;; *)
+case $r in *"taskbar "[0-9]*) ;; *)
   grep -aho 'start([^)]*)[^"]*' runs/out-site-$t/console.txt 2>/dev/null | head -2
   echo "pipeline: the site at $URL did not reach its desktop (runs/out-site-$t)"; exit 1;; esac
