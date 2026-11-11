@@ -323,7 +323,7 @@
   const WIN_DESKTOP = 'C:\\users\\gex\\Desktop';
   const START = [
     { id: 'desktop', name: 'Desktop', icon: 'desktop', meta: 'Wine with its shell', wide: true },
-    { id: 'cmd', name: 'Command Prompt', icon: 'cmd', launch: 'start "" C:\\windows\\system32\\cmd.exe', title: 'cmd\\.exe' },
+    { id: 'cmd', name: 'Command Prompt', icon: 'cmd', launch: 'start C:\\windows\\system32\\cmd.exe', title: 'cmd\\.exe' },
     { id: 'files', name: 'Files', icon: 'files', launch: `start "" C:\\windows\\explorer.exe ${WIN_DESKTOP}`, title: '^Desktop$' },
     { id: 'notepadpp', name: 'Notepad++', launch: 'start "" "C:\\Program Files\\Notepad++\\notepad++.exe"', title: 'Notepad\\+\\+', meta: 'Built for gex' },
     { id: 'dillo', name: 'Dillo', launch: 'start "" "C:\\Program Files\\Dillo\\dillo.exe"', title: 'Dillo', meta: 'Built for gex' },
