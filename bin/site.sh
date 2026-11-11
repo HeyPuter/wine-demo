@@ -26,7 +26,7 @@ for kv in sys.argv[2:]:
 json.dump(d, open(p, 'w'), indent=2)
 PY
 # The desktop behind the windows: the scheme's Background colour (user.reg's Control Panel\Colors).
-python3 -I - runs/$rec/wine32-session.json $WDR/tools/index.html $P/user/index.html <<'PY'
+python3 -I - runs/$rec/wine32-session.json $WDR/tools/index.html $P/user/index.html $WDR/tools/launcher.tsv <<'PY'
 import json, re, sys, tarfile
 bundle = json.load(open(sys.argv[1])).get('bundle')
 reg = ''
@@ -42,10 +42,26 @@ m = re.search(r'^"Background"="(\d+) (\d+) (\d+)"', key(r'Control Panel\\Colors'
 if m: colour = "'#%02x%02x%02x'" % tuple(int(v) for v in m.groups())
 page = open(sys.argv[2]).read()
 assert 'const DESKTOP_COLOUR = null;' in page
-open(sys.argv[3], 'w').write(page.replace('const DESKTOP_COLOUR = null;', f'const DESKTOP_COLOUR = {colour};', 1))
+# The launcher's installers (tools/launcher.tsv), as the page's APPS.
+apps = []
+for l in open(sys.argv[4], encoding='utf-8'):
+    if l.startswith('#') or not l.strip(): continue
+    f = l.rstrip('\n').split('\t')
+    if f[0] == 'id': keys = f; continue
+    a = dict(zip(keys, f)); a['bytes'] = int(a['bytes'] or 0); apps.append(a)
+assert 'const APPS = null;' in page
+page = page.replace('const DESKTOP_COLOUR = null;', f'const DESKTOP_COLOUR = {colour};', 1)
+page = page.replace('const APPS = null;', 'const APPS = ' + json.dumps(apps, ensure_ascii=False).replace('</', '<\\/') + ';', 1)
+open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+# INSTALLERS=DIR: the launcher's installers (tools/launcher.tsv's files, from DIR) beside the page, at
+# installers/FILE, which the page fetches itself; without them the guest's agent downloads each from its site.
+if [ -n "${INSTALLERS:-}" ]; then
+  mkdir -p $out/installers
+  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 { print $6 }' $WDR/tools/launcher.tsv | while read -r f; do cp "$INSTALLERS/$f" $out/installers/; done
+fi
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
 p = sys.argv[1]; d = json.load(open(p))

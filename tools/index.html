@@ -3,34 +3,75 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Wine desktop</title>
+<title>Windows apps in the browser</title>
 <style>
-  :root { --bg: #111; --fg: #ddd; --dim: #8a8f98; --track: #2a2d33; --bar: #4a90e2; --err: #f88; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font: 14px system-ui, sans-serif; }
-  #error { position: fixed; left: 1em; right: 1em; bottom: 1em; margin: 0; color: var(--err); white-space: pre-wrap; z-index: 2147483647; }
-  /* The loading screen: over the whole page (above the windows' own z-index)
-     until the program's first frame. */
-  #loading { position: fixed; inset: 0; z-index: 2147483646; display: flex; align-items: center; justify-content: center;
-             background: var(--bg); transition: opacity 0.6s ease; }
-  #loading.done { opacity: 0; pointer-events: none; }
-  #loading .box { width: min(360px, calc(100vw - 32px)); }
-  #loading .row { display: flex; justify-content: space-between; gap: 1em; margin-bottom: 8px; }
-  #loading .phase { font-weight: 600; }
-  #loading .time, #loading .detail { color: var(--dim); font-variant-numeric: tabular-nums; }
-  #loading .track { height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
-  #loading .fill { height: 100%; width: 0; background: var(--bar); transition: width 0.2s linear; }
-  /* No count to show (the program is starting): a bar that moves. */
-  #loading .track.busy .fill { width: 30%; animation: busy 1.2s ease-in-out infinite; }
-  @keyframes busy { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
-  #loading .detail { margin-top: 8px; min-height: 1.2em; }
-  /* What the start-up has reached (start()'s progress log): the latest lines. */
-  #loading .log { margin: 10px 0 0; padding: 0; list-style: none; height: calc(8 * 1.35em); overflow: hidden;
-                  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.35em; color: var(--dim);
-                  display: flex; flex-direction: column; justify-content: flex-end; }
-  #loading .log li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #loading .log .t { display: inline-block; width: 5.5em; text-align: right; margin-right: 1em; opacity: 0.7; }
-  /* The phases already over (the download, with its time). */
-  #loading .past { margin-top: 4px; min-height: 1.2em; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  :root { --bg: #f4f5f7; --ink: #1b1f24; --muted: #59616b; --faint: #8a919b; --line: #e2e5e9; --err: #c0392b;
+          --accent: #1d49e7; --tile-shadow: 0 1px 2px rgba(17,24,39,.12); --bar: #1d49e7;
+          font-family: "Noto Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #2e686c; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  #desk { position: fixed; inset: 0; }
+  #error { position: fixed; left: 1em; right: 1em; bottom: 1em; margin: 0; color: #f88; white-space: pre-wrap; z-index: 2147483647; }
+
+  /* The launcher: over the desktop (which starts behind it) until a tile is chosen. */
+  #launcher { position: fixed; inset: 0; z-index: 2147483640; display: flex; flex-direction: column; background: var(--bg);
+              overflow-y: auto; transition: opacity .35s ease, transform .35s ease; }
+  #launcher.gone { opacity: 0; transform: scale(1.02); pointer-events: none; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px;
+         background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 1; }
+  .puter { display: flex; align-items: center; gap: 10px; }
+  .puter img { display: block; height: 30px; width: auto; }
+  .puter a { display: inline-flex; align-items: center; gap: 7px; color: #333; font-size: 16px; font-weight: 600;
+             letter-spacing: -.01em; text-decoration: none; transition: opacity .15s ease; }
+  .puter a:hover { opacity: .7; }
+  .labs { padding: 2px 8px; border-radius: 999px; background: rgba(29,73,231,.09); color: #1d49e7;
+          font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+  .gh { display: inline-flex; align-items: center; gap: 6px; color: #333; font-size: 14px; font-weight: 500; text-decoration: none; opacity: .8; }
+  .gh:hover { opacity: 1; }
+  main { width: min(1180px, 100%); box-sizing: border-box; margin: 0 auto; padding: 28px 28px 48px; }
+  h1 { margin: 0 0 4px; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+  .lede { margin: 0 0 24px; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 60ch; }
+  h2 { margin: 26px 0 10px; color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1 / 1;
+          min-height: 120px; padding: 12px; box-sizing: border-box; border: 0; border-radius: 2px; color: #fff;
+          background: var(--c); box-shadow: var(--tile-shadow); cursor: pointer; text-align: left; font: inherit;
+          transition: transform .12s ease, filter .12s ease; }
+  .tile.wide { grid-column: span 2; aspect-ratio: auto; }
+  .tile:hover { filter: brightness(1.08); }
+  .tile:active { transform: scale(.97); }
+  .tile:focus-visible { outline: 3px solid #111; outline-offset: 2px; }
+  .tile .glyph { width: 44px; height: 44px; }
+  .tile .glyph.mono { width: 64px; height: 44px; }
+  .tile .name { font-size: 15px; font-weight: 600; line-height: 1.2; }
+  .tile .meta { margin-top: 2px; font-size: 12px; opacity: .85; }
+  .tile .badge { position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 600; opacity: .9; }
+  footer { padding: 8px 28px 32px; color: var(--faint); font-size: 12px; text-align: center; }
+  @media (max-width: 640px) {
+    .bar { padding: 10px 16px; }
+    main { padding: 20px 16px 40px; }
+    h1 { font-size: 23px; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tile { aspect-ratio: 4 / 3; min-height: 0; }
+    .tile.wide { grid-column: span 2; aspect-ratio: auto; min-height: 110px; }
+    .tile .glyph { width: 34px; height: 34px; }
+    .tile .glyph.mono { width: 50px; height: 34px; }
+  }
+
+  /* Over the desktop: what the chosen app is doing, and the way back to the apps. */
+  #status { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2147483641; display: none;
+            align-items: center; gap: 10px; max-width: calc(100vw - 32px); box-sizing: border-box; padding: 8px 14px;
+            border-radius: 4px; background: rgba(17,24,39,.88); color: #fff; font-size: 13px; }
+  #status.on { display: flex; }
+  #status .spin { flex: 0 0 auto; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+                  border-radius: 50%; animation: spin .8s linear infinite; }
+  #status .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #apps { position: fixed; right: 8px; top: 8px; z-index: 2147483641; display: none; padding: 5px 10px; border: 0; border-radius: 3px;
+          background: rgba(17,24,39,.6); color: #fff; font: 600 12px system-ui, sans-serif; cursor: pointer; }
+  #apps.on { display: block; }
+  #apps:hover { background: rgba(17,24,39,.85); }
+  @media (prefers-reduced-motion: reduce) { #launcher, .tile { transition: none; } #status .spin { animation: none; } }
+
   /* What the running program is fetching (a lazy file, translated code). */
   #fetching { position: fixed; right: 8px; bottom: 48px; z-index: 2147483645; max-width: calc(100vw - 32px);
               padding: 3px 10px; border-radius: 4px; background: rgba(0, 0, 0, 0.72); color: #eee;
@@ -49,27 +90,50 @@
   #copies .copy .what { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #copies .copy .track { height: 4px; margin-top: 4px; border-radius: 2px; background: #333; overflow: hidden; }
   #copies .copy .fill { height: 100%; width: 0; background: var(--bar); }
-  #copies .copy.err { color: var(--err); }
+  #copies .copy.err { color: #f88; }
   #copies .copy button { float: right; margin-left: 8px; background: none; border: 0; color: #aaa; cursor: pointer; font: inherit; }
   /* A program that crashed: its windows are gone; a note names it and says why, until closed (or 30 s). */
-  #crashes { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2147483645; display: flex;
+  #crashes { position: fixed; left: 50%; top: 56px; transform: translateX(-50%); z-index: 2147483645; display: flex;
              flex-direction: column; gap: 6px; width: min(420px, calc(100vw - 32px)); pointer-events: none; }
   #crashes .crash { padding: 8px 12px; border-radius: 4px; background: rgba(0, 0, 0, 0.82); color: #eee;
-                    border-left: 3px solid var(--err); font: 13px system-ui, sans-serif; pointer-events: auto; }
+                    border-left: 3px solid #f88; font: 13px system-ui, sans-serif; pointer-events: auto; }
   #crashes .crash .what { font-weight: 600; overflow-wrap: anywhere; }
-  #crashes .crash .why { margin-top: 2px; color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
+  #crashes .crash .why { margin-top: 2px; color: #b8bec7; font-size: 12px; overflow-wrap: anywhere; }
   #crashes .crash button { float: right; margin-left: 8px; background: none; border: 0; color: #aaa; cursor: pointer; font: inherit; }
-  /* The files' store open in another tab: the choice, over the loading screen. */
+  /* The files' store open in another tab: the choice, over everything. */
   #busy { position: fixed; inset: 0; z-index: 2147483647; display: none; align-items: center; justify-content: center;
           background: rgba(0, 0, 0, 0.6); }
   #busy.on { display: flex; }
-  #busy .box { width: min(420px, calc(100vw - 32px)); padding: 20px; border-radius: 6px; background: #1d2026; line-height: 1.45; }
+  #busy .box { width: min(420px, calc(100vw - 32px)); padding: 20px; border-radius: 6px; background: #1d2026; color: #ddd; line-height: 1.45; }
   #busy p { margin: 0 0 16px; }
-  #busy .wait { color: var(--dim); font-size: 12px; }
-  #busy button { padding: 6px 14px; border-radius: 4px; border: 1px solid #555; background: #2a2d33; color: var(--fg); font: inherit; cursor: pointer; }
+  #busy .wait { color: #8a8f98; font-size: 12px; }
+  #busy button { padding: 6px 14px; border-radius: 4px; border: 1px solid #555; background: #2a2d33; color: #ddd; font: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
+<div id="desk"></div>
+<section id="launcher" aria-label="Apps">
+  <header class="bar">
+    <div class="puter">
+      <a href="https://puter.com" target="_blank" rel="noreferrer" aria-label="Puter"><img src="data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3Csvg%20x%3D%220px%22%20y%3D%220px%22%20width%3D%2248px%22%20height%3D%2248px%22%20viewBox%3D%220%200%2048%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20stroke-width%3D%222%22%20transform%3D%22matrix(0%2C%201%2C%20-1%2C%200%2C%2047.999504%2C%200.000014)%22%3E%3Cpolyline%20points%3D%2239%2024%2025%2024%2025%2028%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2235.879%2010.121%2032%2014%2025%2014%2025%2018%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M13%2C26a10.29%2C10.29%2C0%2C0%2C1-7.2-3%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M17%2C31.6A5.826%2C5.826%2C0%2C0%2C1%2C13%2C26a5.731%2C5.731%2C0%2C0%2C1%2C2-4.4%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M35.879%2C37.879%2C32%2C34H25v2A9.9%2C9.9%2C0%2C0%2C1%2C15%2C46%2C9.9%2C9.9%2C0%2C0%2C1%2C5%2C36a9.058%2C9.058%2C0%2C0%2C1%2C.6-3.2A5.627%2C5.627%2C0%2C0%2C1%2C3%2C28a5.888%2C5.888%2C0%2C0%2C1%2C2.8-5A9.994%2C9.994%2C0%2C0%2C1%2C3%2C16%2C9.9%2C9.9%2C0%2C0%2C1%2C13%2C6h.4A5.826%2C5.826%2C0%2C0%2C1%2C19%2C2a5.893%2C5.893%2C0%2C0%2C1%2C6%2C6%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%228%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2224%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2240%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E" alt="Puter" height="30"></a>
+      <a href="https://developer.puter.com/" target="_blank" rel="noreferrer">Puter <span class="labs">Labs</span></a>
+    </div>
+    <a class="gh" href="https://github.com/HeyPuter/gex" target="_blank" rel="noreferrer"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"> <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/> </svg>GitHub</a>
+  </header>
+  <main>
+    <h1>Windows apps in your browser</h1>
+    <p class="lede">Wine and gex run these programs in this tab, with nothing to install. Pick one: the desktop is already
+      starting, and an installer downloads and runs the first time. What you install stays in this browser.</p>
+    <h2>Start</h2>
+    <div class="tiles" id="t-start"></div>
+    <h2>Install and run</h2>
+    <div class="tiles" id="t-apps"></div>
+  </main>
+  <footer>Each program belongs to its authors; its installer comes from their own site. Windows is a trademark of its owner;
+    this demo is not affiliated with it or with any of these projects.</footer>
+</section>
+<div id="status" role="status" aria-live="polite"><span class="spin"></span><span class="text"></span></div>
+<button id="apps" type="button" title="Back to the apps">Apps</button>
 <pre id="error"></pre>
 <div id="fetching" aria-live="polite"></div>
 <div id="dropzone">Drop to copy to the Wine Desktop</div>
@@ -82,58 +146,33 @@
     <button type="button">Continue without saving</button>
   </div>
 </div>
-<div id="loading" role="progressbar" aria-live="polite">
-  <div class="box">
-    <div class="row"><span class="phase">Loading</span><span class="time">0 s</span></div>
-    <div class="track"><div class="fill"></div></div>
-    <div class="detail"></div>
-    <div class="past"></div>
-    <ul class="log"></ul>
-  </div>
-</div>
 <script type="module">
   // Your page: gexc eject wrote it once (user/index.html) and never rewrites
   // it. The program is app.mjs's: start() takes an element to fill and,
   // optionally, args, env, size ('fit' or {w, h}), onLog, onExit, onProgress
   // and more (crates/gex-eject/README.md, "The web build"); it gives back { exited, kill(),
-  // resize(), state }. The loading screen below is this page's: start()
-  // only says how far along it is (onProgress).
+  // resize(), state }.
+  //
+  // The desktop starts as the page loads, behind the launcher, with no progress shown. Its programs come
+  // from the launcher's tiles: a tile's job (NAME.job, key=value lines) is dropped into C:\windemo\queue,
+  // where the guest's agent (agent/agent.c, started with the desktop) downloads and runs the installer
+  // when the program is not installed yet, then starts it, and says how far it is in its status
+  // window's title, which the page reads from the desktop's window list.
+  // `?desktop=1`: no launcher; the desktop as recorded (cmd and the file manager on the Desktop folder).
   import { start } from './app.mjs';
   // The desktop's colour (site.sh: the scheme's Background), or null.
   const DESKTOP_COLOUR = null;
+  // The launcher's installers (site.sh: tools/launcher.tsv), or null.
+  const APPS = null;
   const error = document.getElementById('error');
   const show = (e) => { error.textContent = String(e?.message ?? e); };
-
-  const loading = document.getElementById('loading');
-  const $ = (c) => loading.querySelector(c);
-  // The clock counts the download, then starts again at 0 for the start-up,
-  // so each shows its own time; the download's stays on the screen.
-  const t0 = performance.now();
-  let since = t0;
-  let downloaded = false;
-  const secs = (ms) => (ms < 10000 ? (ms / 1000).toFixed(1) : String(Math.round(ms / 1000)));
-  const clock = setInterval(() => { $('.time').textContent = `${Math.floor((performance.now() - since) / 1000)} s`; }, 250);
-  const downloadDone = (p) => {
-    if (downloaded || !['compile', 'boot', 'first-frame', 'ready'].includes(p.phase)) return;
-    downloaded = true;
-    // When the download ended: the next phase's start (start()'s own clock).
-    const end = p.at.compile ?? p.at.boot ?? p.at['first-frame'] ?? p.elapsed;
-    since = t0 + end;
-    const d = p.download;
-    $('.past').textContent = `Downloaded${d.total ? ` ${mb(d.total)} MB` : ''} in ${secs(end)} s`;
-  };
+  const $ = (id) => document.getElementById(id);
   const mb = (n) => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
-  const bar = (frac) => {
-    $('.track').classList.toggle('busy', frac === null);
-    $('.fill').style.width = frac === null ? '' : `${Math.min(100, frac * 100).toFixed(1)}%`;
-  };
-  const hide = () => {
-    clearInterval(clock);
-    loading.classList.add('done');
-    setTimeout(() => loading.remove(), 700);
-  };
+  const q = new URLSearchParams(location.search);
+  const bare = q.get('desktop') === '1';
+
   // After the start: what the program is fetching, in a corner, while it is.
-  const line = document.getElementById('fetching');
+  const line = $('fetching');
   let off = 0;
   const fetching = (f) => {
     clearTimeout(off);
@@ -149,58 +188,14 @@
     line.textContent = `Loading ${what}${f.total ? ` \u2014 ${of}` : ''}${more}`;
     line.classList.add('on');
   };
-  // The latest lines of start()'s log (structured events: phases, programs
-  // started, images loaded, files fetched), each with its time on the clock
-  // that was running then.
-  const logList = $('.log');
-  let logged = '';
-  const showLog = (p) => {
-    const lines = p.log ?? [];
-    const l0 = lines[lines.length - 1];
-    const last = l0 ? `${lines.length}:${l0.t}:${l0.text}` : '';
-    if (last === logged) return;
-    logged = last;
-    const end = p.at?.compile ?? p.at?.boot;
-    logList.replaceChildren(...lines.slice(-8).map((l) => {
-      const li = document.createElement('li');
-      const t = document.createElement('span');
-      t.className = 't';
-      t.textContent = `${secs(end !== undefined && l.t >= end ? l.t - end : l.t)} s`;
-      li.append(t, l.text);
-      return li;
-    }));
-  };
+  // The start-up, for the tiles: ready once the desktop has drawn.
+  let phase = 'download', failed = null;
+  let readyNow;
+  const ready = new Promise((r) => { readyNow = r; });
   const progress = (p) => {
-    downloadDone(p);
-    showLog(p);
-    const d = p.download;
-    const c = p.compile;
-    if (p.phase === 'download') {
-      $('.phase').textContent = 'Downloading';
-      // Pieces the page kept from an earlier visit count as done: say so.
-      const kept = d.cached ? ` (${mb(d.cached)} MB from cache)` : '';
-      $('.detail').textContent = (d.total ? `${mb(d.done)} of ${mb(d.total)} MB` : `${d.filesDone} of ${d.files} files`) + kept;
-      bar(d.total ? d.done / d.total : d.files ? d.filesDone / d.files : null);
-    } else if (p.phase === 'compile') {
-      $('.phase').textContent = 'Compiling';
-      $('.detail').textContent = `${c.done} of ${c.total}`;
-      bar(c.total ? c.done / c.total : null);
-    } else if (p.phase === 'boot' || p.phase === 'first-frame') {
-      // What the program has reached: the latest program and image, and the
-      // build's images loaded so far of all it ships (the bar).
-      const b = p.boot;
-      $('.phase').textContent = b?.program ? `Starting ${b.program}` : 'Starting';
-      const of = b?.units.total ? `${b.units.done} of ${b.units.total} images` : '';
-      $('.detail').textContent = [b?.image, of].filter(Boolean).join(' \u2014 ');
-      bar(b?.units.total ? b.units.done / b.units.total : null);
-    } else if (p.phase === 'ready') {
-      hide();
-      fetching(p.fetch);
-    } else if (p.phase === 'failed' || p.phase === 'exited') {
-      clearInterval(clock);
-      $('.phase').textContent = p.phase === 'failed' ? 'Failed' : 'The program exited';
-      bar(0);
-    }
+    phase = p.phase;
+    if (p.phase === 'ready') { readyNow(); if (!launcher.classList.contains('gone')) return; fetching(p.fetch); }
+    else if (p.phase === 'failed' || p.phase === 'exited') { failed = p.error ?? p.phase; status(null); }
   };
 
   // A program that crashed (start()'s onCrash: gex ended it and closed its windows): a note at the top
@@ -304,14 +299,138 @@
     });
   }
 
+
+  // --- the launcher -------------------------------------------------------------------------------------
+  const launcher = $('launcher');
+  const statusBox = $('status');
+  const status = (text) => {
+    statusBox.classList.toggle('on', !!text);
+    if (text) statusBox.querySelector('.text').textContent = text;
+  };
+  // A tile's mark: the name's first letters on the tile's colour (no program's own logo).
+  const COLOURS = ['#1d49e7', '#0f7b6c', '#b4441f', '#6b3fa0', '#a3236a', '#2b6cb0', '#3d7a1f', '#b7791f', '#2c5364', '#8c2f39'];
+  const colour = (s) => COLOURS[[...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % COLOURS.length];
+  const SVG = {
+    desktop: '<rect x="4" y="8" width="40" height="27" rx="2" fill="none" stroke="#fff" stroke-width="3"/><path d="M16 41h16M24 35v6" stroke="#fff" stroke-width="3"/>',
+    cmd: '<rect x="4" y="8" width="40" height="32" rx="2" fill="none" stroke="#fff" stroke-width="3"/><path d="M11 18l7 6-7 6M22 31h12" fill="none" stroke="#fff" stroke-width="3"/>',
+    files: '<path d="M5 12h14l4 5h20v22H5z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>',
+  };
+  const glyph = (t) => SVG[t.icon]
+    ? `<svg class="glyph" viewBox="0 0 48 48" aria-hidden="true">${SVG[t.icon]}</svg>`
+    : `<svg class="glyph mono" viewBox="0 0 64 44" aria-hidden="true"><text x="1" y="34" font-size="32" font-weight="700"  fill="#fff" font-family="system-ui, sans-serif">${t.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).replace(/^(.)(.)/, (m, a, b) => a.toUpperCase() + b.toLowerCase())}</text></svg>`;
+  const WIN_DESKTOP = 'C:\\users\\gex\\Desktop';
+  const START = [
+    { id: 'desktop', name: 'Desktop', icon: 'desktop', meta: 'Wine with its shell', wide: true },
+    { id: 'cmd', name: 'Command Prompt', icon: 'cmd', launch: 'start "" C:\\windows\\system32\\cmd.exe', title: 'cmd\\.exe' },
+    { id: 'files', name: 'Files', icon: 'files', launch: `start "" C:\\windows\\explorer.exe ${WIN_DESKTOP}`, title: '^Desktop$' },
+    { id: 'notepadpp', name: 'Notepad++', launch: 'start "" "C:\\Program Files\\Notepad++\\notepad++.exe"', title: 'Notepad\\+\\+', meta: 'Built for gex' },
+    { id: 'dillo', name: 'Dillo', launch: 'start "" "C:\\Program Files\\Dillo\\dillo.exe"', title: 'Dillo', meta: 'Built for gex' },
+    { id: '7zip', name: '7-Zip', launch: 'start "" "C:\\Program Files\\7-Zip\\7zFM.exe"', title: '7-Zip|C:\\\\', meta: 'Built for gex' },
+  ];
+  let kept = {};
+  try { kept = JSON.parse(localStorage.getItem('windemo-installed') ?? '{}'); } catch { /* none */ }
+  const keepInstalled = (id) => { kept[id] = 1; try { localStorage.setItem('windemo-installed', JSON.stringify(kept)); } catch { /* none */ } };
+  const tile = (t, where) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `tile${t.wide ? ' wide' : ''}`;
+    b.style.setProperty('--c', t.colour ?? colour(t.name));
+    const meta = t.meta ?? (t.bytes ? `${t.category} \u00b7 ${mb(t.bytes)} MB` : t.category ?? '');
+    b.innerHTML = `${glyph(t)}<div><div class="name"></div><div class="meta"></div></div><span class="badge"></span>`;
+    b.querySelector('.name').textContent = t.name;
+    b.querySelector('.meta').textContent = meta;
+    if (t.install && kept[t.id]) b.querySelector('.badge').textContent = 'Installed';
+    b.addEventListener('click', () => open(t, b));
+    where.append(b);
+  };
+  // The agent's status window: "windemo-job ID STATE DETAIL".
+  const windows = async () => {
+    const d = await globalThis.__gexCompositor?.describe?.({ pixels: false }).catch(() => null);
+    return (d?.list ?? []).map((l) => /"(.*)"$/.exec(l)?.[1] ?? '');
+  };
+  async function fetchInstaller(t) {
+    let res = null;
+    try { res = await fetch(`installers/${encodeURIComponent(t.file)}`); } catch { /* not here */ }
+    if (!res?.ok || !res.body) return;
+    const total = Number(res.headers.get('Content-Length')) || t.bytes || 0;
+    const parts = [];
+    let done = 0;
+    const reader = res.body.getReader();
+    for (;;) {
+      const { done: end, value } = await reader.read();
+      if (end) break;
+      parts.push(value);
+      done += value.length;
+      status(`Downloading ${t.name}\u2026 ${total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`}`);
+    }
+    await app.drop([new File(parts, t.file)], { dir: '/pfx/drive_c/users/gex/Downloads',
+      onProgress: (p) => status(`Copying ${t.name} into Windows\u2026 ${p.total ? Math.round((100 * p.done) / p.total) : 100}%`) });
+  }
+  let busy = null;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function open(t, b) {
+    launcher.classList.add('gone');
+    $('apps').classList.add('on');
+    if (t.id === 'desktop') { if (phase !== 'ready') status('Starting the desktop\u2026'); await ready; status(null); return; }
+    if (busy) return;
+    busy = t.id;
+    try {
+      if (phase !== 'ready') { status('Starting the desktop\u2026'); await ready; }
+      if (failed) throw new Error(`the desktop did not start (${failed})`);
+      const id = `${t.id}-${Date.now().toString(36)}`;
+      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'install', 'check', 'launch', 'okrc'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`)].join('\r\n') + '\r\n';
+      const before = new Set(await windows());
+      // The installer from this site when it has it (installers/FILE: a browser fetch, then the drop path
+      // into the guest's Downloads folder, where the agent finds it); else the agent downloads it from `url`.
+      if (t.file && !kept[t.id]) await fetchInstaller(t);
+      await app.drop([new File([job], `${id}.job`)], { dir: '/pfx/drive_c/windemo/queue' });
+      status(t.install ? `Getting ${t.name}\u2026` : `Starting ${t.name}\u2026`);
+      const title = t.title ? new RegExp(t.title) : null;
+      let started = 0;
+      for (const end = Date.now() + 20 * 60e3; Date.now() < end;) {
+        await sleep(500);
+        const ws = await windows();
+        const me = ws.find((w) => w.startsWith(`windemo-job ${id} `));
+        const [, , state, ...rest] = (me ?? '').split(' ');
+        const detail = rest.join(' ');
+        if (state === 'downloading') {
+          const [done, total] = detail.split(' ').map(Number);
+          status(`Downloading ${t.name}\u2026 ${total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`}`);
+        } else if (state === 'installing') status(`Installing ${t.name}\u2026`);
+        else if (state === 'launching' || state === 'started') {
+          status(`Starting ${t.name}\u2026`);
+          if (t.install && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
+          started ||= Date.now();
+          // its window: a new one with its title, or any new one when the tile names none
+          const win = ws.find((w) => !before.has(w) && !w.startsWith('windemo-job') && w && (!title || title.test(w)));
+          if (win) { status(null); return; }
+          if (Date.now() - started > (t.install ? 10 : 3) * 60e3) throw new Error(`${t.name} did not open a window`);
+        } else if (state === 'failed') throw new Error(detail || 'it failed');
+      }
+      throw new Error(`${t.name} took too long`);
+    } catch (e) {
+      status(null);
+      note(`${t.name} could not start`, String(e?.message ?? e), 30000);
+      console.log('[launcher]', JSON.stringify({ id: t.id, error: String(e?.message ?? e) }));
+    } finally {
+      busy = null;
+    }
+  }
+  $('apps').addEventListener('click', () => { launcher.classList.remove('gone'); $('apps').classList.remove('on'); });
+  for (const t of START) tile(t, $('t-start'));
+  for (const t of APPS ?? []) tile(t, $('t-apps'));
+  if (!(APPS ?? []).length) $('t-apps').previousElementSibling.remove();
+  if (bare) { launcher.classList.add('gone'); }
+
+  let app = null;
   try {
     // The guest's network over a Wisp proxy: gex's default (as its desktop
     // page), or ?wisp=wss://…/; an empty ?wisp= leaves the guest offline.
-    const q = new URLSearchParams(location.search);
     const wisp = q.has('wisp') ? q.get('wisp') : 'wss://anura.pro/';
     // ?persist=0: nothing kept between visits; by default the guest's
     // files are kept in this browser's origin private file system (OPFS).
     const keep = q.get('persist') !== '0';
+    if (!keep) kept = {};
     // Wine's own line for a program that wants more address space than the page has (a 64-bit Chromium or
     // Electron app's reservation): shown, not left to look like any other crash.
     const said = (text) => {
@@ -322,25 +441,27 @@
     // The files' store is held by one tab at a time: another tab of windemo
     // has it. Closing that one goes on here by itself (start() waits for
     // it, and aborts `signal`); the button runs this tab without saving.
-    const busy = document.getElementById('busy');
+    const busyBox = $('busy');
     let unsaved = false;
     const onStoreBusy = ({ signal }) => new Promise((resolve) => {
-      busy.classList.add('on');
-      const done = (v) => { busy.classList.remove('on'); resolve(v); };
-      busy.querySelector('button').onclick = () => { unsaved = true; done('memory'); };
+      busyBox.classList.add('on');
+      const done = (v) => { busyBox.classList.remove('on'); resolve(v); };
+      busyBox.querySelector('button').onclick = () => { unsaved = true; done('memory'); };
       signal.addEventListener('abort', () => done('wait'), { once: true });
     });
-    const app = await start({
-      container: document.body, size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
-      // The desktop: the scheme's Background colour.
+    app = await start({
+      container: $('desk'), size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
+      // the desktop and the launcher's agent; ?desktop=1, the recorded desktop
+      ...(bare ? {} : { args: ['C:\\windows\\explorer.exe', '/desktop=shell', 'C:\\windemo\\agent.exe'] }),
+      // A plain desktop in the scheme's colour.
       background: { color: DESKTOP_COLOUR ?? '#2e686c' },
       filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy, onCrash: crashed,
     });
     if (unsaved) console.log('[windemo] open in another tab: this one keeps no files');
     globalThis.__app = app;
     dropFiles(app);
-    // A library that says nothing of its progress: no loading screen to keep.
-    if (!app.state?.progress) hide();
+    // A library that says nothing of its progress: ready once it runs.
+    if (!app.state?.progress) readyNow();
     // The desktop follows the window (a resize, a zoom): 'fit' again,
     // once the window has settled.
     let resizing = 0;
@@ -350,7 +471,8 @@
     });
     app.exited.then((status) => { if (status && !serverFailed) show((exitShown = `The program exited (${status}).`)); }, show);
   } catch (e) {
-    progress({ phase: 'failed' });
+    failed = String(e?.message ?? e);
+    progress({ phase: 'failed', error: failed });
     show(e);
   }
 </script>
