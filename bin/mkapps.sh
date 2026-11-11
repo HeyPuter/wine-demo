@@ -65,6 +65,9 @@ if [ "${PRINTER:-1}" != 0 ]; then
   grep -q '^addprinter: ' logs/mkapps-printer.log || { echo "mkapps: no printer (logs/mkapps-printer.log)"; exit 1; }
   pr='"Print to file"'
 fi
+# The launcher's agent (agent/agent.c): the page's tiles drop their jobs into C:\windemo\queue for it.
+mkdir -p $c/windemo
+$MINGW_CC -municode -mwindows -O2 -o $c/windemo/agent.exe $WDR/agent/agent.c -lwininet
 # The look (THEME, default classic: windemo's own scheme, theme/classic, drawn by Wine's classic code with no
 # visual style; aero: Wine's stock visual style, as the gate's prefix has it).
 th=${THEME:-classic}
