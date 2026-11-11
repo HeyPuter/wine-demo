@@ -1,0 +1,56 @@
+# windemo's classic scheme: its own palette, Windows-98-style flat grey bevels and a solid caption
+# gradient, drawn by Wine's classic (unthemed) code. classic.py writes it into a prefix's user.reg.
+# [Colors]: Control Panel\Colors, R G B. [Metrics]: Control Panel\Desktop\WindowMetrics, in pixels at
+# 96 dpi. [Fonts]: the WindowMetrics fonts, FACE HEIGHT WEIGHT (Wine's own Tahoma).
+[Colors]
+ActiveBorder=196 196 190
+ActiveTitle=24 44 116
+AppWorkSpace=120 122 118
+Background=46 104 108
+ButtonAlternateFace=180 180 176
+ButtonDkShadow=36 36 34
+ButtonFace=196 196 190
+ButtonHilight=255 255 255
+ButtonLight=226 226 220
+ButtonShadow=124 124 118
+ButtonText=0 0 0
+GradientActiveTitle=70 128 196
+GradientInactiveTitle=184 184 178
+GrayText=124 124 118
+Hilight=28 52 128
+HilightText=255 255 255
+HotTrackingColor=28 52 160
+InactiveBorder=196 196 190
+InactiveTitle=124 124 118
+InactiveTitleText=220 220 214
+InfoText=0 0 0
+InfoWindow=255 255 228
+Menu=196 196 190
+MenuBar=196 196 190
+MenuHilight=28 52 128
+MenuText=0 0 0
+Scrollbar=214 214 208
+TitleText=255 255 255
+Window=255 255 255
+WindowFrame=0 0 0
+WindowText=0 0 0
+[Metrics]
+BorderWidth=1
+PaddedBorderWidth=0
+CaptionHeight=18
+CaptionWidth=18
+SmCaptionHeight=15
+SmCaptionWidth=15
+MenuHeight=18
+MenuWidth=18
+ScrollHeight=16
+ScrollWidth=16
+IconSpacing=75
+IconVerticalSpacing=75
+[Fonts]
+CaptionFont=Tahoma -11 700
+SmCaptionFont=Tahoma -11 700
+MenuFont=Tahoma -11 400
+MessageFont=Tahoma -11 400
+StatusFont=Tahoma -11 400
+IconFont=Tahoma -11 400

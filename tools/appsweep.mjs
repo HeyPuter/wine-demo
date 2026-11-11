@@ -493,7 +493,7 @@ const still = (await wins()).some((w) => w.id === app.id);
 const drawn = (() => {
   if (!desk || !a || desk.w !== a.w) return null;
   const x0 = Math.max(0, live.x), y0 = Math.max(0, live.y), x1 = Math.min(a.w, live.x + live.w), y1 = Math.min(a.h, live.y + live.h);
-  // Only pixels where the desktop picture shows the wallpaper say whether the program drew: over another
+  // Only pixels where the desktop picture shows the bare desktop say whether the program drew: over another
   // window an unpainted one and a painted one can look the same (white over white). Too few such pixels: all count.
   const under = (x, y) => deskList.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
   let walls = 0;
@@ -509,7 +509,7 @@ const drawn = (() => {
   }
   return tot ? { frac: n / tot, over: tot / all, top: Math.max(...hist.values()) / all } : null;
 })();
-if (drawn) res.notes.push(`drawn: ${Math.round(drawn.frac * 100)}% of its ${live.w}x${live.h} window, measured over the ${Math.round(drawn.over * 100)}% of it on wallpaper in the desktop picture (most common colour ${Math.round(drawn.top * 100)}%)`);
+if (drawn) res.notes.push(`drawn: ${Math.round(drawn.frac * 100)}% of its ${live.w}x${live.h} window, measured over the ${Math.round(drawn.over * 100)}% of it on the bare desktop in the desktop picture (most common colour ${Math.round(drawn.top * 100)}%)`);
 const undrawn = drawn && (drawn.frac <= 0.5 || drawn.top > 0.97);
 res.usable = !still ? 'window gone' : why ? why : undrawn ? `not drawn (${Math.round(drawn.frac * 100)}% of its window, ${Math.round(drawn.top * 100)}% one colour)` : changed === 0 ? 'no change' : 'ok';
 res.changed_px = changed;

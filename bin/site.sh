@@ -25,8 +25,7 @@ for kv in sys.argv[2:]:
     else: d[k] = v
 json.dump(d, open(p, 'w'), indent=2)
 PY
-# The desktop behind the windows: the theme's Background colour (user.reg's Control Panel\Colors) when
-# the bundle's prefix has a visual style on; the page's dark grey otherwise.
+# The desktop behind the windows: the scheme's Background colour (user.reg's Control Panel\Colors).
 python3 -I - runs/$rec/wine32-session.json $WDR/tools/index.html $P/user/index.html <<'PY'
 import json, re, sys, tarfile
 bundle = json.load(open(sys.argv[1])).get('bundle')
@@ -39,18 +38,14 @@ def key(name):
     m = re.search(r'^\[' + re.escape(name) + r'\][^\n]*\n(.*?)(?=^\[|\Z)', reg, re.M | re.S)
     return m.group(1) if m else ''
 colour = 'null'
-if re.search(r'^"ThemeActive"="1"', key(r'Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager'), re.M):
-    m = re.search(r'^"Background"="(\d+) (\d+) (\d+)"', key(r'Control Panel\\Colors'), re.M)
-    if m: colour = "'#%02x%02x%02x'" % tuple(int(v) for v in m.groups())
+m = re.search(r'^"Background"="(\d+) (\d+) (\d+)"', key(r'Control Panel\\Colors'), re.M)
+if m: colour = "'#%02x%02x%02x'" % tuple(int(v) for v in m.groups())
 page = open(sys.argv[2]).read()
 assert 'const DESKTOP_COLOUR = null;' in page
 open(sys.argv[3], 'w').write(page.replace('const DESKTOP_COLOUR = null;', f'const DESKTOP_COLOUR = {colour};', 1))
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
-# The desktop's wallpaper (theme/wallpaper.webp: Puter's desktop art, WebP quality 100, 67 KB against the
-# 2.2 MB PNG), beside the page, which starts fetching it as it starts.
-cp $WDR/theme/wallpaper.webp $out/wallpaper.webp
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
 p = sys.argv[1]; d = json.load(open(p))

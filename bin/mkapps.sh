@@ -65,15 +65,12 @@ if [ "${PRINTER:-1}" != 0 ]; then
   grep -q '^addprinter: ' logs/mkapps-printer.log || { echo "mkapps: no printer (logs/mkapps-printer.log)"; exit 1; }
   pr='"Print to file"'
 fi
-# The visual style (THEME, default luna: windemo's own, theme/luna; aero: Wine's stock one), applied as
-# winecfg's Desktop tab does (bin/theme.sh: uxtheme's ApplyTheme), which writes its colors and metrics.
-th=${THEME:-luna}
-if [ "$th" != aero ]; then
-  [ "$th" = luna ] || { echo "mkapps: THEME is luna or aero, not $th"; exit 1; }
-  b64=$(sed -n 's/^WINMD_DIR=//p' w64/dist.env); b64=${b64%/include}
-  tools=$(sed -n 's/^toolsdir = //p' $b64/Makefile); wsrc=$(sed -n 's/^WINE_SRC=//p' w64/dist.env)
-  $WDR/theme/luna/build.sh $wsrc $tools work/luna > logs/mkapps-luna.log 2>&1 || { tail -5 logs/mkapps-luna.log; exit 1; }
-  mkdir -p work/luna/style; cp work/luna/luna.msstyles work/luna/style/
-  $WDR/bin/theme.sh $P work/luna/style work/luna/colors.txt
-fi
+# The look (THEME, default classic: windemo's own scheme, theme/classic, drawn by Wine's classic code with no
+# visual style; aero: Wine's stock visual style, as the gate's prefix has it).
+th=${THEME:-classic}
+case $th in
+  classic) python3 -I $WDR/theme/classic/classic.py $P/user.reg $WDR/theme/classic/scheme.txt > logs/mkapps-theme.log ;;
+  aero) ;;
+  *) echo "mkapps: THEME is classic or aero, not $th"; exit 1 ;;
+esac
 echo "mkapps: $P, $n shortcuts, printer $pr, theme $th"
