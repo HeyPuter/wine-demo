@@ -1,10 +1,12 @@
 /* agent.exe: the launcher's side in the guest. The page drops a job (NAME.job, key=value lines) into
-   C:\windemo\queue; the agent takes jobs one at a time: when `check` (a path) is missing it downloads `url`
-   to C:\users\gex\Downloads\`file` (when that is not there yet) and runs `install` (a cmd line, in the
-   Downloads folder), then runs `launch` (a cmd line). Each job's state is the title of a 1x1 tool window,
-   "windemo-job ID STATE DETAIL", which the page reads from the desktop's window list:
-   STATE is queued, downloading (DETAIL: bytes done/total), installing, launching, started or failed (DETAIL:
-   why). Without the window list (a program crash) the page has its own crash notice. */
+   C:\windemo\queue; the agent takes jobs one at a time. When `check` (a path) is missing, the app is not
+   installed yet: the installer C:\users\gex\Downloads\`file` (the page puts it there; else the agent
+   downloads `url` to it) runs as it would for anyone, its own windows up and nothing scripted (an .msi
+   through msiexec /i), and the agent waits for it to end. Then, when `check` exists, it runs `launch` (a
+   cmd line); when it does not, the user cancelled, and the job ends there. Each job's state is the title
+   of a 1x1 tool window, "windemo-job ID STATE DETAIL", which the page reads from the desktop's window list:
+   STATE is downloading (DETAIL: bytes done/total), installer (the installer's UI is up to the user),
+   launching, started, cancelled (the installer ended and the app is not there) or failed (DETAIL: why). */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wininet.h>
@@ -93,9 +95,33 @@ out:
     return ok;
 }
 
+/* the installer at PATH as a visitor would run it (an .msi through msiexec /i), shown; its exit code, -1: it
+   did not start */
+static int run_installer(const WCHAR *path)
+{
+    WCHAR cmd[MAX_PATH * 2 + 64];
+    STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    DWORD code = 0;
+    size_t n = wcslen(path);
+    if (n > 4 && !_wcsicmp(path + n - 4, L".msi")) _snwprintf(cmd, MAX_PATH * 2 + 63, L"C:\\windows\\system32\\msiexec.exe /i \"%s\"", path);
+    else _snwprintf(cmd, MAX_PATH * 2 + 63, L"\"%s\"", path);
+    si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_SHOWNORMAL;
+    if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, DOWNLOADS, &si, &pi)) return -1;
+    CloseHandle(pi.hThread);
+    /* the agent's own messages go on while the installer runs */
+    while (MsgWaitForMultipleObjects(1, &pi.hProcess, FALSE, INFINITE, QS_ALLINPUT) == WAIT_OBJECT_0 + 1)
+    {
+        MSG m;
+        while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) DispatchMessageW(&m);
+    }
+    GetExitCodeProcess(pi.hProcess, &code); CloseHandle(pi.hProcess);
+    return code;
+}
+
 static void take(const WCHAR *path)
 {
-    WCHAR text[8192] = L"", name[128], url[2048], file[MAX_PATH], install[2048], check[MAX_PATH], launch[2048], okrc[128];
+    WCHAR text[8192] = L"", name[128], url[2048], file[MAX_PATH], check[MAX_PATH], launch[2048];
     WCHAR dl[MAX_PATH * 2];
     char raw[16384];
     DWORD n = 0;
@@ -105,22 +131,18 @@ static void take(const WCHAR *path)
     DeleteFileW(path);
     MultiByteToWideChar(CP_UTF8, 0, raw, -1, text, 8191);
     field(text, L"id", job_id, 64); field(text, L"name", name, 128); field(text, L"url", url, 2048);
-    field(text, L"file", file, MAX_PATH); field(text, L"install", install, 2048); field(text, L"check", check, MAX_PATH);
-    field(text, L"launch", launch, 2048); field(text, L"okrc", okrc, 128);
+    field(text, L"file", file, MAX_PATH); field(text, L"check", check, MAX_PATH); field(text, L"launch", launch, 2048);
     if (!job_id[0]) return;
     if (check[0]) { WCHAR x[MAX_PATH]; if (ExpandEnvironmentStringsW(check, x, MAX_PATH)) wcscpy(check, x); }
-    if (install[0] && !(check[0] && exists(check)))
+    if (file[0] && !(check[0] && exists(check)))
     {
         CreateDirectoryW(DOWNLOADS, NULL);
         _snwprintf(dl, MAX_PATH * 2 - 1, L"%s\\%s", DOWNLOADS, file);
-        if (url[0] && file[0] && !exists(dl) && !download(url, dl)) return;
-        say(L"installing", NULL);
-        int rc = run(install, DOWNLOADS, TRUE);
-        WCHAR rcs[16]; _snwprintf(rcs, 15, L",%d,", rc);
-        WCHAR oks[140]; _snwprintf(oks, 139, L",0,%s,", okrc);
-        if (rc < 0) { say(L"failed", L"the installer did not start"); return; }
-        if (!wcsstr(oks, rcs) && !(check[0] && exists(check))) { say(L"failed", L"the installer ended with %d", rc); return; }
-        if (check[0] && !exists(check)) { say(L"failed", L"the installer ended without writing %s", check); return; }
+        if (!exists(dl) && (!url[0] || !download(url, dl))) { if (!url[0]) say(L"failed", L"no installer"); return; }
+        say(L"installer", NULL);
+        int rc = run_installer(dl);
+        if (rc < 0) { say(L"failed", L"the installer did not start (%lu)", GetLastError()); return; }
+        if (check[0] && !exists(check)) { say(L"cancelled", L"%d", rc); return; }
     }
     if (launch[0])
     {

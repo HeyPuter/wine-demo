@@ -48,7 +48,10 @@ for l in open(sys.argv[4], encoding='utf-8'):
     if l.startswith('#') or not l.strip(): continue
     f = l.rstrip('\n').split('\t')
     if f[0] == 'id': keys = f; continue
-    a = dict(zip(keys, f)); a['bytes'] = int(a['bytes'] or 0); apps.append(a)
+    a = dict(zip(keys, f)); a['bytes'] = int(a['bytes'] or 0)
+    # the silent install line is the sweep's; a tile runs the installer as a visitor would (agent/agent.c)
+    for k in ('install', 'okrc', 'sha256'): a.pop(k, None)
+    apps.append(a)
 assert 'const APPS = null;' in page
 page = page.replace('const DESKTOP_COLOUR = null;', f'const DESKTOP_COLOUR = {colour};', 1)
 page = page.replace('const APPS = null;', 'const APPS = ' + json.dumps(apps, ensure_ascii=False).replace('</', '<\\/') + ';', 1)

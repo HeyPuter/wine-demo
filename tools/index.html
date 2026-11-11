@@ -73,6 +73,41 @@
   #apps:hover { background: rgba(17,24,39,.85); }
   @media (prefers-reduced-motion: reduce) { #launcher, .tile { transition: none; } #status .spin { animation: none; } }
 
+  /* After a tile's click, while anything its app needs is not ready: one bar per item, side by side in time. */
+  #loading { position: fixed; inset: 0; z-index: 2147483642; display: none; align-items: center; justify-content: center;
+             padding: 16px; box-sizing: border-box; background: var(--bg); overflow-y: auto; }
+  #loading.on { display: flex; }
+  #loading .card { width: min(520px, 100%); }
+  #loading .head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  #loading .mark { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px;
+                   border-radius: 2px; background: var(--c); box-shadow: var(--tile-shadow); }
+  #loading .mark .glyph { width: 40px; height: 40px; }
+  #loading .mark .glyph.mono { width: 54px; height: 38px; }
+  #loading h1 { margin: 0; font-size: 22px; }
+  #loading .sub { margin-top: 2px; color: var(--muted); font-size: 13px; }
+  #loading ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  #loading li .top { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+  #loading li .what { font-weight: 600; }
+  #loading li .num { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+  #loading li .track { height: 6px; margin-top: 6px; border-radius: 3px; background: var(--line); overflow: hidden; position: relative; }
+  #loading li .fill { height: 100%; width: 0; background: var(--bar); transition: width .25s ease; }
+  #loading li .track.busy .fill { position: absolute; width: 30%; animation: slide 1.3s ease-in-out infinite; }
+  #loading li.done .what::before { content: "\2713  "; color: #0f7b6c; }
+  #loading li.done .fill { width: 100%; background: #0f7b6c; }
+  #loading li.done .track.busy .fill { position: static; animation: none; }
+  #loading li.fail .what, #loading li.fail .num { color: var(--err); }
+  #loading li.fail .fill { width: 100%; background: var(--err); }
+  #loading li.fail .track.busy .fill { position: static; animation: none; }
+  #loading .why { display: none; margin-top: 20px; padding: 10px 12px; border-left: 3px solid var(--err); background: #fff;
+                  font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+  #loading .why.on { display: block; }
+  #loading .why b { display: block; }
+  #loading .back { display: none; margin-top: 18px; padding: 7px 16px; border: 1px solid var(--line); border-radius: 3px;
+                   background: #fff; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+  #loading .back.on { display: inline-block; }
+  @keyframes slide { from { left: -30%; } to { left: 100%; } }
+  @media (prefers-reduced-motion: reduce) { #loading li .track.busy .fill { animation: none; left: 0; width: 100%; opacity: .4; } }
+
   /* What the running program is fetching (a lazy file, translated code). */
   #fetching { position: fixed; right: 8px; bottom: 48px; z-index: 2147483645; max-width: calc(100vw - 32px);
               padding: 3px 10px; border-radius: 4px; background: rgba(0, 0, 0, 0.72); color: #eee;
@@ -124,7 +159,7 @@
   <main>
     <h1>Windows apps in your browser</h1>
     <p class="lede">Wine and gex run these programs in this tab, with nothing to install. Pick one: the desktop is already
-      starting, and an installer downloads and runs the first time. What you install stays in this browser.</p>
+      starting, and the first time, its installer opens on the desktop for you to click through. What you install stays in this browser.</p>
     <h2>Start</h2>
     <div class="tiles" id="t-start"></div>
     <h2>Install and run</h2>
@@ -133,6 +168,14 @@
   <footer>Each program belongs to its authors and is their unmodified installer; <a href="credits.html">credits and
     licences</a> lists each one's licence and source. Windows is a trademark of its owner; this demo is not affiliated
     with it or with any of these projects.</footer>
+</section>
+<section id="loading" aria-live="polite" aria-label="Loading">
+  <div class="card">
+    <div class="head"><div class="mark"></div><div><h1></h1><div class="sub"></div></div></div>
+    <ul></ul>
+    <div class="why" role="alert"></div>
+    <button class="back" type="button">Back to the apps</button>
+  </div>
 </section>
 <div id="status" role="status" aria-live="polite"><span class="spin"></span><span class="text"></span></div>
 <button id="apps" type="button" title="Back to the apps">Apps</button>
@@ -157,9 +200,9 @@
   //
   // The desktop starts as the page loads, behind the launcher, with no progress shown. Its programs come
   // from the launcher's tiles: a tile's job (NAME.job, key=value lines) is dropped into C:\windemo\queue,
-  // where the guest's agent (agent/agent.c, started with the desktop) downloads and runs the installer
-  // when the program is not installed yet, then starts it, and says how far it is in its status
-  // window's title, which the page reads from the desktop's window list.
+  // where the guest's agent (agent/agent.c, started with the desktop) runs the installer when the program
+  // is not installed yet (its own windows, up to the user: nothing scripted), then starts it, and says how
+  // far it is in its status window's title, which the page reads from the desktop's window list.
   // `?desktop=1`: no launcher; the desktop as recorded (cmd and the file manager on the Desktop folder).
   import { start } from './app.mjs';
   // The desktop's colour (site.sh: the scheme's Background), or null.
@@ -194,10 +237,17 @@
   let phase = 'download', failed = null;
   let readyNow;
   const ready = new Promise((r) => { readyNow = r; });
+  // The boot as the loading screen's desktop bar shows it: {what, num, frac (null: no measure)}.
+  let boot = { what: 'Downloading the desktop', num: '', frac: null };
   const progress = (p) => {
     phase = p.phase;
-    if (p.phase === 'ready') { readyNow(); if (!launcher.classList.contains('gone')) return; fetching(p.fetch); }
-    else if (p.phase === 'failed' || p.phase === 'exited') { failed = p.error ?? p.phase; status(null); }
+    const d = p.download, c = p.compile, b = p.boot;
+    if (p.phase === 'download') boot = { what: 'Downloading the desktop', num: d?.total ? `${mb(d.done)} of ${mb(d.total)} MB` : d?.files ? `${d.filesDone} of ${d.files} files` : '', frac: d?.total ? d.done / d.total : d?.files ? d.filesDone / d.files : null };
+    else if (p.phase === 'compile') boot = { what: 'Preparing the desktop', num: c?.total ? `${c.done} of ${c.total}` : '', frac: c?.total ? c.done / c.total : null };
+    else if (p.phase === 'boot' || p.phase === 'first-frame') boot = { what: 'Starting Windows', num: b?.units?.total ? `${b.units.done} of ${b.units.total} parts` : '', frac: b?.units?.total ? b.units.done / b.units.total : null };
+    if (p.phase === 'ready') { readyNow(); loader.boot(null); loader.files(p.fetch); if (!launcher.classList.contains('gone')) return; fetching(p.fetch); }
+    else if (p.phase === 'failed' || p.phase === 'exited') { failed = p.error ?? p.phase; status(null); loader.boot(failed); if (loader.on) loader.failWith('The desktop', String(failed)); }
+    else loader.boot();
   };
 
   // A program that crashed (start()'s onCrash: gex ended it and closed its windows): a note at the top
@@ -350,71 +400,194 @@
     const d = await globalThis.__gexCompositor?.describe?.({ pixels: false }).catch(() => null);
     return (d?.list ?? []).map((l) => /"(.*)"$/.exec(l)?.[1] ?? '');
   };
+  // The loading screen: one row per item the clicked app is waiting on; done ones tick off.
+  const loadingBox = $('loading');
+  const loader = {
+    on: false, rows: new Map(),
+    show(t) {
+      this.on = true; this.rows.clear();
+      loadingBox.querySelector('ul').replaceChildren();
+      const mark = loadingBox.querySelector('.mark');
+      mark.style.setProperty('--c', t.colour ?? colour(t.name));
+      mark.innerHTML = glyph(t);
+      loadingBox.querySelector('h1').textContent = t.id === 'desktop' ? 'Starting the desktop' : `Starting ${t.name}`;
+      loadingBox.querySelector('.sub').textContent = 'Everything runs in this tab.';
+      loadingBox.querySelector('.why').classList.remove('on');
+      loadingBox.querySelector('.back').classList.remove('on');
+      loadingBox.classList.add('on');
+    },
+    hide() { this.on = false; loadingBox.classList.remove('on'); },
+    // row KEY: set(what, num, frac) (frac null: busy), done(num), fail(num)
+    row(key) {
+      let r = this.rows.get(key);
+      if (r) return r;
+      const li = document.createElement('li');
+      li.innerHTML = '<div class="top"><span class="what"></span><span class="num"></span></div><div class="track"><div class="fill"></div></div>';
+      loadingBox.querySelector('ul').append(li);
+      const $w = li.querySelector('.what'), $n = li.querySelector('.num'), $t = li.querySelector('.track'), $f = li.querySelector('.fill');
+      r = {
+        set(what, num, frac) {
+          if (li.classList.contains('done') || li.classList.contains('fail')) return r;
+          if (what) $w.textContent = what;
+          $n.textContent = num ?? '';
+          $t.classList.toggle('busy', frac == null);
+          $f.style.width = frac == null ? '' : `${Math.min(100, 100 * frac).toFixed(1)}%`;
+          return r;
+        },
+        done(num) { if (!li.classList.contains('fail')) { li.classList.add('done'); if (num != null) $n.textContent = num; } return r; },
+        fail(num) { li.classList.add('fail'); if (num != null) $n.textContent = num; return r; },
+        again() { li.classList.remove('done'); return r; },
+        get finished() { return li.classList.contains('done') || li.classList.contains('fail'); },
+      };
+      this.rows.set(key, r);
+      return r;
+    },
+    // the desktop's row, from the boot's state (why: the desktop failed)
+    boot(why) {
+      const r = this.rows.get('desktop');
+      if (!r) return;
+      if (why) r.fail(`did not start: ${why}`);
+      else if (phase === 'ready') r.done('ready');
+      else r.set(boot.what, boot.num, boot.frac);
+    },
+    // a part of the rest of the files the app is waiting on (start()'s progress `fetch` once ready)
+    files(f) {
+      if (!this.on) return;
+      if (!f) { const r = this.rows.get('files'); if (r && !r.finished) r.done('loaded'); return; }
+      const code = f.name && f.owner && f.name.toLowerCase() !== f.owner.toLowerCase() ? `${f.name} (${f.owner})` : f.name || f.owner || 'the program';
+      const what = f.kind === 'code' ? `Loading code for ${code}` : `Loading ${f.name ?? 'files'}`;
+      this.row('files').again().set(what, f.total ? (f.total >= 1e6 ? `${mb(f.done)} of ${mb(f.total)} MB` : `${Math.round(f.done / 1e3)} of ${Math.max(1, Math.round(f.total / 1e3))} KB`) : '', f.total ? f.done / f.total : null);
+    },
+    failWith(name, why) {
+      for (const r of this.rows.values()) if (!r.finished) r.fail();
+      const box = loadingBox.querySelector('.why');
+      box.innerHTML = '<b></b><span></span>';
+      box.querySelector('b').textContent = `${name} could not start`;
+      box.querySelector('span').textContent = why;
+      box.classList.add('on');
+      loadingBox.querySelector('.back').classList.add('on');
+    },
+  };
+  loadingBox.querySelector('.back').addEventListener('click', () => { loader.hide(); launcher.classList.remove('gone'); $('apps').classList.remove('on'); });
+  // installers/FILE from this site into memory, its row counting (null: the site has none; the agent downloads it)
   async function fetchInstaller(t) {
     let res = null;
     try { res = await fetch(`installers/${encodeURIComponent(t.file)}`); } catch { /* not here */ }
-    if (!res?.ok || !res.body) return;
+    if (!res?.ok || !res.body) return null;
+    const row = loader.row('installer');
     const total = Number(res.headers.get('Content-Length')) || t.bytes || 0;
     const parts = [];
     let done = 0;
     const reader = res.body.getReader();
+    row.set(`Downloading the ${t.name} installer`, total ? `0 of ${mb(total)} MB` : '', total ? 0 : null);
     for (;;) {
       const { done: end, value } = await reader.read();
       if (end) break;
       parts.push(value);
       done += value.length;
-      status(`Downloading ${t.name}\u2026 ${total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`}`);
+      row.set(null, total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`, total ? done / total : null);
     }
-    await app.drop([new File(parts, t.file)], { dir: '/pfx/drive_c/users/gex/Downloads',
-      onProgress: (p) => status(`Copying ${t.name} into Windows\u2026 ${p.total ? Math.round((100 * p.done) / p.total) : 100}%`) });
+    row.set(`Downloaded the ${t.name} installer`, `${mb(done)} MB, waiting for the desktop`, 1);
+    return new File(parts, t.file);
   }
   let busy = null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const secsSince = (t0) => `${Math.round((Date.now() - t0) / 1000)} s`;
   async function open(t, b) {
     launcher.classList.add('gone');
     $('apps').classList.add('on');
-    if (t.id === 'desktop') { if (phase !== 'ready') status('Starting the desktop\u2026'); await ready; status(null); return; }
+    // Not installed yet (as far as this browser knows): the installer runs on the desktop as it would for
+    // anyone, its own windows up to the user; the agent launches the app once it is there.
+    const needsInstall = !!(t.file && !kept[t.id]);
+    // Nothing outstanding: straight to the app. Else the loading screen, until the app's window or the
+    // installer's is up.
+    const screen = phase !== 'ready' || needsInstall;
+    if (t.id === 'desktop') {
+      if (phase === 'ready') return;
+      loader.show(t); loader.row('desktop'); loader.boot();
+      await ready; if (!failed) loader.hide(); return;
+    }
     if (busy) return;
     busy = t.id;
+    let ticker = 0, shown = false;
+    const fail = (why) => {
+      status(null);
+      if (loader.on) loader.failWith(t.name, why);
+      else note(`${t.name} could not start`, why, 30000);
+      console.log('[launcher]', JSON.stringify({ id: t.id, error: why }));
+    };
     try {
-      if (phase !== 'ready') { status('Starting the desktop\u2026'); await ready; }
+      if (screen) { loader.show(t); if (phase !== 'ready') { loader.row('desktop'); loader.boot(); } }
+      // The installer from this site when it has it (a browser fetch, at the same time as the desktop's
+      // boot, then the drop path into the guest's Downloads folder, where the agent finds it); else the
+      // agent downloads it from `url`.
+      const got = needsInstall ? fetchInstaller(t) : Promise.resolve(null);
+      await Promise.race([ready, new Promise((_, no) => { const w = setInterval(() => { if (failed) { clearInterval(w); no(new Error(`the desktop did not start (${failed})`)); } }, 300); ready.then(() => clearInterval(w)); })]);
       if (failed) throw new Error(`the desktop did not start (${failed})`);
+      const file = await got;
+      if (file) {
+        const row = loader.row('installer');
+        await app.drop([file], { dir: '/pfx/drive_c/users/gex/Downloads',
+          onProgress: (p) => row.set(`Copying the ${t.name} installer into Windows`, `${p.total ? Math.round((100 * p.done) / p.total) : 100}%`, p.total ? p.done / p.total : 1) });
+        row.done(`${mb(file.size)} MB`);
+      }
       const id = `${t.id}-${Date.now().toString(36)}`;
-      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'install', 'check', 'launch', 'okrc'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`)].join('\r\n') + '\r\n';
+      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'check', 'launch'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`)].join('\r\n') + '\r\n';
       const before = new Set(await windows());
-      // The installer from this site when it has it (installers/FILE: a browser fetch, then the drop path
-      // into the guest's Downloads folder, where the agent finds it); else the agent downloads it from `url`.
-      if (t.file && !kept[t.id]) await fetchInstaller(t);
       await app.drop([new File([job], `${id}.job`)], { dir: '/pfx/drive_c/windemo/queue' });
-      status(t.install ? `Getting ${t.name}\u2026` : `Starting ${t.name}\u2026`);
+      if (!screen) status(`Starting ${t.name}…`);
       const title = t.title ? new RegExp(t.title) : null;
-      let started = 0;
-      for (const end = Date.now() + 20 * 60e3; Date.now() < end;) {
+      let started = 0, installer = 0;
+      const t0 = Date.now();
+      const tick = () => {
+        if (!loader.on) return;
+        if (installer && !shown) loader.row('setup').set(`Opening the ${t.name} installer`, secsSince(installer), null);
+        else if (started) loader.row('launch').set(`Starting ${t.name}`, `waiting for its window · ${secsSince(started)}`, null);
+      };
+      if (screen) loader.row(needsInstall ? 'setup' : 'launch').set(needsInstall ? `Opening the ${t.name} installer` : `Starting ${t.name}`, 'waiting for Windows', null);
+      ticker = setInterval(tick, 1000);
+      let seen = new Set(before);
+      for (;;) {
         await sleep(500);
         const ws = await windows();
         const me = ws.find((w) => w.startsWith(`windemo-job ${id} `));
         const [, , state, ...rest] = (me ?? '').split(' ');
         const detail = rest.join(' ');
+        const fresh = ws.filter((w) => w && !seen.has(w) && !w.startsWith('windemo-job'));
         if (state === 'downloading') {
+          // the agent's own download (this site has no copy): its row
           const [done, total] = detail.split(' ').map(Number);
-          status(`Downloading ${t.name}\u2026 ${total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`}`);
-        } else if (state === 'installing') status(`Installing ${t.name}\u2026`);
-        else if (state === 'launching' || state === 'started') {
-          status(`Starting ${t.name}\u2026`);
-          if (t.install && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
+          loader.row('installer').set(`Downloading the ${t.name} installer`, total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`, total ? done / total : null);
+        } else if (state === 'installer') {
+          loader.rows.get('installer')?.done();
+          installer ||= Date.now();
+          // its first window: the screen goes, and the user takes the installer from there
+          if (!shown && fresh.length) {
+            shown = true; loader.row('setup').done('open'); loader.hide();
+            console.log('[launcher]', JSON.stringify({ id: t.id, installer: fresh[0], s: Math.round((Date.now() - t0) / 100) / 10 }));
+          }
+          if (!shown && Date.now() - installer > 4 * 60e3) throw new Error(`the ${t.name} installer did not open a window`);
+          seen = new Set(ws);
+        } else if (state === 'cancelled') {
+          // the installer ended and the app is not there: the desktop as it is
+          loader.hide(); status(null);
+          console.log('[launcher]', JSON.stringify({ id: t.id, cancelled: detail }));
+          return;
+        } else if (state === 'launching' || state === 'started') {
+          loader.rows.get('installer')?.done();
+          if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
           const win = ws.find((w) => !before.has(w) && !w.startsWith('windemo-job') && w && (!title || title.test(w)));
-          if (win) { status(null); return; }
-          if (Date.now() - started > (t.install ? 10 : 3) * 60e3) throw new Error(`${t.name} did not open a window`);
+          if (win) { status(null); loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
+          if (Date.now() - started > 3 * 60e3) throw new Error(`${t.name} did not open a window`);
         } else if (state === 'failed') throw new Error(detail || 'it failed');
+        else if (!installer && !started && Date.now() - t0 > 5 * 60e3) throw new Error(`${t.name} took too long to start`);
       }
-      throw new Error(`${t.name} took too long`);
     } catch (e) {
-      status(null);
-      note(`${t.name} could not start`, String(e?.message ?? e), 30000);
-      console.log('[launcher]', JSON.stringify({ id: t.id, error: String(e?.message ?? e) }));
+      fail(String(e?.message ?? e));
     } finally {
+      clearInterval(ticker);
       busy = null;
     }
   }

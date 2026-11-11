@@ -1,9 +1,10 @@
 # The launcher's installers (bin/site.sh puts them in the page's APPS, and in credits.html with their licences):
 # public installers that pass the WD sweep. The page fetches each from installers/FILE beside it; when that is
 # missing the guest's agent downloads it from url. id, name, category, bytes, url, file, install (a cmd line in
-# the Downloads folder), launch (a cmd line), title (the window's title, a regex), check (installed when it
-# exists), licence (SPDX, or the vendor's freeware terms), source (the upstream source of that release),
-# sha256 (bin/installers.sh checks each download against it)
+# the Downloads folder: the sweep's silent install; a tile runs the installer itself, its UI up to the user),
+# launch (a cmd line), title (the window's title, a regex), check (installed when it exists), licence (SPDX, or
+# the vendor's freeware terms), source (the upstream source of that release), sha256 (bin/installers.sh checks
+# each download against it)
 id	name	category	bytes	url	file	install	launch	title	check	licence	source	sha256
 vlc	VLC media player	Media	44943296	https://download.videolan.org/pub/videolan/vlc/3.0.21/win64/vlc-3.0.21-win64.exe	vlc-3.0.21-win64.exe	start "" /wait vlc-3.0.21-win64.exe /L=1033 /S	start "" "C:\Program Files\VideoLAN\VLC\vlc.exe"	VLC	C:\Program Files\VideoLAN\VLC\vlc.exe	GPL-2.0-or-later	https://code.videolan.org/videolan/vlc/-/tree/3.0.21	9742689a50e96ddc04d80ceff046b28da2beefd617be18166f8c5e715ec60c59
 gimp	GIMP	Graphics	344465496	https://download.gimp.org/gimp/v2.10/windows/gimp-2.10.38-setup.exe	gimp-2.10.38-setup.exe	start "" /wait gimp-2.10.38-setup.exe /VERYSILENT /NORESTART /ALLUSERS	start "" "C:\Program Files\GIMP 2\bin\gimp-2.10.exe"	GIMP|GNU Image	C:\Program Files\GIMP 2\bin\gimp-2.10.exe	GPL-3.0-or-later	https://gitlab.gnome.org/GNOME/gimp/-/tree/GIMP_2_10_38	e3515980c9012eed67cf78f1151d216725529e95676c16f5ff7478d46230ddab
