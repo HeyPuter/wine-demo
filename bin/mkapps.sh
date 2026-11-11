@@ -67,7 +67,7 @@ if [ "${PRINTER:-1}" != 0 ]; then
 fi
 # The launcher's agent (agent/agent.c): the page's tiles drop their jobs into C:\windemo\queue for it.
 mkdir -p $c/windemo
-$MINGW_CC -municode -mwindows -O2 -o $c/windemo/agent.exe $WDR/agent/agent.c -lwininet
+$WDR/agent/build.sh $c/windemo/agent.exe
 # The look (THEME, default classic: windemo's own scheme, theme/classic, drawn by Wine's classic code with no
 # visual style; aero: Wine's stock visual style, as the gate's prefix has it).
 th=${THEME:-classic}

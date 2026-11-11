@@ -11,6 +11,7 @@ Every regular file is accounted for by content (SHA-256), in this order:
                 (STRIPNAMES: the dist's stripnames.py over it)
   wine fon      Wine's raster fonts as tools/mkfon.sh makes them from the Wine tree (w64/fon)
   winebuild PE  an MZ file with winebuild's "Wine builtin DLL" / "Wine placeholder DLL" stub
+  windemo       built here from this repo's source: the launcher's agent (agent/build.sh, rebuilt and compared)
   gexcc app     a file of WN's drop-in (APPS, default apps/wn2: its SHA256SUMS), the programs built from
                 source with gexcc's Windows target, and their licenses
   free app      a member of an upstream archive in test-apps/ (SHA256SUMS checked first):
@@ -25,7 +26,7 @@ And no Wine machine code runs translated but round A's i386 set: a Wine builtin 
 with code sections anywhere in the trees fails the audit (CODE), unless it is an i386 image byte-identical
 to w64/dist-s's lib/wine/i386-windows (WoW64's i386 side, translated until its native modules land).
 """
-import collections, ctypes, hashlib, os, re, struct, subprocess, sys, zipfile
+import collections, ctypes, hashlib, os, re, struct, subprocess, sys, tempfile, zipfile
 
 # WD_OUT: the output tree the audit runs in (env.sh), whose w64/dist.env names the dist's sources.
 S = os.environ.get('WD_OUT', os.getcwd())
@@ -63,6 +64,8 @@ ALLOWED = [r'(.*/)?(system|user|userdef)\.reg', r'\.update-timestamp', r'dll-bas
            r'drive_c/windows/syswow64/winevulkan\.json', r'share/wine/wine\.inf', r'etc/ssl/certs/ca-certificates\.crt']
 # this repo's tools/fonts
 FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
+# this repo
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STUBS = (b'Wine builtin DLL', b'Wine placeholder DLL')
 
 
@@ -188,6 +191,10 @@ def main():
         gexcc = {l.split(None, 1)[0]: l.split(None, 1)[1].strip() for l in open(os.path.join(APPS, 'SHA256SUMS')) if l.strip()}
     fonts = {sha(open(os.path.join(FONTS, n), 'rb').read()): n for n in os.listdir(FONTS)
              if n != 'README.txt'}
+    ours = {}
+    with tempfile.TemporaryDirectory() as td:
+        subprocess.run([os.path.join(REPO, 'agent/build.sh'), os.path.join(td, 'agent.exe')], check=True)
+        ours[sha(open(os.path.join(td, 'agent.exe'), 'rb').read())] = 'agent.exe'
     i386 = tree_hashes('w64/dist-s/lib/wine/i386-windows')
     codebad = []
     allowed = re.compile('(' + '|'.join(ALLOWED) + ')$')
@@ -215,6 +222,8 @@ def main():
                     c = 'wine fon'
                 elif b[:2] == b'MZ' and any(s in b[:1024] for s in STUBS):
                     c = 'winebuild PE'
+                elif h in ours:
+                    c = 'windemo'
                 elif h in gexcc:
                     c = 'gexcc app'
                 elif h in apps:
