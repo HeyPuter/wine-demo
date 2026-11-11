@@ -50,7 +50,7 @@ for l in open(sys.argv[4], encoding='utf-8'):
     if f[0] == 'id': keys = f; continue
     a = dict(zip(keys, f)); a['bytes'] = int(a['bytes'] or 0)
     # the silent install line is the sweep's; a tile runs the installer as a visitor would (agent/agent.c)
-    for k in ('install', 'okrc', 'sha256'): a.pop(k, None)
+    for k in ('install', 'okrc', 'sha256', 'icon'): a.pop(k, None)
     apps.append(a)
 assert 'const APPS = null;' in page
 page = page.replace('const DESKTOP_COLOUR = null;', f'const DESKTOP_COLOUR = {colour};', 1)
@@ -59,6 +59,18 @@ open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+# The tiles' icons (tools/icons.py, at icons/ID.png): the Wine programs' and the gexcc apps' own, each
+# launcher app's from its installer (or the program inside it the launcher.tsv row names), and the drop
+# picker's generic program icon; the page's ICONS lists the ones made.
+d=w64/dist/lib/wine/x86_64-windows; pf="$APPS/files/Program Files"
+specs=(desktop=$d/shell32.dll#16 exe=$d/shell32.dll#3 cmd=$d/cmd.exe files=$d/winefile.exe
+  "notepadpp=$pf/Notepad++/notepad++.exe" "dillo=$pf/Dillo/dillo.exe" "7zip=$pf/7-Zip/7zFM.exe")
+if [ -n "${INSTALLERS:-}" ]; then
+  while IFS=$'\t' read -r id f m; do specs+=("$id=$INSTALLERS/$f${m:+::$m}"); done < <(grep -v '^#' $WDR/tools/launcher.tsv |
+    awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } { print $1 "\t" $c["file"] "\t" $c["icon"] }')
+fi
+python3 -I $WDR/tools/icons.py $out/icons "${specs[@]}" > logs/icons-$out.txt 2> logs/icons-$out.err
+ids=$(paste -sd, logs/icons-$out.txt); sed -i "s|const ICONS = null;|const ICONS = '$ids'.split(',');|" $out/index.html
 # The credits page: each launcher installer's licence and source (tools/credits.py).
 python3 -I $WDR/tools/credits.py $WDR/tools/launcher.tsv $out/credits.html
 # INSTALLERS=DIR: the launcher's installers (tools/launcher.tsv's files, from DIR) beside the page, at

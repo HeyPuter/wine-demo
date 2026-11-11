@@ -28,6 +28,9 @@ WDR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 : "${TOOLCHAIN_ENV:=$SANDBOX/scratch/env.sh}"
 : "${NODE_BIN:=$HOME/toolchains/node/bin}"
 : "${MINGW_CC:=x86_64-w64-mingw32-gcc}"
+# innoextract, for the icons of programs inside Inno Setup installers (tools/icons.py); empty: on PATH, or those
+# tiles keep their installer's icon.
+: "${INNOEXTRACT:=}"
 # The bench box the recordings and smoke runs go to (bench.sh), its ssh login and where its copy of
 # SANDBOX is, from that login's home.
 : "${BENCH:=$SANDBOX/scratch/bench/bench.sh}"
@@ -46,7 +49,7 @@ WDR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # (its menu sits on the taskbar's top edge; a Wine before the shell's work-area fix had them at
 # con:608 fm:627 dillo:646 np:665 putty:684).
 : "${MENU_ROWS:=con:539 fm:557 dillo:575 np:593 putty:611}"
-export WDR SANDBOX WD_OUT WD_HOT GEX GEXC GATE_W64 APPS APPS_RECIPE TEST_APPS DROPS INSTALLERS TOOLCHAIN_ENV NODE_BIN MINGW_CC \
+export WDR SANDBOX WD_OUT WD_HOT GEX GEXC GATE_W64 APPS APPS_RECIPE TEST_APPS DROPS INSTALLERS TOOLCHAIN_ENV NODE_BIN MINGW_CC INNOEXTRACT \
   BENCH BENCH_HOST BENCH_SSH BENCH_ROOT SITE_HOST PORT SERVE_DIR SPKI FREETYPE_INC MENU_ROWS
 URL=https://$SITE_HOST:$PORT/
 # rel PATH: PATH (under SANDBOX) as the bench host's commands name it, from its copy's root.

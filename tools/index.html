@@ -42,9 +42,44 @@
   .tile:focus-visible { outline: 3px solid #111; outline-offset: 2px; }
   .tile .glyph { width: 44px; height: 44px; }
   .tile .glyph.mono { width: 64px; height: 44px; }
+  .tile .glyph.icon { width: 48px; height: 48px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+  #loading .mark .glyph.icon { width: 44px; height: 44px; object-fit: contain; }
   .tile .name { font-size: 15px; font-weight: 600; line-height: 1.2; }
   .tile .meta { margin-top: 2px; font-size: 12px; opacity: .85; }
   .tile .badge { position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 600; opacity: .9; }
+  /* Your own program: dropped (a file or a folder) or chosen, copied into Windows and run. */
+  .dropapp { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border: 2px dashed #b9c0ca; border-radius: 4px;
+             background: #fff; transition: border-color .15s ease, background .15s ease; }
+  .dropapp.over { border-color: var(--accent); background: rgba(29,73,231,.06); }
+  .dropapp img { flex: 0 0 auto; width: 44px; height: 44px; }
+  .dropapp .txt { flex: 1 1 auto; min-width: 0; }
+  .dropapp .t1 { font-size: 15px; font-weight: 600; }
+  .dropapp .t2 { margin-top: 2px; color: var(--muted); font-size: 13px; }
+  .dropapp .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dropapp button, #picker button.row, #picker .cancel { padding: 7px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg);
+             color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+  .dropapp button:hover { border-color: var(--accent); }
+  .dropapp input { display: none; }
+  .dropapp .tap { display: none; }
+  /* a phone: no dragging there, so only the buttons */
+  @media (max-width: 640px), (pointer: coarse) {
+    .dropapp { flex-wrap: wrap; } .dropapp .drag { display: none; } .dropapp .tap { display: inline; }
+  }
+  /* The drop's programs, when it holds more than one: the user picks the one to run. */
+  #picker { position: fixed; inset: 0; z-index: 2147483643; display: none; align-items: center; justify-content: center;
+            padding: 16px; box-sizing: border-box; background: rgba(17,24,39,.45); }
+  #picker.on { display: flex; }
+  #picker .box { width: min(520px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column;
+                 padding: 20px; box-sizing: border-box; border-radius: 4px; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  #picker h2 { margin: 0 0 4px; color: var(--ink); font-size: 18px; letter-spacing: 0; text-transform: none; }
+  #picker p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+  #picker ul { list-style: none; margin: 0 0 14px; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  #picker button.row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #fff; }
+  #picker button.row:hover { border-color: var(--accent); background: rgba(29,73,231,.05); }
+  #picker button.row img { width: 32px; height: 32px; flex: 0 0 auto; }
+  #picker button.row .p { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  #picker button.row .s { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
+  #picker .cancel { align-self: flex-end; }
   footer { padding: 8px 28px 32px; color: var(--faint); font-size: 12px; text-align: center; }
   footer a { color: inherit; }
   @media (max-width: 640px) {
@@ -56,6 +91,7 @@
     .tile.wide { grid-column: span 2; aspect-ratio: auto; min-height: 110px; }
     .tile .glyph { width: 34px; height: 34px; }
     .tile .glyph.mono { width: 50px; height: 34px; }
+    .tile .glyph.icon { width: 38px; height: 38px; }
   }
 
   /* Over the desktop: what the chosen app is doing, and the way back to the apps. */
@@ -160,6 +196,19 @@
     <h1>Windows apps in your browser</h1>
     <p class="lede">Wine and gex run these programs in this tab, with nothing to install. Pick one: the desktop is already
       starting, and the first time, its installer opens on the desktop for you to click through. What you install stays in this browser.</p>
+    <div class="dropapp" id="dropapp">
+      <img src="icons/exe.png" alt="" onerror="this.remove()">
+      <div class="txt">
+        <div class="t1">Run your own Windows program</div>
+        <div class="t2"><span class="drag">Drop an .exe, an .msi or a whole folder here, or choose one.</span><span class="tap">Choose an .exe, an .msi or a folder.</span> It is copied into Windows here and runs in this tab.</div>
+      </div>
+      <div class="btns">
+        <button type="button" id="pick-file">Choose a program</button>
+        <button type="button" id="pick-dir">Choose a folder</button>
+      </div>
+      <input type="file" id="in-file" accept=".exe,.msi,application/x-msdownload,application/x-msi">
+      <input type="file" id="in-dir" webkitdirectory multiple>
+    </div>
     <h2>Start</h2>
     <div class="tiles" id="t-start"></div>
     <h2>Install and run</h2>
@@ -169,6 +218,14 @@
     licences</a> lists each one's licence and source. Windows is a trademark of its owner; this demo is not affiliated
     with it or with any of these projects.</footer>
 </section>
+ <div id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-h">
+  <div class="box">
+    <h2 id="picker-h">Which program?</h2>
+    <p></p>
+    <ul></ul>
+    <button type="button" class="cancel">Cancel</button>
+  </div>
+</div>
 <section id="loading" aria-live="polite" aria-label="Loading">
   <div class="card">
     <div class="head"><div class="mark"></div><div><h1></h1><div class="sub"></div></div></div>
@@ -209,6 +266,9 @@
   const DESKTOP_COLOUR = null;
   // The launcher's installers (site.sh: tools/launcher.tsv), or null.
   const APPS = null;
+  // The ids with an icon at icons/ID.png (site.sh: tools/icons.py), or null.
+  const ICONS = null;
+  const ICON = new Set(ICONS ?? []);
   const error = document.getElementById('error');
   const show = (e) => { error.textContent = String(e?.message ?? e); };
   const $ = (id) => document.getElementById(id);
@@ -367,7 +427,9 @@
     cmd: '<rect x="4" y="8" width="40" height="32" rx="2" fill="none" stroke="#fff" stroke-width="3"/><path d="M11 18l7 6-7 6M22 31h12" fill="none" stroke="#fff" stroke-width="3"/>',
     files: '<path d="M5 12h14l4 5h20v22H5z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>',
   };
-  const glyph = (t) => SVG[t.icon]
+  const glyph = (t) => ICON.has(t.iconId ?? t.id)
+    ? `<img class="glyph icon" fetchpriority="high" src="icons/${encodeURIComponent(t.iconId ?? t.id)}.png" alt="" draggable="false">`
+    : SVG[t.icon]
     ? `<svg class="glyph" viewBox="0 0 48 48" aria-hidden="true">${SVG[t.icon]}</svg>`
     : `<svg class="glyph mono" viewBox="0 0 64 44" aria-hidden="true"><text x="1" y="34" font-size="32" font-weight="700"  fill="#fff" font-family="system-ui, sans-serif">${t.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).replace(/^(.)(.)/, (m, a, b) => a.toUpperCase() + b.toLowerCase())}</text></svg>`;
   const WIN_DESKTOP = 'C:\\users\\gex\\Desktop';
@@ -501,7 +563,7 @@
     const needsInstall = !!(t.file && !kept[t.id]);
     // Nothing outstanding: straight to the app. Else the loading screen, until the app's window or the
     // installer's is up.
-    const screen = phase !== 'ready' || needsInstall;
+    const screen = phase !== 'ready' || needsInstall || !!t.copy;
     if (t.id === 'desktop') {
       if (phase === 'ready') return;
       loader.show(t); loader.row('desktop'); loader.boot();
@@ -512,7 +574,7 @@
     let ticker = 0, shown = false;
     const fail = (why) => {
       status(null);
-      if (loader.on) loader.failWith(t.name, why);
+      if (loader.on && !shown) loader.failWith(t.name, why);
       else note(`${t.name} could not start`, why, 30000);
       console.log('[launcher]', JSON.stringify({ id: t.id, error: why }));
     };
@@ -524,6 +586,12 @@
       const got = needsInstall ? fetchInstaller(t) : Promise.resolve(null);
       await Promise.race([ready, new Promise((_, no) => { const w = setInterval(() => { if (failed) { clearInterval(w); no(new Error(`the desktop did not start (${failed})`)); } }, 300); ready.then(() => clearInterval(w)); })]);
       if (failed) throw new Error(`the desktop did not start (${failed})`);
+      // a dropped program: its files into Windows first (the loading screen's copy row)
+      if (t.copy) {
+        const row = loader.row('copy');
+        await t.copy((done, total) => row.set(`Copying ${t.name} into Windows`, total >= 1e5 ? `${mb(done)} of ${mb(total)} MB` : `${Math.round(done / 1e3)} KB`, total ? done / total : 1));
+        row.done(t.copied);
+      }
       const file = await got;
       if (file) {
         const row = loader.row('installer');
@@ -539,8 +607,11 @@
       const title = t.title ? new RegExp(t.title) : null;
       let started = 0, installer = 0;
       const t0 = Date.now();
+      // the loading screen's rows while it is this job's; nothing once the installer has taken over
+      const NOROW = { set: () => NOROW, done: () => NOROW, fail: () => NOROW, again: () => NOROW };
+      const R = (k) => (shown || !screen ? NOROW : loader.row(k));
       const tick = () => {
-        if (!loader.on) return;
+        if (!loader.on || shown) return;
         if (installer && !shown) loader.row('setup').set(`Opening the ${t.name} installer`, secsSince(installer), null);
         else if (started) loader.row('launch').set(`Starting ${t.name}`, `waiting for its window · ${secsSince(started)}`, null);
       };
@@ -557,29 +628,32 @@
         if (state === 'downloading') {
           // the agent's own download (this site has no copy): its row
           const [done, total] = detail.split(' ').map(Number);
-          loader.row('installer').set(`Downloading the ${t.name} installer`, total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`, total ? done / total : null);
-        } else if (state === 'installer') {
-          loader.rows.get('installer')?.done();
+          R('installer').set(`Downloading the ${t.name} installer`, total ? `${mb(done)} of ${mb(total)} MB` : `${mb(done)} MB`, total ? done / total : null);
+        } else if (state === 'installer' || (needsInstall && !started && !shown && fresh.length && !['downloading', 'failed', 'cancelled'].includes(state))) {
+          R('installer').done();
           installer ||= Date.now();
           // its first window: the screen goes, and the user takes the installer from there
           if (!shown && fresh.length) {
-            shown = true; loader.row('setup').done('open'); loader.hide();
+            R('setup').done('open'); loader.hide(); shown = true;
+            // the installer is the user's now: other tiles can go meanwhile, and this job is followed quietly
+            busy = null;
             console.log('[launcher]', JSON.stringify({ id: t.id, installer: fresh[0], s: Math.round((Date.now() - t0) / 100) / 10 }));
           }
           if (!shown && Date.now() - installer > 4 * 60e3) throw new Error(`the ${t.name} installer did not open a window`);
           seen = new Set(ws);
         } else if (state === 'cancelled') {
           // the installer ended and the app is not there: the desktop as it is
-          loader.hide(); status(null);
+          if (!shown) loader.hide();
+          status(null);
           console.log('[launcher]', JSON.stringify({ id: t.id, cancelled: detail }));
           return;
         } else if (state === 'launching' || state === 'started') {
-          loader.rows.get('installer')?.done();
+          R('installer').done();
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
           const win = ws.find((w) => !before.has(w) && !w.startsWith('windemo-job') && w && (!title || title.test(w)));
-          if (win) { status(null); loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
+          if (win) { status(null); if (!shown) loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
           if (Date.now() - started > 3 * 60e3) throw new Error(`${t.name} did not open a window`);
         } else if (state === 'failed') throw new Error(detail || 'it failed');
         else if (!installer && !started && Date.now() - t0 > 5 * 60e3) throw new Error(`${t.name} took too long to start`);
@@ -588,8 +662,110 @@
       fail(String(e?.message ?? e));
     } finally {
       clearInterval(ticker);
-      busy = null;
+      if (busy === t.id) busy = null;
     }
+  }
+  // --- your own program: dropped or chosen ----------------------------------------------------------
+  // Its files, [{path: 'Folder/sub/x.exe', file}], from a drop's entries (a folder walked whole) or an input.
+  const walk = async (entry, base, out) => {
+    if (entry.isFile) { out.push({ path: base + entry.name, file: await new Promise((ok, no) => entry.file(ok, no)) }); return; }
+    if (!entry.isDirectory) return;
+    const reader = entry.createReader();
+    for (;;) {
+      const batch = await new Promise((ok, no) => reader.readEntries(ok, no));
+      if (!batch.length) break;
+      for (const e of batch) await walk(e, `${base}${entry.name}/`, out);
+    }
+  };
+  const runnable = (p) => /\.(exe|msi)$/i.test(p);
+  const kb = (n) => (n >= 1e6 ? `${mb(n)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
+  // Which of the drop's programs to run: the one there is, or the user's pick (null: cancelled).
+  const pick = (name, files) => new Promise((resolve) => {
+    const progs = files.filter((f) => runnable(f.path)).sort((a, b) => a.path.split('/').length - b.path.split('/').length || a.path.localeCompare(b.path));
+    if (progs.length <= 1) return resolve(progs[0] ?? null);
+    const box = $('picker');
+    box.querySelector('p').textContent = `${name} holds ${progs.length} programs. Pick the one to run.`;
+    const ul = box.querySelector('ul');
+    ul.replaceChildren(...progs.map((f) => {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'row';
+      b.innerHTML = `<img src="icons/exe.png" alt=""><span class="p"></span><span class="s"></span>`;
+      b.querySelector('.p').textContent = f.path.split('/').slice(1).join('\\') || f.path;
+      b.querySelector('.s').textContent = kb(f.file.size);
+      b.onclick = () => { box.classList.remove('on'); resolve(f); };
+      li.append(b);
+      return li;
+    }));
+    box.querySelector('.cancel').onclick = () => { box.classList.remove('on'); resolve(null); };
+    box.classList.add('on');
+    ul.querySelector('button')?.focus();
+  });
+  // The drop or the choice: copied under C:\users\gex\Desktop (a folder as itself), then the chosen program
+  // run as a tile runs its app, through the same loading screen; an .msi through msiexec /i.
+  async function runOwn(files) {
+    files = files.filter((f) => f.file);
+    if (!files.length) return;
+    const top = files[0].path.includes('/') ? files[0].path.split('/')[0] : null;
+    const name = top ?? files[0].file.name;
+    const chosen = await pick(name, files);
+    if (!chosen) {
+      if (!files.some((f) => runnable(f.path))) note(`Nothing to run in ${name}`, 'Drop an .exe, an .msi or a folder that holds one.', 12000);
+      return;
+    }
+    const win = (p) => `${WIN_DESKTOP}\\${p.split('/').join('\\')}`;
+    const exe = win(chosen.path);
+    const total = files.reduce((n, f) => n + f.file.size, 0);
+    const t = {
+      id: `own-${Date.now().toString(36)}`, name: chosen.file.name.replace(/\.(exe|msi)$/i, ''), iconId: 'exe',
+      launch: /\.msi$/i.test(exe) ? `msiexec /i "${exe}"` : `start "${chosen.file.name}" /d "${exe.slice(0, exe.lastIndexOf('\\'))}" "${exe}"`,
+      copied: `${files.length} file${files.length === 1 ? '' : 's'}, ${kb(total)}`,
+      copy: async (onRow) => {
+        // one drop per folder, so the tree comes out as it was
+        const dirs = new Map();
+        for (const f of files) {
+          const d = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/')) : '';
+          if (!dirs.has(d)) dirs.set(d, []);
+          dirs.get(d).push(f.file);
+        }
+        let done = 0;
+        onRow(0, total);
+        for (const [d, list] of dirs) {
+          const size = list.reduce((n, f) => n + f.size, 0);
+          await app.drop(list, { dir: d ? `${DESKTOP}/${d}` : DESKTOP, onProgress: (p) => onRow(done + (p.done ?? 0), total) });
+          done += size;
+          onRow(done, total);
+        }
+      },
+    };
+    t.colour = colour(t.name);
+    console.log('[launcher]', JSON.stringify({ own: name, files: files.length, bytes: total, run: chosen.path }));
+    open(t, null);
+  }
+  {
+    const zone = $('dropapp');
+    const has = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+    let depth = 0;
+    // over the launcher, a drop is a program to run (the desktop's own drop handling is for when it shows)
+    launcher.addEventListener('dragenter', (e) => { if (!has(e)) return; e.preventDefault(); e.stopPropagation(); depth++; zone.classList.add('over'); });
+    launcher.addEventListener('dragleave', (e) => { e.stopPropagation(); if (--depth <= 0) { depth = 0; zone.classList.remove('over'); } });
+    launcher.addEventListener('dragover', (e) => { if (!has(e)) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy'; });
+    launcher.addEventListener('drop', (e) => {
+      if (!has(e)) return;
+      e.preventDefault(); e.stopPropagation();
+      depth = 0; zone.classList.remove('over');
+      // the entries now, while the event lasts; their files after
+      const entries = [...e.dataTransfer.items].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+      const plain = entries.length ? [] : [...e.dataTransfer.files].map((f) => ({ path: f.name, file: f }));
+      (async () => { const out = [...plain]; for (const en of entries) await walk(en, '', out); runOwn(out); })()
+        .catch((err) => note('The drop could not be read', String(err?.message ?? err), 12000));
+    });
+    const inFile = $('in-file'), inDir = $('in-dir');
+    $('pick-file').onclick = () => inFile.click();
+    $('pick-dir').onclick = () => inDir.click();
+    if (!('webkitdirectory' in inDir)) $('pick-dir').remove();
+    inFile.onchange = () => { const f = inFile.files[0]; inFile.value = ''; if (f) runOwn([{ path: f.name, file: f }]); };
+    inDir.onchange = () => { const fs = [...inDir.files].map((f) => ({ path: f.webkitRelativePath || f.name, file: f })); inDir.value = ''; runOwn(fs); };
   }
   $('apps').addEventListener('click', () => { launcher.classList.remove('gone'); $('apps').classList.remove('on'); });
   for (const t of START) tile(t, $('t-start'));

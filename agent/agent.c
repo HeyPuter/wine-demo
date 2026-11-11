@@ -16,8 +16,11 @@
 #define QUEUE L"C:\\windemo\\queue"
 #define DOWNLOADS L"C:\\users\\gex\\Downloads"
 
-static HWND status;
+/* the job being worked on: its status window and id (a job taken while an installer runs nests in it) */
+static HWND status, owner;
+static HINSTANCE hinst;
 static WCHAR job_id[64];
+static void poll_queue(void);
 
 static void say(const WCHAR *state, const WCHAR *fmt, ...)
 {
@@ -25,6 +28,8 @@ static void say(const WCHAR *state, const WCHAR *fmt, ...)
     if (fmt) { va_list a; va_start(a, fmt); _vsnwprintf(detail, 511, fmt, a); va_end(a); }
     _snwprintf(title, 699, L"windemo-job %s %s %s", job_id, state, detail);
     SetWindowTextW(status, title);
+    /* a repaint, so the desktop's compositor takes the new title with the window's next frame */
+    RedrawWindow(status, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_UPDATENOW);
 }
 
 /* one key's value from the job's text, into out (empty when absent) */
@@ -109,17 +114,18 @@ static int run_installer(const WCHAR *path)
     si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_SHOWNORMAL;
     if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, DOWNLOADS, &si, &pi)) return -1;
     CloseHandle(pi.hThread);
-    /* the agent's own messages go on while the installer runs */
-    while (MsgWaitForMultipleObjects(1, &pi.hProcess, FALSE, INFINITE, QS_ALLINPUT) == WAIT_OBJECT_0 + 1)
+    /* while it runs (as long as the user takes), the agent's messages and other jobs go on */
+    for (;;)
     {
-        MSG m;
-        while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) DispatchMessageW(&m);
+        DWORD r = MsgWaitForMultipleObjects(1, &pi.hProcess, FALSE, 300, QS_ALLINPUT);
+        if (r == WAIT_OBJECT_0 || r == WAIT_FAILED) break;
+        poll_queue();
     }
     GetExitCodeProcess(pi.hProcess, &code); CloseHandle(pi.hProcess);
     return code;
 }
 
-static void take(const WCHAR *path)
+static void take_job(const WCHAR *path)
 {
     WCHAR text[8192] = L"", name[128], url[2048], file[MAX_PATH], check[MAX_PATH], launch[2048];
     WCHAR dl[MAX_PATH * 2];
@@ -152,28 +158,54 @@ static void take(const WCHAR *path)
     say(L"started", NULL);
 }
 
+/* a job in its own status window (gone 15 s after the job ends), the outer job's restored after it */
+static void take(const WCHAR *path)
+{
+    HWND outer = status;
+    WCHAR outer_id[64];
+    wcscpy(outer_id, job_id);
+    job_id[0] = 0;
+    status = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"WindemoAgent", L"windemo-job - taking", WS_POPUP,
+                             0, 0, 1, 1, owner, NULL, hinst, NULL);
+    ShowWindow(status, SW_SHOWNOACTIVATE);
+    take_job(path);
+    SetTimer(status, 1, 15000, NULL);
+    status = outer;
+    wcscpy(job_id, outer_id);
+}
+
+static LRESULT CALLBACK proc(HWND w, UINT msg, WPARAM wp, LPARAM lp)
+{
+    if (msg == WM_TIMER) { DestroyWindow(w); return 0; }
+    return DefWindowProcW(w, msg, wp, lp);
+}
+
+static void poll_queue(void)
+{
+    MSG m; WIN32_FIND_DATAW fd; HANDLE h;
+    while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) DispatchMessageW(&m);
+    if ((h = FindFirstFileW(QUEUE L"\\*.job", &fd)) != INVALID_HANDLE_VALUE)
+    {
+        WCHAR p[MAX_PATH * 2];
+        FindClose(h);
+        _snwprintf(p, MAX_PATH * 2 - 1, L"%s\\%s", QUEUE, fd.cFileName);
+        take(p);
+    }
+}
+
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
 {
     WNDCLASSW wc = { 0 };
-    wc.lpfnWndProc = DefWindowProcW; wc.hInstance = inst; wc.lpszClassName = L"WindemoAgent";
+    wc.lpfnWndProc = proc; wc.hInstance = inst; wc.lpszClassName = L"WindemoAgent";
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     RegisterClassW(&wc);
-    /* owned by a window never shown, so no taskbar shows a button for it (the page reads its title) */
-    HWND owner = CreateWindowExW(WS_EX_TOOLWINDOW, L"WindemoAgent", L"", WS_POPUP, 0, 0, 0, 0, NULL, NULL, inst, NULL);
-    status = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"WindemoAgent", L"windemo-job - idle", WS_POPUP,
-                             0, 0, 1, 1, owner, NULL, inst, NULL);
-    ShowWindow(status, SW_SHOWNOACTIVATE);
+    hinst = inst;
+    /* the status windows' owner, never shown, so no taskbar shows a button for them (the page reads their titles) */
+    owner = CreateWindowExW(WS_EX_TOOLWINDOW, L"WindemoAgent", L"", WS_POPUP, 0, 0, 0, 0, NULL, NULL, inst, NULL);
     CreateDirectoryW(L"C:\\windemo", NULL); CreateDirectoryW(QUEUE, NULL);
     for (;;)
     {
-        MSG m; WIN32_FIND_DATAW fd; HANDLE h;
-        while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) DispatchMessageW(&m);
-        if ((h = FindFirstFileW(QUEUE L"\\*.job", &fd)) != INVALID_HANDLE_VALUE)
-        {
-            WCHAR p[MAX_PATH * 2];
-            FindClose(h);
-            _snwprintf(p, MAX_PATH * 2 - 1, L"%s\\%s", QUEUE, fd.cFileName);
-            take(p);
-        }
+        poll_queue();
         MsgWaitForMultipleObjects(0, NULL, FALSE, 300, QS_ALLINPUT);
     }
 }
