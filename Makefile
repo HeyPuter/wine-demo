@@ -2,7 +2,7 @@
 # other path and host (env.local overrides it); outputs go to WD_OUT, never here.
 #   make site GEX=<gex checkout> DIST=<GATE_W64/dist64-K-...-wow64-...-nN64-N32-sS> SITE=sW7
 #   make check SITE=sW7          (the site served at env.sh's URL)
-# Each step is its own target too: runtime, dist, test-apps, prefix, bundle, pipeline, drops, check, serve,
+# Each step is its own target too: runtime, dist, test-apps, installers, prefix, bundle, pipeline, drops, check, serve,
 # and apps (WN's recipe; long, only when the apps change).
 SHELL := /bin/bash
 B := $(CURDIR)/bin
@@ -10,8 +10,8 @@ SITE ?= sW7
 TAG ?= $(shell echo $(SITE) | tr A-Z a-z)
 export GEX DIST
 
-.PHONY: site runtime dist test-apps prefix bundle pipeline drops check serve apps
-site: runtime dist test-apps prefix bundle pipeline
+.PHONY: site runtime dist test-apps installers prefix bundle pipeline drops check serve apps
+site: runtime dist test-apps installers prefix bundle pipeline
 
 runtime:
 	$(B)/runtime.sh
@@ -20,6 +20,8 @@ dist:
 	$(B)/dist.sh $(DIST)
 test-apps:
 	$(B)/test-apps.sh
+installers:
+	$(B)/installers.sh
 prefix: test-apps
 	$(B)/mkapps.sh
 bundle:

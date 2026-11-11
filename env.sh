@@ -21,6 +21,9 @@ WDR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # The upstream downloads (test-apps.txt: make test-apps), and the files the smoke runs drop into the page.
 : "${TEST_APPS:=$WD_OUT/test-apps}"
 : "${DROPS:=$WD_OUT/drops}"
+# The launcher's installers (tools/launcher.tsv: make installers), served beside the page. INSTALLERS= (empty)
+# leaves them off the site, and the guest's agent downloads each from its own site.
+: "${INSTALLERS=$WD_OUT/installers}"
 # Toolchains: the userland env (cargo, sccache, node), node itself, mingw for tools/prt.
 : "${TOOLCHAIN_ENV:=$SANDBOX/scratch/env.sh}"
 : "${NODE_BIN:=$HOME/toolchains/node/bin}"
@@ -43,7 +46,7 @@ WDR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # (its menu sits on the taskbar's top edge; a Wine before the shell's work-area fix had them at
 # con:608 fm:627 dillo:646 np:665 putty:684).
 : "${MENU_ROWS:=con:539 fm:557 dillo:575 np:593 putty:611}"
-export WDR SANDBOX WD_OUT WD_HOT GEX GEXC GATE_W64 APPS APPS_RECIPE TEST_APPS DROPS TOOLCHAIN_ENV NODE_BIN MINGW_CC \
+export WDR SANDBOX WD_OUT WD_HOT GEX GEXC GATE_W64 APPS APPS_RECIPE TEST_APPS DROPS INSTALLERS TOOLCHAIN_ENV NODE_BIN MINGW_CC \
   BENCH BENCH_HOST BENCH_SSH BENCH_ROOT SITE_HOST PORT SERVE_DIR SPKI FREETYPE_INC MENU_ROWS
 URL=https://$SITE_HOST:$PORT/
 # rel PATH: PATH (under SANDBOX) as the bench host's commands name it, from its copy's root.

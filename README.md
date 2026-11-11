@@ -16,6 +16,7 @@ This repo holds only the pipeline. Its outputs go to `WD_OUT`, never into the re
 | `GATE_W64` | the gate's Wine builds |
 | `APPS`, `APPS_RECIPE` | WN's app drop-in, and the recipe that builds it |
 | `TEST_APPS`, `DROPS` | the upstream downloads, and the files the checks drop into the page |
+| `INSTALLERS` | the launcher's installers, served beside the page; empty leaves them off the site |
 | `BENCH`, `BENCH_HOST`, `BENCH_SSH`, `BENCH_ROOT` | where the recordings and smoke runs run |
 | `SITE_HOST`, `PORT`, `SERVE_DIR`, `SPKI` | where a site is served, and the TLS key the runs trust |
 
@@ -39,6 +40,8 @@ This repo holds only the pipeline. Its outputs go to `WD_OUT`, never into the re
    | Notepad++ 8.6.9 x64 portable (`npp.8.6.9.portable.x64.zip`) | https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.portable.x64.zip | `c1478faf2a2ec8c78c9d92b22445d53027c85d142165015cf9ed0aca80b13679` |
 
    The page ships the PuTTYs and the 7-Zip `.exe` installers. The Notepad++ x86 zip is only a check's drop, and the msi and the x64 zip are there for the audit, which accounts for their members.
+
+5. **The launcher's installers** (`INSTALLERS`, fetched by `make installers`): the 20 public installers in `tools/launcher.tsv`, each checked against the SHA-256 there. `bin/site.sh` puts them at `installers/` beside the page and writes `credits.html` with each one's licence and upstream source. When one is missing from the site, the guest's agent downloads it from its own site.
 
 Nothing from real Windows goes in. `tools/audit.py` accounts for every file in the bundle by content, and `mkbundle` and `site` fail if any file is unaccounted for.
 

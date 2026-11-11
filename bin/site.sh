@@ -56,11 +56,16 @@ open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+# The credits page: each launcher installer's licence and source (tools/credits.py).
+python3 -I $WDR/tools/credits.py $WDR/tools/launcher.tsv $out/credits.html
 # INSTALLERS=DIR: the launcher's installers (tools/launcher.tsv's files, from DIR) beside the page, at
-# installers/FILE, which the page fetches itself; without them the guest's agent downloads each from its site.
+# installers/FILE, which the page fetches itself; a missing one the guest's agent downloads from its site.
 if [ -n "${INSTALLERS:-}" ]; then
   mkdir -p $out/installers
-  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 { print $6 }' $WDR/tools/launcher.tsv | while read -r f; do cp "$INSTALLERS/$f" $out/installers/; done
+  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 { print $6 }' $WDR/tools/launcher.tsv | while read -r f; do
+    [ -f "$INSTALLERS/$f" ] || { echo "site: no $INSTALLERS/$f (make installers)"; exit 1; }
+    ln -f "$INSTALLERS/$f" $out/installers/ 2>/dev/null || cp "$INSTALLERS/$f" $out/installers/
+  done
 fi
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
