@@ -27,6 +27,36 @@ fi
 WSRC=${WINE_SRC:-$(sed -n 's/^srcdir = //p' $B64/Makefile)}
 printf 'dist %s\nb64 %s\npen64 %s\npen32 %s\nsysroot %s\nprefix %s\nwine src %s (%s)\n' $DIST $B64 $P64 $P32 $SR $PFX $WSRC "$(git -C $WSRC log --oneline -1 | cut -c1-70)"
 CORE="ntdll.dll kernelbase.dll kernel32.dll msvcrt.dll ucrtbase.dll winewayland.drv wow64.dll wow64win.dll wow64cpu.dll wineboot.exe services.exe explorer.exe"
+# What of WSRC the site would miss. Everything in DIST is built at its commit K, and only CORE's PE code is
+# restaged, from B64's objects: those are at K too unless B64 is a DIST_B64 copy whose PE objects were remade
+# and which says from what (B64/wine-commit, the full commit). Any other change between K and WSRC's HEAD
+# (a Unix side, a module outside CORE, the server) is not in the site: dist fails on one, listing them, unless
+# DIST_UNSTAGED_OK=1 (the caller puts those in itself). Uncommitted changes in WSRC always fail.
+HEAD=$(git -C $WSRC rev-parse HEAD); BK=$(git -C $WSRC rev-parse $K)
+[ -z "$(git -C $WSRC status --porcelain --untracked-files=no)" ] || { echo "dist: $WSRC has uncommitted changes"; git -C $WSRC status --short --untracked-files=no | head; exit 1; }
+[ ! -f $B64/wine-commit ] || BK=$(git -C $WSRC rev-parse "$(cat $B64/wine-commit)")
+coredirs=$(for m in $CORE; do b=${m%.*}; case $m in *.exe) echo programs/$b;; *.dll) echo dlls/$b;; *) echo dlls/$m;; esac; done)
+miss=; stale=
+for f in $(git -C $WSRC diff --name-only $K $HEAD); do
+  # PE code: a core module's file that is not Unix-side (#pragma makedep unix); a header in a module with a
+  # Unix side is both
+  d=${f%/*}; pe= unix=1
+  case " $(echo $coredirs) " in *" $d "*)
+    case $f in
+      *.c) grep -q '^#pragma makedep unix' <<< "$(git -C $WSRC show $HEAD:$f 2>/dev/null)" || { pe=1; unix=; };;
+      *.h) pe=1; git -C $WSRC grep -q '^#pragma makedep unix' $HEAD -- "$d/*.c" || unix=;;
+      *.rc|*.spec|*.idl|*.svg|*.ico|*.bmp|Makefile.in) pe=1; unix=;;
+    esac;;
+  esac
+  [ -z "$pe" ] || [ -z "$(git -C $WSRC diff --name-only $BK $HEAD -- $f)" ] || stale="$stale $f"
+  [ -z "$unix" ] || miss="$miss $f"
+done
+[ -z "$stale" ] || { echo "dist: $B64's PE objects are at $(git -C $WSRC rev-parse --short=12 $BK), not $WSRC's HEAD $(git -C $WSRC rev-parse --short=12 $HEAD): the restaged core would miss$(printf '\n  %s' $stale)"; echo "  (rebuild a copy of the tree from $WSRC, write the commit to its wine-commit and name it with DIST_B64)"; exit 1; }
+if [ -n "$miss" ]; then
+  echo "dist: changes since $DIST's commit $(printf %.12s $K) that the restaging does not reach (a Unix side, a module outside the core):$(printf '\n  %s' $miss)"
+  [ "${DIST_UNSTAGED_OK:-}" = 1 ] || { echo "  (DIST_UNSTAGED_OK=1 when the caller puts them in itself)"; exit 1; }
+fi
+[ -z "${DIST_CHECK_ONLY:-}" ] || { echo "dist: check only, ok"; exit 0; }
 mkdir -p w64; rm -rf w64/dist-prev w64/dist-s
 if [ -d w64/dist ]; then mv w64/dist w64/dist-prev; [ ! -f w64/dist.env ] || mv w64/dist.env w64/dist-prev.env; fi
 cp -a $DIST w64/dist; chmod -R u+w w64/dist
