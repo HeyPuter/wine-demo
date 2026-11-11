@@ -10,7 +10,9 @@ DIST=$(realpath "${1:?DIST}"); G=$GATE_W64; cd "$WD_OUT"
 K=$(basename "$DIST" | sed -n 's/^dist64-\([0-9a-f]\{12\}\)-.*-wow64-.*-n[0-9a-f]*-[0-9a-f]*-s[0-9a-f]*\(-twin[0-9a-f]*\)\{0,1\}$/\1/p')
 [ -n "$K" ] || { echo "dist: $DIST is not a native-i386 WoW64 dist (dist64-K-...-wow64-...-nN64-N32-sS)"; exit 1; }
 one() { [ $# = 1 ] && [ -e "$1" ] || { echo "dist: want one $what, got: $*" >&2; exit 1; }; echo "$1"; }
-what="wasm64 wow64 tree"; B64=$(one $(ls -d $G/b64-$K-*-wow64 2>/dev/null))
+# DIST_B64: a copy of that tree whose PE objects were remade from WINE_SRC (the core is restaged from the
+# tree's objects, not from WINE_SRC itself)
+what="wasm64 wow64 tree"; B64=${DIST_B64:-$(one $(ls -d $G/b64-$K-*-wow64 2>/dev/null))}
 nk=$(basename $DIST | sed 's/.*-n\([0-9a-f]*\)-\([0-9a-f]*\)-s[0-9a-f]*\(-twin[0-9a-f]*\)\{0,1\}$/\1 \2/')
 what="x86-64 native dir"; P64=$(one $(ls -d $G/pen64-$K-${nk% *} 2>/dev/null))
 what="i386 native dir"; P32=$(one $(ls -d $G/pen32-$K-${nk#* } 2>/dev/null))
@@ -21,6 +23,7 @@ if [ -z "$PFX" ]; then
   what="WoW64 prefix made for $DIST"; PFX=$(one $($GEX/wine/prefix-key.sh $DIST $G/pfs64-*-wow64-*/pfx))
 fi
 # WINE_SRC: the Wine source at DIST's commit when the gate's checkout (B64's srcdir) has moved on to its next round
+# (the source the restaged objects were made from)
 WSRC=${WINE_SRC:-$(sed -n 's/^srcdir = //p' $B64/Makefile)}
 printf 'dist %s\nb64 %s\npen64 %s\npen32 %s\nsysroot %s\nprefix %s\nwine src %s (%s)\n' $DIST $B64 $P64 $P32 $SR $PFX $WSRC "$(git -C $WSRC log --oneline -1 | cut -c1-70)"
 CORE="ntdll.dll kernelbase.dll kernel32.dll msvcrt.dll ucrtbase.dll winewayland.drv wow64.dll wow64win.dll wow64cpu.dll wineboot.exe services.exe explorer.exe"
