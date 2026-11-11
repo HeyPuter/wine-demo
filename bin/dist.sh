@@ -3,7 +3,8 @@
 # its x86-64 core restaged with PELINK_EXPORT_ALL=1 (gexcc-win apps import kernel32/ucrtbase names the gate's
 # core leaves out) by GEX's stage-native64.sh, and w64/dist.env (what the audit and mkapps read). The dist
 # that was there becomes w64/dist-prev. Also finds the WoW64 prefix wine/dist.sh made for DIST (w64/prefix:
-# GEX's wine/prefix-key.sh, from the keys dist.sh stamps it with); DIST_PREFIX names it instead.
+# GEX's wine/prefix-key.sh, from the keys dist.sh stamps it with); DIST_PREFIX names it instead. WINE_SRC names
+# the Wine source the core is restaged from (default: the build tree's srcdir).
 set -euo pipefail; . "$(dirname "$0")/../env.sh"; need_gex
 DIST=$(realpath "${1:?DIST}"); G=$GATE_W64; cd "$WD_OUT"
 K=$(basename "$DIST" | sed -n 's/^dist64-\([0-9a-f]\{12\}\)-.*-wow64-.*-n[0-9a-f]*-[0-9a-f]*-s[0-9a-f]*\(-twin[0-9a-f]*\)\{0,1\}$/\1/p')
@@ -19,7 +20,8 @@ if [ -z "$PFX" ]; then
   [ -x $GEX/wine/prefix-key.sh ] || { echo "dist: $GEX has no wine/prefix-key.sh: name the prefix with DIST_PREFIX" >&2; exit 1; }
   what="WoW64 prefix made for $DIST"; PFX=$(one $($GEX/wine/prefix-key.sh $DIST $G/pfs64-*-wow64-*/pfx))
 fi
-WSRC=$(sed -n 's/^srcdir = //p' $B64/Makefile)
+# WINE_SRC: the Wine source at DIST's commit when the gate's checkout (B64's srcdir) has moved on to its next round
+WSRC=${WINE_SRC:-$(sed -n 's/^srcdir = //p' $B64/Makefile)}
 printf 'dist %s\nb64 %s\npen64 %s\npen32 %s\nsysroot %s\nprefix %s\nwine src %s (%s)\n' $DIST $B64 $P64 $P32 $SR $PFX $WSRC "$(git -C $WSRC log --oneline -1 | cut -c1-70)"
 CORE="ntdll.dll kernelbase.dll kernel32.dll msvcrt.dll ucrtbase.dll winewayland.drv wow64.dll wow64win.dll wow64cpu.dll wineboot.exe services.exe explorer.exe"
 mkdir -p w64; rm -rf w64/dist-prev w64/dist-s

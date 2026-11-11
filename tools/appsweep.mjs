@@ -5,14 +5,15 @@
 // PLAN: {id, drop: [host paths], install: "cmd line" | null, interactive: [steps] | null, launch: "cmd line",
 //        title: "regex" (the program's window; default any new window), timeout: {install, launch} s,
 //        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms, settle_shots: s,
-//        dismiss: [{in: regex, alt|key}] (boxes answered while waiting, named in the notes), okrc: [codes], use: [steps]}
+//        dismiss: [{in: regex, alt|key}] (boxes answered while waiting, named in the notes), okrc: [codes], use: [steps],
+//        restarts: N, reload: true, image: "x.exe" (the memory64 fallback's starts: restarts() below)}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
 //        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
 // Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
 // Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader).
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, appendFileSync, openSync, readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
@@ -86,7 +87,10 @@ const line = (t) => {
   appendFileSync(`${outDir}/console.txt`, stamp() + ' ' + t + '\n');
   if (!QUIET.test(t) && ERR.test(t)) errs.push({ t: now(), phase, text: t.slice(0, 300) });
   if (t.startsWith('[drop] ')) drops.push(t);
+  if (/needs 64-bit memory/.test(t)) notices.push({ t: now(), text: t.slice(0, 300) });
+  if (/\bexec \S*wine\.m64 /.test(t)) m64Execs.push(now());
 };
+const notices = [], m64Execs = [];
 const drops = [];
 const workers = new Set();
 cdp.on('Target.attachedToTarget', (e) => {
@@ -274,6 +278,68 @@ const run = async (steps) => {
   return null;
 };
 
+// The renderer's VmData (MiB, its processes summed): what the page's memory costs the tab
+const vmData = () => {
+  try {
+    const pids = execSync(`pgrep -f -- 'user-data-dir=${prof}' || true`).toString().trim().split(/\s+/).filter(Boolean);
+    let kb = 0;
+    for (const p of pids) {
+      try { const st = readFileSync(`/proc/${p}/status`, 'utf8'); if (!/--type=renderer/.test(readFileSync(`/proc/${p}/cmdline`, 'utf8').replace(/\0/g, ' '))) continue; kb += Number(/VmData:\s+(\d+)/.exec(st)?.[1] ?? 0); } catch {}
+    }
+    return Math.round(kb / 1024);
+  } catch { return null; }
+};
+// plan.restarts (the memory64 fallback): the first start may fall short with gex's notice that the program
+// needs 64-bit memory, and the next start gets it. Each start's outcome (its window or the notice), seconds to
+// it, whether its process ran on wine.m64 and the renderer's VmData go to res.starts; the program is started
+// plan.restarts times more after the first, and with plan.reload once more after a reload of the page (the
+// record of which programs need 64-bit memory outlives it). The usual check then runs on the last start's window.
+async function restarts(appRe, t0, seen) {
+  res.starts = [];
+  const one = async (k, from) => {
+    const r = new RegExp(appRe);
+    for (const end = from + (plan.timeout?.launch ?? 900); now() < end;) {
+      await watch();
+      const w = (await wins()).find((x) => r.test(x.title) && !seen.has(x.id) && !CRASH.test(x.title));
+      const n = notices.find((x) => x.t >= from);
+      if (w || n) {
+        const st = { start: k, outcome: w ? 'window' : 'notice', secs: +(now() - from).toFixed(1), m64: m64Execs.some((x) => x >= from), vmdata_mib: vmData() };
+        if (w) st.window = `${w.w}x${w.h} "${w.title}"`; if (n) st.notice = n.text;
+        res.starts.push(st); log(`start ${k}: ${JSON.stringify(st)}`); await shot(`start-${k}`);
+        return st;
+      }
+      await sleep(1000);
+    }
+    const st = { start: k, outcome: 'nothing', secs: +(now() - from).toFixed(1), m64: m64Execs.some((x) => x >= from), vmdata_mib: vmData() };
+    res.starts.push(st); await shot(`start-${k}`); return st;
+  };
+  const again = async (k) => {
+    // a window the last start left (the program up) is closed by its process first: taskkill on its image
+    if (plan.image) { await cmd(`taskkill /f /im ${plan.image} >nul 2>&1 & title killed`); await waitWin('^killed$', 60); await sleep(5000); }
+    for (const w of await wins()) seen.add(w.id);
+    const t = now(); await cmd(`title launching & ${plan.launch}`);
+    return one(k, t);
+  };
+  let last = await one(1, t0);
+  for (let k = 2; k <= 1 + plan.restarts; k++) last = await again(k);
+  if (plan.reload) {
+    phase = 'reload';
+    await s('Page.reload', { ignoreCache: false }).catch((e) => log('reload: ' + e.message));
+    const tr = now();
+    cmdWin = await waitWin('cmd\\.exe$', 300);
+    if (!cmdWin || !(await waitWin('^Desktop$', 60))) { res.first_error = 'the desktop did not come up again after the reload'; done(); }
+    res.times.reload_desktop = +(now() - tr).toFixed(1);
+    await sleep(3000);
+    const fm = (await wins()).find((w) => w.title === 'Desktop');
+    if (fm) { await click(fm.x + fm.w - 14, fm.y + 15); await sleep(1500); }
+    if (plan.check) { await cmd(`if exist "${plan.check}" (title HAVE) else (title NOFILE)`); const c = await waitWin('^(HAVE|NOFILE)$', 60); res.notes.push(`after the reload: ${c?.title === 'HAVE' ? 'still installed' : 'not installed any more'}`); if (c?.title !== 'HAVE') done(); }
+    for (const w of await wins()) seen.add(w.id);
+    const t = now(); await cmd(`title launching & ${plan.launch}`);
+    last = await one(2 + plan.restarts, t);
+  }
+  if (last.outcome !== 'window') { res.launch = last.outcome === 'notice' ? 'notice' : 'fail'; res.first_error = last.notice ?? `no window in ${plan.timeout?.launch ?? 900} s`; done(); }
+}
+
 // 1. boot: the desktop and its cmd window
 cmdWin = await waitWin('cmd\\.exe$', 300);
 // The windows there before the install: a timeout notes the others by title (a box's title says what stopped
@@ -370,6 +436,7 @@ if (!started) await cmd(`title launching & ${plan.launch}`);
 // the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
 const appRe = plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+';
+if (plan.restarts) await restarts(appRe, t3, seen);
 let app = await waitWin(appRe, plan.timeout?.launch ?? 180, seen);
 if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
 res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app.title;
