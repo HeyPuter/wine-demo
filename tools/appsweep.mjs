@@ -10,7 +10,7 @@
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"}, {ctrl: "`"},
 //        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
-// Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
+// Writes OUTDIR/console.txt, OUTDIR/out.txt (the program's terminal output), OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
 // Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader), APPSWEEP_KEEP_PROFILE=1
 // (the Chromium profile is not deleted at the end).
@@ -107,6 +107,16 @@ cdp.on('Inspector.targetCrashed', () => { line('[sweep] RENDERER CRASHED'); res.
 await s('Runtime.enable'); await s('Page.enable'); await s('Inspector.enable').catch(() => {});
 await s('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
 await s('Page.navigate', { url });
+// The program's terminal output (Wine's own debug channels, WINEDEBUG set in a cmd line) to OUTDIR/out.txt, read
+// from the page every 2 s: the page shows none of it.
+{ let had = 0, busy = false;
+  setInterval(async () => {
+    if (busy) return; busy = true;
+    try { const t = await lim(ev(`(globalThis.__app?.state?.out ?? '').slice(${had}, ${had} + 4000000)`), 'out', 5000);
+      if (t) { appendFileSync(`${outDir}/out.txt`, t); had += t.length; } } catch {}
+    busy = false;
+  }, 2000).unref();
+}
 
 // the compositor's windows: [{id, w, h, x, y, title}]
 const wins = async () => {

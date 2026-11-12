@@ -4,12 +4,14 @@
 # nt.json keeps `identities` (a compact process takes only its own flavour's); DROP_IDS=1 drops them.
 # REST_ORDER=FILE (default tools/rest-order-all.txt): guest paths read together, first in the rest bundle (eject-site --rest-order).
 # Units of images not in tools/boot-units.txt go in the background fill (BOOT_UNITS= : all at boot).
+# LAUNCHER=FILE: the launcher's list from FILE instead of tools/launcher.tsv (a local site's own tiles); credits.html
+# still lists only tools/launcher.tsv's.
 # Outputs: WD_OUT/proj-OUT, WD_OUT/OUT.
 set -euo pipefail
 . "$(dirname "$0")/../env.sh"; need_gex; S=$WD_OUT; W=$GEX; cd $S
 [ -z "${KEEP_NAMES:-}" ] || export GEX_KEEP_NAMES=1
 export PATH=$NODE_BIN:$PATH; REST_ORDER=${REST_ORDER-$WDR/tools/rest-order-all.txt}
-rec=$1 out=$2; shift 2; P=proj-$out
+rec=$1 out=$2; shift 2; P=proj-$out; LAUNCHER=$(realpath "${LAUNCHER:-$WDR/tools/launcher.tsv}")
 rm -rf $P $out
 nice -n 10 $GEXC eject runs/$rec --out $P --web-src $W/page --unit-cache units > logs/eject-$out.log 2>&1
 python3 -I - $P/user/eject.json "$@" <<'PY'
@@ -26,7 +28,7 @@ for kv in sys.argv[2:]:
 json.dump(d, open(p, 'w'), indent=2)
 PY
 # The desktop behind the windows: the scheme's Background colour (user.reg's Control Panel\Colors).
-python3 -I - runs/$rec/wine32-session.json $WDR/tools/index.html $P/user/index.html $WDR/tools/launcher.tsv <<'PY'
+python3 -I - runs/$rec/wine32-session.json $WDR/tools/index.html $P/user/index.html $LAUNCHER <<'PY'
 import json, re, sys, tarfile
 bundle = json.load(open(sys.argv[1])).get('bundle')
 reg = ''
@@ -66,7 +68,7 @@ d=w64/dist/lib/wine/x86_64-windows; pf="$APPS/files/Program Files"
 specs=(desktop=$d/shell32.dll#16 exe=$d/shell32.dll#3 cmd=$d/cmd.exe files=$d/winefile.exe
   "notepadpp=$pf/Notepad++/notepad++.exe" "dillo=$pf/Dillo/dillo.exe" "7zip=$pf/7-Zip/7zFM.exe")
 if [ -n "${INSTALLERS:-}" ]; then
-  while IFS=$'\t' read -r id f m; do specs+=("$id=$INSTALLERS/$f${m:+::$m}"); done < <(grep -v '^#' $WDR/tools/launcher.tsv |
+  while IFS=$'\t' read -r id f m; do specs+=("$id=$INSTALLERS/$f${m:+::$m}"); done < <(grep -v '^#' $LAUNCHER |
     awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } { print $1 "\t" $c["file"] "\t" $c["icon"] }')
 fi
 python3 -I $WDR/tools/icons.py $out/icons "${specs[@]}" > logs/icons-$out.txt 2> logs/icons-$out.err
@@ -77,7 +79,7 @@ python3 -I $WDR/tools/credits.py $WDR/tools/launcher.tsv $out/credits.html
 # installers/FILE, which the page fetches itself; a missing one the guest's agent downloads from its site.
 if [ -n "${INSTALLERS:-}" ]; then
   mkdir -p $out/installers
-  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 { print $6 }' $WDR/tools/launcher.tsv | while read -r f; do
+  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 { print $6 }' $LAUNCHER | while read -r f; do
     [ -f "$INSTALLERS/$f" ] || { echo "site: no $INSTALLERS/$f (make installers)"; exit 1; }
     ln -f "$INSTALLERS/$f" $out/installers/ 2>/dev/null || cp "$INSTALLERS/$f" $out/installers/
   done
