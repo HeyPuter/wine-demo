@@ -1,0 +1,9 @@
+# The Start menu's shortcuts to Wine's own programs (bin/mkapps.sh), as Windows lays them out under Programs:
+# folder (under Programs; - for Programs itself), name, program, arguments.
+Accessories	Command Prompt	C:\windows\system32\cmd.exe	
+Accessories	Notepad	C:\windows\system32\notepad.exe	
+Accessories	WordPad	C:\Program Files\Windows NT\Accessories\wordpad.exe	
+Accessories	Windows Explorer	C:\windows\explorer.exe	C:\users\gex\Desktop
+Accessories\System Tools	Task Manager	C:\windows\system32\taskmgr.exe	
+Accessories\System Tools	Registry Editor	C:\windows\regedit.exe	
+Games	Minesweeper	C:\windows\system32\winemine.exe	

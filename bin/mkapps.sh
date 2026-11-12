@@ -4,7 +4,8 @@
 # SHA256SUMS): 7-Zip, Notepad++ and Dillo built from source with gexcc's Windows target, as wasm modules.
 # PuTTY (TEST_APPS/putty-x64.exe) goes in too. Their licenses go to
 # C:\Program Files\Licenses, and each program in programs.list gets a Start menu shortcut (wscript's
-# WScript.Shell.CreateShortcut, natively under gexc, no display). mkbundle.sh makes the page prefix from it.
+# WScript.Shell.CreateShortcut, natively under gexc, no display), as do Wine's own programs the page has in
+# tools/start-menu.tsv (Command Prompt, Notepad, the file manager...). mkbundle.sh makes the page prefix from it.
 set -euo pipefail
 . "$(dirname "$0")/../env.sh"; need_gex; S=$WD_OUT; cd $S
 src=$(realpath "${1:-$(sed -n 's/^PREFIX=//p' w64/dist.env)}"); G=$GEXC; A=$APPS
@@ -40,6 +41,18 @@ v=$c/mklinks.vbs
     echo "l.IconLocation = \"$exe,0\""
     echo 'l.Save'
   done < <(cat "$A/programs.list"; printf 'PuTTY\tC:\\Program Files\\PuTTY\\putty.exe\tgui\n')
+  # Wine's own programs, in Windows' folders (made here first: CreateShortcut makes no folder)
+  while IFS=$'\t' read -r dir name exe args; do
+    case "$dir" in ''|'#'*) continue;; esac
+    [ "$dir" = - ] && at='d' || { at="d & \"\\$dir\""; mkdir -p "$c/ProgramData/Microsoft/Windows/Start Menu/Programs/${dir//\\//}"; }
+    [ -e "$c/$(echo "${exe#C:\\}" | tr '\\' /)" ] || { echo "mkapps: no $exe in the prefix (tools/start-menu.tsv)"; exit 1; }
+    echo "Set l = sh.CreateShortcut($at & \"\\$name.lnk\")"
+    echo "l.TargetPath = \"$exe\""
+    [ -z "$args" ] || echo "l.Arguments = \"$args\""
+    echo 'l.WorkingDirectory = "C:\users\gex"'
+    echo "l.IconLocation = \"$exe,0\""
+    echo 'l.Save'
+  done < $WDR/tools/start-menu.tsv
 } > "$v"
 (cd $c && timeout -k 10 600 systemd-run --user --scope -q -p TasksMax=1024 -p MemoryMax=16G nice -n 10 \
   $G run --env WINEPREFIX=$P --env WINEGEX_WOW64=1 --env WINEDEBUG=err+all,fixme-all --env USER=gex \
@@ -47,6 +60,9 @@ v=$c/mklinks.vbs
 rm -f "$v"
 n=$(find "$c/ProgramData/Microsoft/Windows/Start Menu/Programs" -maxdepth 1 -name '*.lnk' | wc -l)
 [ "$n" = "$(($(grep -c . "$A/programs.list") - $(grep -c '7zG\.exe' "$A/programs.list") + 1))" ] || { echo "mkapps: $n Start menu shortcuts, not one per program (logs/mkapps-links.log)"; exit 1; }
+nw=$(find "$c/ProgramData/Microsoft/Windows/Start Menu/Programs" -mindepth 2 -name '*.lnk' | wc -l)
+[ "$nw" = "$(grep -cv '^#' $WDR/tools/start-menu.tsv)" ] || { echo "mkapps: $nw shortcuts to Wine's programs, not one per line of tools/start-menu.tsv (logs/mkapps-links.log)"; exit 1; }
+n=$((n + nw))
 # A "Print to file" printer, the default (PRINTER=0: none): Wine's PostScript driver, each job written
 # over C:\users\gex\Documents\print.ps (WN's recipe: wineps.drv and winspool.drv's generic.ppd in the
 # driver directory, then tools/prt/addprinter.c, built here with mingw into work/ and not shipped). It needs a loader
