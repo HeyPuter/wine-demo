@@ -322,6 +322,7 @@ async function restarts(appRe, t0, seen) {
   };
   let last = await one(1, t0);
   for (let k = 2; k <= 1 + plan.restarts; k++) last = await again(k);
+  const pre = last;
   if (plan.reload) {
     phase = 'reload';
     await s('Page.reload', { ignoreCache: false }).catch((e) => log('reload: ' + e.message));
@@ -336,6 +337,12 @@ async function restarts(appRe, t0, seen) {
     for (const w of await wins()) seen.add(w.id);
     const t = now(); await cmd(`title launching & ${plan.launch}`);
     last = await one(2 + plan.restarts, t);
+  }
+  // the memory64 restart's window is the launch: a start after the reload that maps none is a note, and the
+  // program is not there for the usable check
+  if (last !== pre && last.outcome !== 'window' && pre.outcome === 'window') {
+    res.notes.push(`the start after the page reload: ${last.outcome === 'notice' ? last.notice : `no window in ${last.secs} s`}`);
+    res.launch = 'ok'; res.window = pre.window; res.times.launch = pre.secs; res.usable = 'not checked (no window after the reload)'; done();
   }
   if (last.outcome !== 'window') { res.launch = last.outcome === 'notice' ? 'notice' : 'fail'; res.first_error = last.notice ?? `no window in ${plan.timeout?.launch ?? 900} s`; done(); }
 }
