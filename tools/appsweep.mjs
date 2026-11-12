@@ -7,7 +7,7 @@
 //        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms, settle_shots: s,
 //        dismiss: [{in: regex, alt|key}] (boxes answered while waiting, named in the notes), okrc: [codes], use: [steps],
 //        restarts: N, reload: true, image: "x.exe" (the memory64 fallback's starts: restarts() below)}
-// Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"},
+// Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"}, {ctrl: "`"},
 //        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
 // Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
@@ -192,6 +192,14 @@ const key = async (k) => {
   await kd('keyDown', k, code, vk, 0, k === 'Enter' ? '\r' : k === ' ' ? ' ' : undefined); await sleep(120); await kd('keyUp', k, code, vk, 0);
   log('key ' + k);
 };
+// Ctrl+ch (a letter, a digit or one of PK's): a program's hotkey (Ditto's Ctrl+` shows its clip list)
+const ctrl = async (ch) => {
+  const [code, vk] = PK[ch] ?? (/[a-z]/.test(ch) ? ['Key' + ch.toUpperCase(), ch.toUpperCase().charCodeAt(0)] : ['Digit' + ch, ch.charCodeAt(0)]);
+  await kd('keyDown', 'Control', 'ControlLeft', 17, 2); await sleep(60);
+  await kd('keyDown', ch, code, vk, 2); await sleep(100); await kd('keyUp', ch, code, vk, 2);
+  await sleep(60); await kd('keyUp', 'Control', 'ControlLeft', 17, 0);
+  log('ctrl+' + ch);
+};
 const alt = async (ch) => {
   const vk = ch.toUpperCase().charCodeAt(0), code = 'Key' + ch.toUpperCase();
   await kd('keyDown', 'Alt', 'AltLeft', 18, 1); await sleep(60);
@@ -270,6 +278,7 @@ const run = async (steps) => {
     }
     else if (st.key) await key(st.key);
     else if (st.alt) await alt(st.alt);
+    else if (st.ctrl) await ctrl(st.ctrl);
     else if (st.tap) { const vk = { Alt: 18, Control: 17, Shift: 16 }[st.tap]; const code = st.tap + 'Left'; await kd('keyDown', st.tap, code, vk, 0); await sleep(120); await kd('keyUp', st.tap, code, vk, 0); log('tap ' + st.tap); }
     else if (st.type) await type(st.type);
     else if (st.click && st.in) { const r = new RegExp(st.in); const w = (await wins()).find((x) => r.test(x.title)); if (!w) return `no window /${st.in}/ to click in`; await click(w.x + st.click[0], w.y + st.click[1]); }
