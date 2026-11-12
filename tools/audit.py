@@ -15,7 +15,8 @@ Every regular file is accounted for by content (SHA-256), in this order:
   gexcc app     a file of WN's drop-in (APPS, default apps/wn2: its SHA256SUMS), the programs built from
                 source with gexcc's Windows target, and their licenses
   free app      a member of an upstream archive in test-apps/ (SHA256SUMS checked first):
-                the 7-Zip msi's cabinet (libarchive), the Notepad++ zips, the files themselves
+                the 7-Zip msi's cabinet (libarchive), the Notepad++ zips, the Liberation fonts' tarball,
+                the files themselves
   free font     a file of tools/fonts (its README.txt: the symbol fallback cut from Debian's DejaVu Sans,
                 and its license)
   xkb data      under usr/share/X11/xkb, byte-identical to this machine's /usr/share/X11/xkb (xkb-data)
@@ -26,7 +27,7 @@ And no Wine machine code runs translated but round A's i386 set: a Wine builtin 
 with code sections anywhere in the trees fails the audit (CODE), unless it is an i386 image byte-identical
 to w64/dist-s's lib/wine/i386-windows (WoW64's i386 side, translated until its native modules land).
 """
-import collections, ctypes, hashlib, os, re, struct, subprocess, sys, tempfile, zipfile
+import collections, ctypes, hashlib, os, re, struct, subprocess, sys, tarfile, tempfile, zipfile
 
 # WD_OUT: the output tree the audit runs in (env.sh), whose w64/dist.env names the dist's sources.
 S = os.environ.get('WD_OUT', os.getcwd())
@@ -53,7 +54,7 @@ ALLOWED = [r'(.*/)?(system|user|userdef)\.reg', r'\.update-timestamp', r'dll-bas
            r'drive_c/windows/(system32/driverstore/filerepository/[^/]+/)?(inf/)?(mouhid|winebus|winehid|winebth|winexinput|input)\.inf',
            r'drive_c/windows/system32/winevulkan\.json', r'drive_c/windows/system32/drivers/etc/(services|hosts|networks|protocol)',
            r'drive_c/users/[^/]+/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/7-Zip/[^/]+\.lnk',
-           r'drive_c/users/gex/Desktop/Read me\.txt', r'drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/[^/]+\.lnk',
+           r'drive_c/users/gex/Desktop/Read me\.txt', r'drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/(.+/)?[^/]+\.lnk',
            # the memory64 twin's loader too (wine/dist.sh WINE64_TWIN=1: wine.m64)
            r'lib/wine/x86_64-unix/(wine|wineserver)(\.64|\.m64)?(\.wasm)?', 
            # the loader's lazy Unix side of winegstreamer (link-wine64.sh WINE64_MEDIA=lazy) and the list that keeps it
@@ -184,6 +185,9 @@ def main():
         if f.endswith('.zip'):
             with zipfile.ZipFile(p) as z:
                 apps.update({sha(z.read(i)): f for i in z.infolist() if not i.is_dir()})
+        if f.endswith('.tar.gz'):
+            with tarfile.open(p) as t:
+                apps.update({sha(t.extractfile(i).read()): f for i in t.getmembers() if i.isfile()})
     gexcc = {}
     if os.path.isdir(APPS):
         if subprocess.run(['sha256sum', '-c', '--quiet', 'SHA256SUMS'], cwd=APPS).returncode:
