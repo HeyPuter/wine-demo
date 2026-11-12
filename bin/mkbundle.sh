@@ -54,6 +54,20 @@ find stage/pfx/drive_c -type f -name '*.wasm' -exec setfattr -n user.DOSATTRIB -
 # every font's links (tools/fonts/README.txt).
 cp $WDR/tools/fonts/dejavusans-symbols.ttf $c/windows/Fonts/
 mkdir -p "$c/Program Files/Licenses"; cp $WDR/tools/fonts/DejaVu-LICENSE.txt "$c/Program Files/Licenses/"
+# Liberation Sans, Serif and Mono (SIL OFL 1.1; upstream's 2.1.5 release, TEST_APPS): the metrics of Arial, Times
+# New Roman and Courier New, which programs ask for by name, and HKCU\Software\Wine\Fonts\Replacements makes those
+# names these (Pidgin waited forever for its Arial). Nothing from Windows.
+L=liberation-fonts-ttf-2.1.5; rm -rf work/$L
+tar -xzf $TEST_APPS/$L.tar.gz -C work $L/LICENSE $(for f in Sans Serif Mono; do for s in Regular Bold Italic BoldItalic; do echo $L/Liberation$f-$s.ttf; done; done)
+cp work/$L/*.ttf $c/windows/Fonts/; cp work/$L/LICENSE "$c/Program Files/Licenses/Liberation-LICENSE.txt"; rm -rf work/$L
+python3 -I - stage/pfx/user.reg <<'PY'
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+assert '[Software\\\\Wine\\\\Fonts\\\\Replacements]' not in s, 'Replacements already there'
+s = s.rstrip('\n') + '\n\n[Software\\\\Wine\\\\Fonts\\\\Replacements] 1794440998\n' + ''.join(
+    f'"{a}"="{b}"\n' for a, b in (('Arial', 'Liberation Sans'), ('Times New Roman', 'Liberation Serif'), ('Courier New', 'Liberation Mono')))
+open(p, 'w', encoding='utf-8').write(s)
+PY
 python3 -I - stage/pfx/system.reg <<'PY'
 import re, sys
 p = sys.argv[1]; s = open(p, encoding='utf-8').read()

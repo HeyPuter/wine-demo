@@ -38,7 +38,11 @@ code {{ font-size: 12px; word-break: break-all; }}
 quickly. Each keeps its own licence; the source column links the upstream source of the same release. The
 installer runs inside Wine in your browser, and nothing is installed on your computer.</p>
 <p>The desktop is <a href="https://www.winehq.org/">Wine</a> (LGPL-2.1-or-later) running on
-<a href="https://github.com/HeyPuter/gex">gex</a>. <a href="./">Back to the apps</a></p>
+<a href="https://github.com/HeyPuter/gex">gex</a>. Its fonts besides Wine's own are
+<a href="https://github.com/liberationfonts/liberation-fonts">Liberation</a> Sans, Serif and Mono 2.1.5
+(SIL Open Font License 1.1), standing in for Arial, Times New Roman and Courier New, and a subset of
+<a href="https://dejavu-fonts.github.io/">DejaVu</a> Sans for symbols (Bitstream Vera licence); their licences are in
+C:\\Program Files\\Licenses. <a href="./">Back to the apps</a></p>
 <div class="wrap"><table>
 <thead><tr><th>App</th><th>Installer</th><th>Licence</th><th>Source</th><th>Upstream download</th></tr></thead>
 <tbody>
