@@ -12,7 +12,8 @@
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
 // Writes OUTDIR/console.txt, OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
-// Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader).
+// Env: CHROME (default /usr/bin/chromium), APPSWEEP_GPU=1 (Vulkan instead of SwiftShader), APPSWEEP_KEEP_PROFILE=1
+// (the Chromium profile is not deleted at the end).
 import { spawn, execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, appendFileSync, openSync, readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -33,7 +34,8 @@ const done = (why) => {
   res.wall = Math.round(now());
   writeFileSync(`${outDir}/result.json`, JSON.stringify(res, null, 1) + '\n');
   try { chrome.kill('SIGKILL'); } catch {}
-  rmSync(`${outDir}/profile`, { recursive: true, force: true });
+  // APPSWEEP_KEEP_PROFILE=1: the profile stays (its OPFS store, to read what a reload restored)
+  if (!process.env.APPSWEEP_KEEP_PROFILE) rmSync(`${outDir}/profile`, { recursive: true, force: true });
   process.exit(0);
 };
 
