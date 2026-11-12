@@ -129,14 +129,15 @@ const crop = (sh, w, name) => {
   for (let y = 0; y < ch; y++) sh.b.copy(b, y * cw * 4, ((y0 + y) * sh.w + x0) * 4, ((y0 + y) * sh.w + x0 + cw) * 4);
   writeFileSync(`${outDir}/${name}.png`, png(cw, ch, b));
 };
-const waitWin = async (re, secs, not = null) => {
+// big: a window of more than 8x8 (a program's hidden 1x1 main window, as Delphi's before its first dialog, is not its window)
+const waitWin = async (re, secs, not = null, big = false) => {
   const r = new RegExp(re);
   let ls = now();
   for (const end = now() + secs; now() < end;) {
     await watch();
     if (now() - ls > 60) { ls = now(); await shot('wait'); }
     const all = await wins();
-    const w = all.find((x) => r.test(x.title) && (!not || !not.has(x.id)) && (r.test('RC0') || !CRASH.test(x.title)));
+    const w = all.find((x) => r.test(x.title) && (!not || !not.has(x.id)) && (r.test('RC0') || !CRASH.test(x.title)) && (!big || (x.w > 8 && x.h > 8)));
     if (w) return w;
     // an error box (a small window titled as one): its picture, and after 45 s of it the wait ends
     const e = all.find((x) => DIALOG.test(x.title) && x.w < 800 && x.h < 500);
@@ -302,7 +303,7 @@ async function restarts(appRe, t0, seen) {
     const r = new RegExp(appRe);
     for (const end = from + (plan.timeout?.launch ?? 900); now() < end;) {
       await watch();
-      const w = (await wins()).find((x) => r.test(x.title) && !seen.has(x.id) && !CRASH.test(x.title));
+      const w = (await wins()).find((x) => r.test(x.title) && !seen.has(x.id) && !CRASH.test(x.title) && x.w > 8 && x.h > 8);
       const n = notices.find((x) => x.t >= from);
       if (w || n) {
         const st = { start: k, outcome: w ? 'window' : 'notice', secs: +(now() - from).toFixed(1), m64: m64Execs.some((x) => x >= from), vmdata_mib: vmData() };
@@ -446,7 +447,7 @@ if (!started) await cmd(`title launching & ${plan.launch}`);
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
 const appRe = plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+';
 if (plan.restarts) await restarts(appRe, t3, seen);
-let app = await waitWin(appRe, plan.timeout?.launch ?? 180, seen);
+let app = await waitWin(appRe, plan.timeout?.launch ?? 180, seen, true);
 if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }
 res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app.title;
 // settle_shots: a picture every that many seconds of the settle, named by the seconds since the window came
