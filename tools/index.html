@@ -180,6 +180,14 @@
   #busy p { margin: 0 0 16px; }
   #busy .wait { color: #8a8f98; font-size: 12px; }
   #busy button { padding: 6px 14px; border-radius: 4px; border: 1px solid #555; background: #2a2d33; color: #ddd; font: inherit; cursor: pointer; }
+  /* The rest of the files, downloading in the background after the title set: a small note in the bottom left
+     corner, over the desktop above its taskbar, gone once all of it is here. */
+  #rest { position: fixed; bottom: 48px; left: 8px; z-index: 2147483644; display: none; align-items: center; gap: 6px;
+          padding: 3px 8px; border-radius: 3px; background: rgba(0, 0, 0, .55); color: #e8e8e8; font: 11px/1.2 system-ui, sans-serif;
+          pointer-events: none; }
+  #rest.on { display: flex; }
+  #rest .track { width: 64px; height: 3px; background: rgba(255, 255, 255, .25); border-radius: 2px; overflow: hidden; }
+  #rest .fill { height: 100%; width: 0; background: #7fb2ff; transition: width .3s linear; }
 </style>
 </head>
 <body>
@@ -241,6 +249,7 @@
 <div id="dropzone">Drop to copy to the Wine Desktop</div>
 <div id="copies" aria-live="polite"></div>
 <div id="crashes" role="status" aria-live="polite"></div>
+<div id="rest" title="The rest of Windows' files, downloading in the background"><div class="track"><div class="fill"></div></div><span></span></div>
 <div id="busy" role="alertdialog" aria-labelledby="busy-text">
   <div class="box">
     <p id="busy-text">windemo is open in another tab: close it to keep your files here, or continue without saving.</p>
@@ -279,12 +288,15 @@
   // After the start: what the program is fetching, in a corner, while it is.
   const line = $('fetching');
   let off = 0;
+  // (every progress says null while nothing is fetched, the rest download's several times a second: the hide is
+  // timed from the first, not put off by each)
   const fetching = (f) => {
-    clearTimeout(off);
     if (!f) {
-      off = setTimeout(() => line.classList.remove('on'), 400);
+      off ||= setTimeout(() => { off = 0; line.classList.remove('on'); }, 400);
       return;
     }
+    clearTimeout(off);
+    off = 0;
     const more = f.inflight > 1 ? ` (+${f.inflight - 1})` : '';
     const of = f.total >= 1e6 ? `${mb(f.done)} of ${mb(f.total)} MB`
       : `${Math.round(f.done / 1e3)} of ${Math.max(1, Math.round(f.total / 1e3))} KB`;
@@ -299,7 +311,17 @@
   const ready = new Promise((r) => { readyNow = r; });
   // The boot as the loading screen's desktop bar shows it: {what, num, frac (null: no measure)}.
   let boot = { what: 'Downloading the desktop', num: '', frac: null };
+  // the rest bundle's background download (start()'s progress `rest`): MB done of total, gone at its end
+  const restNote = document.getElementById('rest');
+  const restShow = (r) => {
+    const on = !!(r && !r.complete && r.total > 0);
+    restNote.classList.toggle('on', on);
+    if (!on) return;
+    restNote.querySelector('.fill').style.width = `${Math.min(100, (100 * r.done) / r.total).toFixed(1)}%`;
+    restNote.querySelector('span').textContent = `Files ${mb(r.done)} of ${mb(r.total)} MB`;
+  };
   const progress = (p) => {
+    restShow(p.rest);
     phase = p.phase;
     const d = p.download, c = p.compile, b = p.boot;
     if (p.phase === 'download') boot = { what: 'Downloading the desktop', num: d?.total ? `${mb(d.done)} of ${mb(d.total)} MB` : d?.files ? `${d.filesDone} of ${d.files} files` : '', frac: d?.total ? d.done / d.total : d?.files ? d.filesDone / d.files : null };
