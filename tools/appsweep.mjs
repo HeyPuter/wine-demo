@@ -231,14 +231,39 @@ const firstErr = (from) => errs.find((e) => e.t >= from)?.text ?? null;
 // top of it): its taskbar button first.
 let cmdWin = null;
 const hit = (x, y) => ev(`(async()=>(await globalThis.__gexCompositor?.windowAt?.(${x},${y}))?.key??null)()`).catch(() => null);
+// A fresh cmd window from the guest's agent (agent/agent.c, in the session since the page starts it): a job
+// dropped into its queue runs `start "sweep-cmd" cmd.exe ...`, a new console on top of what covered the old one.
+// null when the page or session has no agent (a site recorded before it was in the session).
+const freshCmd = async () => {
+  const id = `sweepcmd-${Date.now().toString(36)}`;
+  const job = [`id=${id}`, 'name=cmd', 'check=C:\\windows\\system32\\cmd.exe',
+    'launch=start "sweep-cmd" cmd.exe /v:on /k cd /d %USERPROFILE%\\Desktop'].join('\r\n') + '\r\n';
+  const agent = (await wins()).some((x) => /^windemo-job /.test(x.title)) || await ev('!!globalThis.__windemoAgent').catch(() => false);
+  const before = new Set((await wins()).map((x) => x.id));
+  const ok = await ev(`(async () => { const a = globalThis.__app; if (!a?.drop) return false;
+    await a.drop([new File([${JSON.stringify(job)}], '${id}.job')], { dir: '/pfx/drive_c/windemo/queue' }); return true; })()`).catch(() => false);
+  if (!ok) return null;
+  const w = await waitWin('^sweep-cmd', agent ? 60 : 20, before);
+  log(`a fresh cmd from the agent: ${w ? `${w.w}x${w.h} at ${w.x},${w.y}` : 'none (no agent in the session?)'}`);
+  return w;
+};
 const cmd = async (text) => {
-  const w = (await wins()).find((x) => x.id === cmdWin.id) ?? cmdWin;
+  let w = (await wins()).find((x) => x.id === cmdWin.id) ?? cmdWin;
   const own = (k) => typeof k === 'string' && k.split(':')[0] === String(w.id).split(':')[0];
   let at = null;
   const pts = [[Math.min(300, w.w / 2), Math.min(200, w.h / 2)], ...[[0.25, 0.3], [0.75, 0.3], [0.25, 0.8], [0.75, 0.8], [0.5, 0.97], [0.95, 0.5], [0.5, 0.02]].map(([fx, fy]) => [w.w * fx, w.h * fy])];
   for (const [dx, dy] of pts) {
     const x = Math.round(w.x + dx), y = Math.round(w.y + dy);
     if (own(await hit(x, y))) { at = [x, y]; break; }
+  }
+  if (!at) {
+    // covered: a fresh cmd from the agent, when it is on top (the old one stays where it is)
+    const f = await freshCmd();
+    if (f) {
+      const fx = Math.round(f.x + Math.min(300, f.w / 2)), fy = Math.round(f.y + Math.min(200, f.h / 2));
+      const fk = await hit(fx, fy);
+      if (typeof fk === 'string' && fk.split(':')[0] === String(f.id).split(':')[0]) { cmdWin = f; w = f; at = [fx, fy]; log('cmd window covered: the fresh one is used'); }
+    }
   }
   if (at) await click(...at);
   else {
