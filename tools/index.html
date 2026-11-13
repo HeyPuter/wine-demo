@@ -963,13 +963,24 @@
       busyBox.querySelector('button').onclick = () => { unsaved = true; done('memory'); };
       signal.addEventListener('abort', () => done('wait'), { once: true });
     });
+    // Debug: ?glcapture=BYTES records the GL stream (the library's
+    // glcapture switch) and, at that size, the browser saves it as a
+    // .gexgltr file. Nothing is added without it.
+    const glSave = q.get('glcapture') ? { debug: { glcapture: q.get('glcapture') }, onGlCapture: (bytes) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+      a.download = `windemo-${new Date().toISOString().replace(/[:.]/g, '-')}.gexgltr`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      console.log(`[windemo] GL capture saved: ${bytes.length} bytes`);
+    } } : {};
     app = await start({
       container: $('desk'), size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
       // the desktop and the launcher's agent; ?desktop=1, the recorded desktop
       ...(bare ? {} : { args: ['C:\\windows\\explorer.exe', '/desktop=shell', 'C:\\windemo\\agent.exe'] }),
       // A plain desktop in the scheme's colour.
       background: { color: DESKTOP_COLOUR ?? '#2e686c' },
-      filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy, onCrash: crashed,
+      filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy, onCrash: crashed, ...glSave,
     });
     if (unsaved) console.log('[windemo] open in another tab: this one keeps no files');
     globalThis.__app = app;
