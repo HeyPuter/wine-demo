@@ -548,8 +548,10 @@ const drawn = (() => {
   if (!desk || !a || desk.w !== a.w) return null;
   const x0 = Math.max(0, live.x), y0 = Math.max(0, live.y), x1 = Math.min(a.w, live.x + live.w), y1 = Math.min(a.h, live.y + live.h);
   // Only pixels where the desktop picture shows the bare desktop say whether the program drew: over another
-  // window an unpainted one and a painted one can look the same (white over white). Too few such pixels: all count.
-  const under = (x, y) => deskList.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
+  // window an unpainted one and a painted one can look the same (white over white). Too few such pixels: only the one-colour test.
+  // (The desktop's own window, the whole screen, is the bare desktop, not a window over it.)
+  const over = deskList.filter((w) => !(w.x <= 0 && w.y <= 0 && w.w >= W && w.h >= H));
+  const under = (x, y) => over.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
   let walls = 0;
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (!under(x, y)) walls++;
   const wallOnly = walls >= ((x1 - x0) * (y1 - y0)) / 10;
@@ -561,7 +563,7 @@ const drawn = (() => {
     tot++;
     if (Math.abs(a.b[i] - desk.b[i]) + Math.abs(a.b[i + 1] - desk.b[i + 1]) + Math.abs(a.b[i + 2] - desk.b[i + 2]) > 24) n++;
   }
-  return tot ? { frac: n / tot, over: tot / all, top: Math.max(...hist.values()) / all } : null;
+  return tot ? { frac: wallOnly ? n / tot : 1, over: wallOnly ? tot / all : 0, top: Math.max(...hist.values()) / all } : null;
 })();
 if (drawn) res.notes.push(`drawn: ${Math.round(drawn.frac * 100)}% of its ${live.w}x${live.h} window, measured over the ${Math.round(drawn.over * 100)}% of it on the bare desktop in the desktop picture (most common colour ${Math.round(drawn.top * 100)}%)`);
 const undrawn = drawn && (drawn.frac <= 0.5 || drawn.top > 0.97);
