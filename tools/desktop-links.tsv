@@ -1,0 +1,7 @@
+# The shortcuts on the desktop (C:\users\gex\Desktop, bin/mkapps.sh): name, program, arguments. Each runs what the
+# launcher's tile for it ran, from the Desktop folder; its icon is the program's own.
+Command Prompt	C:\windows\system32\cmd.exe	
+Files	C:\windows\explorer.exe	C:\users\gex\Desktop
+Notepad++	C:\Program Files\Notepad++\notepad++.exe	
+Dillo	C:\Program Files\Dillo\dillo.exe	
+7-Zip	C:\Program Files\7-Zip\7zFM.exe	

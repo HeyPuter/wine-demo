@@ -217,9 +217,7 @@
       <input type="file" id="in-file" accept=".exe,.msi,application/x-msdownload,application/x-msi">
       <input type="file" id="in-dir" webkitdirectory multiple>
     </div>
-    <h2>Start</h2>
-    <div class="tiles" id="t-start"></div>
-    <h2>Install and run</h2>
+    <h2>Apps</h2>
     <div class="tiles" id="t-apps"></div>
   </main>
   <footer>Each program belongs to its authors and is their unmodified installer; <a href="credits.html">credits and
@@ -446,8 +444,6 @@
   const colour = (s) => COLOURS[[...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % COLOURS.length];
   const SVG = {
     desktop: '<rect x="4" y="8" width="40" height="27" rx="2" fill="none" stroke="#fff" stroke-width="3"/><path d="M16 41h16M24 35v6" stroke="#fff" stroke-width="3"/>',
-    cmd: '<rect x="4" y="8" width="40" height="32" rx="2" fill="none" stroke="#fff" stroke-width="3"/><path d="M11 18l7 6-7 6M22 31h12" fill="none" stroke="#fff" stroke-width="3"/>',
-    files: '<path d="M5 12h14l4 5h20v22H5z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>',
   };
   const glyph = (t) => ICON.has(t.iconId ?? t.id)
     ? `<img class="glyph icon" fetchpriority="high" src="icons/${encodeURIComponent(t.iconId ?? t.id)}.png" alt="" draggable="false">`
@@ -455,14 +451,9 @@
     ? `<svg class="glyph" viewBox="0 0 48 48" aria-hidden="true">${SVG[t.icon]}</svg>`
     : `<svg class="glyph mono" viewBox="0 0 64 44" aria-hidden="true"><text x="1" y="34" font-size="32" font-weight="700"  fill="#fff" font-family="system-ui, sans-serif">${t.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).replace(/^(.)(.)/, (m, a, b) => a.toUpperCase() + b.toLowerCase())}</text></svg>`;
   const WIN_DESKTOP = 'C:\\users\\gex\\Desktop';
-  const START = [
-    { id: 'desktop', name: 'Desktop', icon: 'desktop', meta: 'Wine with its shell', wide: true },
-    { id: 'cmd', name: 'Command Prompt', icon: 'cmd', launch: 'start C:\\windows\\system32\\cmd.exe', title: 'cmd\\.exe' },
-    { id: 'files', name: 'Files', icon: 'files', launch: `start "" C:\\windows\\explorer.exe ${WIN_DESKTOP}`, title: '^Desktop$' },
-    { id: 'notepadpp', name: 'Notepad++', launch: 'start "" "C:\\Program Files\\Notepad++\\notepad++.exe"', title: 'Notepad\\+\\+', meta: 'Built for gex' },
-    { id: 'dillo', name: 'Dillo', launch: 'start "" "C:\\Program Files\\Dillo\\dillo.exe"', title: 'Dillo', meta: 'Built for gex' },
-    { id: '7zip', name: '7-Zip', launch: 'start "" "C:\\Program Files\\7-Zip\\7zFM.exe"', title: '7-Zip|C:\\\\', meta: 'Built for gex' },
-  ];
+  // The bare desktop's tile, first in the grid: its programs (Command Prompt, the file manager, Notepad++, Dillo,
+  // 7-Zip) are shortcuts on it (bin/mkapps.sh, tools/desktop-links.tsv).
+  const DESKTOP_TILE = { id: 'desktop', name: 'Desktop', icon: 'desktop', meta: 'Wine with its shell', wide: true };
   let kept = {};
   try { kept = JSON.parse(localStorage.getItem('windemo-installed') ?? '{}'); } catch { /* none */ }
   const keepInstalled = (id) => { kept[id] = 1; try { localStorage.setItem('windemo-installed', JSON.stringify(kept)); } catch { /* none */ } };
@@ -790,9 +781,8 @@
     inDir.onchange = () => { const fs = [...inDir.files].map((f) => ({ path: f.webkitRelativePath || f.name, file: f })); inDir.value = ''; runOwn(fs); };
   }
   $('apps').addEventListener('click', () => { launcher.classList.remove('gone'); $('apps').classList.remove('on'); });
-  for (const t of START) tile(t, $('t-start'));
+  tile(DESKTOP_TILE, $('t-apps'));
   for (const t of APPS ?? []) tile(t, $('t-apps'));
-  if (!(APPS ?? []).length) $('t-apps').previousElementSibling.remove();
   if (bare) { launcher.classList.add('gone'); }
 
   let app = null;

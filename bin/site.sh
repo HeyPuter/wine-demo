@@ -61,12 +61,11 @@ open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
-# The tiles' icons (tools/icons.py, at icons/ID.png): the Wine programs' and the gexcc apps' own, each
-# launcher app's from its installer (or the program inside it the launcher.tsv row names), and the drop
-# picker's generic program icon; the page's ICONS lists the ones made.
-d=w64/dist/lib/wine/x86_64-windows; pf="$APPS/files/Program Files"
-specs=(desktop=$d/shell32.dll#16 exe=$d/shell32.dll#3 cmd=$d/cmd.exe files=$d/winefile.exe
-  "notepadpp=$pf/Notepad++/notepad++.exe" "dillo=$pf/Dillo/dillo.exe" "7zip=$pf/7-Zip/7zFM.exe")
+# The tiles' icons (tools/icons.py, at icons/ID.png): the desktop's, each launcher app's from its installer
+# (or the program inside it the launcher.tsv row names), and the drop picker's generic program icon; the
+# page's ICONS lists the ones made.
+d=w64/dist/lib/wine/x86_64-windows
+specs=(desktop=$d/shell32.dll#16 exe=$d/shell32.dll#3)
 if [ -n "${INSTALLERS:-}" ]; then
   while IFS=$'\t' read -r id f m; do specs+=("$id=$INSTALLERS/$f${m:+::$m}"); done < <(grep -v '^#' $LAUNCHER |
     awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } { print $1 "\t" $c["file"] "\t" $c["icon"] }')

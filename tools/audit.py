@@ -54,7 +54,7 @@ ALLOWED = [r'(.*/)?(system|user|userdef)\.reg', r'\.update-timestamp', r'dll-bas
            r'drive_c/windows/(system32/driverstore/filerepository/[^/]+/)?(inf/)?(mouhid|winebus|winehid|winebth|winexinput|input)\.inf',
            r'drive_c/windows/system32/winevulkan\.json', r'drive_c/windows/system32/drivers/etc/(services|hosts|networks|protocol)',
            r'drive_c/users/[^/]+/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/7-Zip/[^/]+\.lnk',
-           r'drive_c/users/gex/Desktop/Read me\.txt', r'drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/(.+/)?[^/]+\.lnk',
+           r'drive_c/users/gex/Desktop/(Read me\.txt|[^/]+\.lnk)', r'drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/(.+/)?[^/]+\.lnk',
            # the memory64 twin's loader too (wine/dist.sh WINE64_TWIN=1: wine.m64)
            r'lib/wine/x86_64-unix/(wine|wineserver)(\.64|\.m64)?(\.wasm)?', 
            # the loader's lazy Unix side of winegstreamer (link-wine64.sh WINE64_MEDIA=lazy) and the list that keeps it

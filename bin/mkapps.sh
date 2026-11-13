@@ -53,6 +53,18 @@ v=$c/mklinks.vbs
     echo "l.IconLocation = \"$exe,0\""
     echo 'l.Save'
   done < $WDR/tools/start-menu.tsv
+  # The desktop's shortcuts (tools/desktop-links.tsv), in user gex's Desktop folder, which the page's desktop shows
+  mkdir -p "$c/users/gex/Desktop"
+  while IFS=$'\t' read -r name exe args; do
+    case "$name" in ''|'#'*) continue;; esac
+    [ -e "$c/$(echo "${exe#C:\\}" | tr '\\' /)" ] || { echo "mkapps: no $exe in the prefix (tools/desktop-links.tsv)"; exit 1; }
+    echo "Set l = sh.CreateShortcut(\"C:\\users\\gex\\Desktop\\$name.lnk\")"
+    echo "l.TargetPath = \"$exe\""
+    [ -z "$args" ] || echo "l.Arguments = \"$args\""
+    echo 'l.WorkingDirectory = "C:\users\gex\Desktop"'
+    echo "l.IconLocation = \"$exe,0\""
+    echo 'l.Save'
+  done < $WDR/tools/desktop-links.tsv
 } > "$v"
 (cd $c && timeout -k 10 600 systemd-run --user --scope -q -p TasksMax=1024 -p MemoryMax=16G nice -n 10 \
   $G run --env WINEPREFIX=$P --env WINEGEX_WOW64=1 --env WINEDEBUG=err+all,fixme-all --env USER=gex \
@@ -62,7 +74,9 @@ n=$(find "$c/ProgramData/Microsoft/Windows/Start Menu/Programs" -maxdepth 1 -nam
 [ "$n" = "$(($(grep -c . "$A/programs.list") - $(grep -c '7zG\.exe' "$A/programs.list") + 1))" ] || { echo "mkapps: $n Start menu shortcuts, not one per program (logs/mkapps-links.log)"; exit 1; }
 nw=$(find "$c/ProgramData/Microsoft/Windows/Start Menu/Programs" -mindepth 2 -name '*.lnk' | wc -l)
 [ "$nw" = "$(grep -cv '^#' $WDR/tools/start-menu.tsv)" ] || { echo "mkapps: $nw shortcuts to Wine's programs, not one per line of tools/start-menu.tsv (logs/mkapps-links.log)"; exit 1; }
-n=$((n + nw))
+nd=$(find "$c/users/gex/Desktop" -maxdepth 1 -name '*.lnk' | wc -l)
+[ "$nd" = "$(grep -cv '^#' $WDR/tools/desktop-links.tsv)" ] || { echo "mkapps: $nd shortcuts on the desktop, not one per line of tools/desktop-links.tsv (logs/mkapps-links.log)"; exit 1; }
+n=$((n + nw + nd))
 # A "Print to file" printer, the default (PRINTER=0: none): Wine's PostScript driver, each job written
 # over C:\users\gex\Documents\print.ps (WN's recipe: wineps.drv and winspool.drv's generic.ppd in the
 # driver directory, then tools/prt/addprinter.c, built here with mingw into work/ and not shipped). It needs a loader
