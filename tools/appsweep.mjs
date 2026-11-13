@@ -291,6 +291,17 @@ const cmd = async (text) => {
   await key('Escape'); await sleep(200);
   await type(text); await sleep(200); await key('Enter');
 };
+// The driver's console out of the way once it has started the program, so the shots show the program and
+// the taskbar a visitor would have (its minimise box, the caption's third button from the right; cmd() raises
+// it again from its taskbar button when it next types).
+const minCmd = async () => {
+  await sleep(500);
+  const w = (await wins()).find((x) => x.id === cmdWin?.id);
+  if (!w || w.w < 120) return;
+  await click(w.x + w.w - 49, w.y + 13); await sleep(500);
+  const still = (await wins()).find((x) => x.id === w.id);
+  log(`cmd minimised: ${still && still.w === w.w && still.y === w.y ? 'still up' : 'yes'}`);
+};
 const run = async (steps) => {
   for (const st of steps ?? []) {
     if (st.wait) { const w = await waitWin(st.wait, st.t ?? 120); if (!w) return `no window /${st.wait}/ in ${st.t ?? 120} s`; await sleep(1500); }
@@ -364,7 +375,7 @@ async function restarts(appRe, t0, seen) {
     // a window the last start left (the program up) is closed by its process first: taskkill on its image
     if (plan.image) { await cmd(`taskkill /f /im ${plan.image} >nul 2>&1 & title killed`); await waitWin('^killed$', 60); await sleep(5000); }
     for (const w of await wins()) seen.add(w.id);
-    const t = now(); await cmd(`title launching & ${plan.launch}`);
+    const t = now(); await cmd(`title launching & ${plan.launch}`); await minCmd();
     return one(k, t);
   };
   let last = await one(1, t0);
@@ -382,7 +393,7 @@ async function restarts(appRe, t0, seen) {
     if (fm) { await click(fm.x + fm.w - 14, fm.y + 15); await sleep(1500); }
     if (plan.check) { await cmd(`if exist "${plan.check}" (title HAVE) else (title NOFILE)`); const c = await waitWin('^(HAVE|NOFILE)$', 60); res.notes.push(`after the reload: ${c?.title === 'HAVE' ? 'still installed' : 'not installed any more'}`); if (c?.title !== 'HAVE') done(); }
     for (const w of await wins()) seen.add(w.id);
-    const t = now(); await cmd(`title launching & ${plan.launch}`);
+    const t = now(); await cmd(`title launching & ${plan.launch}`); await minCmd();
     last = await one(2 + plan.restarts, t);
   }
   // the memory64 restart's window is the launch: a start after the reload that maps none is a note, and the
@@ -486,7 +497,7 @@ if (plan.title) {
   }
   if (started) { log('the install started the program'); seen = startWins; }
 }
-if (!started) await cmd(`title launching & ${plan.launch}`);
+if (!started) { await cmd(`title launching & ${plan.launch}`); await minCmd(); }
 // the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
 const appRe = plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+';
