@@ -12,10 +12,15 @@ for l in open(sys.argv[1], encoding='utf-8'):
     rows.append(dict(zip(keys, f)))
 e = html.escape
 def link(u, text=None): return f'<a href="{e(u)}">{e(text or urlsplit(u).netloc)}</a>' if u else ''
-body = '\n'.join(
-    f'<tr><td>{e(r["name"])}</td><td><code>{e(r["file"])}</code></td><td>{e(r["licence"])}</td>'
-    f'<td>{link(r["source"], "source") if r["source"] else "not published"}</td><td>{link(r["url"])}</td></tr>'
-    for r in sorted(rows, key=lambda r: r['name'].lower()))
+# a row with no file: a tile whose installer the visitor brings from the vendor's site (its homepage); this site
+# serves none of it
+def row(r):
+    if not r['file']:
+        return (f'<tr><td>{e(r["name"])}</td><td>your own download</td><td>{e(r["licence"])}</td><td>closed source</td>'
+                f'<td>{link(r.get("homepage", ""))}</td></tr>')
+    return (f'<tr><td>{e(r["name"])}</td><td><code>{e(r["file"])}</code></td><td>{e(r["licence"])}</td>'
+            f'<td>{link(r["source"], "source") if r["source"] else "not published"}</td><td>{link(r["url"])}</td></tr>')
+body = '\n'.join(row(r) for r in sorted(rows, key=lambda r: r['name'].lower()))
 open(sys.argv[2], 'w', encoding='utf-8').write(f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Credits and licences</title>
@@ -36,7 +41,9 @@ code {{ font-size: 12px; word-break: break-all; }}
 <h1>Credits and licences</h1>
 <p>The launcher's apps are their authors' unmodified installers, served from this site so they start
 quickly. Each keeps its own licence; the source column links the upstream source of the same release. The
-installer runs inside Wine in your browser, and nothing is installed on your computer.</p>
+installer runs inside Wine in your browser, and nothing is installed on your computer. The closed-source ones
+are not served at all: you download the installer from its maker's site and drop it on the tile, and it stays in
+your browser.</p>
 <p>The desktop is <a href="https://www.winehq.org/">Wine</a> (LGPL-2.1-or-later) running on
 <a href="https://github.com/HeyPuter/gex">gex</a>. Its fonts besides Wine's own are
 <a href="https://github.com/liberationfonts/liberation-fonts">Liberation</a> Sans, Serif and Mono 2.1.5

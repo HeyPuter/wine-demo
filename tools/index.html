@@ -80,6 +80,24 @@
   #picker button.row .p { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   #picker button.row .s { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
   #picker .cancel { align-self: flex-end; }
+  /* A tile whose installer the visitor brings (launcher.tsv's homepage, no file): where to get it, and a box to
+     drop it on. */
+  #byo { position: fixed; inset: 0; z-index: 2147483643; display: none; align-items: center; justify-content: center;
+         padding: 16px; box-sizing: border-box; background: rgba(17,24,39,.45); }
+  #byo.on { display: flex; }
+  #byo .box { width: min(520px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 20px; box-sizing: border-box;
+              border-radius: 4px; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  #byo h2 { margin: 0; color: var(--ink); font-size: 18px; letter-spacing: 0; text-transform: none; }
+  #byo p { margin: 0; color: var(--muted); font-size: 13px; }
+  #byo a.home { align-self: flex-start; color: var(--accent); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  #byo .drop { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 16px; border: 2px dashed #b9c0ca;
+               border-radius: 4px; text-align: center; color: var(--muted); font-size: 13px; }
+  #byo .drop.over { border-color: var(--accent); background: rgba(29,73,231,.06); }
+  #byo button { padding: 7px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--ink);
+                font: inherit; font-size: 13px; cursor: pointer; }
+  #byo button:hover { border-color: var(--accent); }
+  #byo .cancel { align-self: flex-end; }
+  #byo input { display: none; }
   footer { padding: 8px 28px 32px; color: var(--faint); font-size: 12px; text-align: center; }
   footer a { color: inherit; }
   @media (max-width: 640px) {
@@ -229,6 +247,21 @@
     <h2 id="picker-h">Which program?</h2>
     <p></p>
     <ul></ul>
+    <button type="button" class="cancel">Cancel</button>
+  </div>
+</div>
+<div id="byo" role="dialog" aria-modal="true" aria-labelledby="byo-h">
+  <div class="box">
+    <h2 id="byo-h"></h2>
+    <p class="why"></p>
+    <a class="home" target="_blank" rel="noreferrer"></a>
+    <div class="drop">
+      <span class="t">Then drop the installer here, or choose it.</span>
+      <button type="button" class="choose">Choose the installer</button>
+      <input type="file" accept=".exe,.msi,application/x-msdownload,application/x-msi">
+    </div>
+    <p>It stays in this tab: it is copied into Windows here and its own setup opens on the desktop for you to click
+      through. Nothing is uploaded.</p>
     <button type="button" class="cancel">Cancel</button>
   </div>
 </div>
@@ -462,14 +495,127 @@
     b.type = 'button';
     b.className = `tile${t.wide ? ' wide' : ''}`;
     b.style.setProperty('--c', t.colour ?? colour(t.name));
-    const meta = t.meta ?? (t.bytes ? `${t.category} \u00b7 ${mb(t.bytes)} MB` : t.category ?? '');
+    const meta = t.meta ?? (t.bytes ? `${t.category} \u00b7 ${mb(t.bytes)} MB` : t.homepage ? `${t.category} \u00b7 your installer` : t.category ?? '');
     b.innerHTML = `${glyph(t)}<div><div class="name"></div><div class="meta"></div></div><span class="badge"></span>`;
+    if (byoIcon(t.id)) b.querySelector('.glyph').replaceWith(iconImg(byoIcon(t.id)));
     b.querySelector('.name').textContent = t.name;
     b.querySelector('.meta').textContent = meta;
     if (t.install && kept[t.id]) b.querySelector('.badge').textContent = 'Installed';
-    b.addEventListener('click', () => open(t, b));
+    // a tile whose installer the visitor brings: where to get it and a box to drop it on, until it is installed
+    b.addEventListener('click', () => (t.homepage && !t.file && !kept[t.id] ? bring(t, b) : open(t, b)));
     where.append(b);
   };
+  // --- bring your own installer (launcher.tsv: a homepage and no file) --------------------------------------------
+  // The site ships none of the vendor's bytes: the visitor downloads the installer from the vendor's site and drops
+  // it here; it goes into this tab's Windows only, and the tile runs it as any tile runs its installer. Its icon is
+  // read from the installer itself (the tile shows its initials until then) and kept in this browser.
+  const iconImg = (src) => Object.assign(document.createElement('img'), { className: 'glyph icon', src, alt: '', draggable: false });
+  const byoIcon = (id) => { try { return localStorage.getItem(`windemo-icon-${id}`); } catch { return null; } };
+  /** The largest icon in a PE file's resources (its group icon, RT_GROUP_ICON 14, and that entry's RT_ICON 3), as a
+   *  PNG data URL; null when the file is not a PE file or has none. Reads only the headers and the resource section. */
+  async function peIcon(file) {
+    const read = async (at, n) => new DataView(await file.slice(at, at + n).arrayBuffer());
+    const h = await read(0, 4096);
+    if (h.byteLength < 64 || h.getUint16(0, true) !== 0x5a4d) return null;
+    const pe = h.getUint32(0x3c, true);
+    if (pe + 24 > h.byteLength || h.getUint32(pe, true) !== 0x4550) return null;
+    const nsec = h.getUint16(pe + 6, true), optSize = h.getUint16(pe + 20, true), opt = pe + 24;
+    const dirs = opt + (h.getUint16(opt, true) === 0x20b ? 112 : 96);
+    const rsrcRva = h.getUint32(dirs + 2 * 8, true);
+    if (!rsrcRva) return null;
+    let sec = null;
+    for (let i = 0, o = opt + optSize; i < nsec && o + 40 <= h.byteLength; i++, o += 40) {
+      const va = h.getUint32(o + 12, true), size = Math.max(h.getUint32(o + 8, true), h.getUint32(o + 16, true)), raw = h.getUint32(o + 20, true);
+      if (rsrcRva >= va && rsrcRva < va + size) sec = { va, raw, size };
+    }
+    if (!sec || sec.size > 64 << 20) return null;
+    const r = await read(sec.raw, sec.size);
+    const at = (rva) => rva - sec.va;
+    const base = at(rsrcRva);
+    const entries = (dir) => {
+      const n = r.getUint16(dir + 12, true) + r.getUint16(dir + 14, true);
+      return Array.from({ length: n }, (_, i) => ({ id: r.getUint32(dir + 16 + i * 8, true), off: r.getUint32(dir + 20 + i * 8, true) }));
+    };
+    const sub = (e) => base + (e.off & 0x7fffffff);
+    const leaf = (dir) => { let e = entries(dir)[0]; while (e && e.off & 0x80000000) e = entries(sub(e))[0]; return e ? base + e.off : null; };
+    const data = (d) => ({ rva: r.getUint32(d, true), size: r.getUint32(d + 4, true) });
+    const top = entries(base);
+    const group = top.find((e) => e.id === 14), icons = top.find((e) => e.id === 3);
+    if (!group || !icons) return null;
+    const g = data(leaf(sub(entries(sub(group))[0])));
+    const gd = at(g.rva), count = r.getUint16(gd + 4, true);
+    let best = null;
+    for (let i = 0; i < count; i++) {
+      const e = gd + 6 + i * 14, w = r.getUint8(e) || 256, bits = r.getUint16(e + 6, true), id = r.getUint16(e + 12, true);
+      if (!best || w > best.w || (w === best.w && bits > best.bits)) best = { w, h: r.getUint8(e + 1) || 256, bits, id, e };
+    }
+    const one = best && entries(sub(icons)).find((e) => e.id === best.id);
+    if (!one) return null;
+    const d = data(leaf(sub(one)));
+    const img = new Uint8Array(r.buffer, r.byteOffset + at(d.rva), d.size);
+    // an .ico of that one image: ICONDIR, its entry (the group's, with the image's offset for its id), the image
+    const ico = new Uint8Array(22 + img.length);
+    const v = new DataView(ico.buffer);
+    v.setUint16(2, 1, true); v.setUint16(4, 1, true);
+    ico.set(new Uint8Array(r.buffer, r.byteOffset + best.e, 12), 6);
+    v.setUint32(18, 22, true);
+    ico.set(img, 22);
+    return icoPng(ico);
+  }
+  /** A one-image .ico's bytes as a PNG data URL (at most 96 pixels), or null. */
+  async function icoPng(ico) {
+    const bmp = await createImageBitmap(new Blob([ico], { type: 'image/x-icon' })).catch(() => null);
+    if (!bmp) return null;
+    const c = Object.assign(document.createElement('canvas'), { width: Math.min(96, bmp.width), height: Math.min(96, bmp.height) });
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png');
+  }
+  const setTileIcon = (t, b, src) => {
+    try { localStorage.setItem(`windemo-icon-${t.id}`, src); } catch { /* none */ }
+    b?.querySelector('.glyph')?.replaceWith(iconImg(src));
+  };
+  // the installed program's own icon (the agent's "windemo-icon ID BASE64" window): over the installer's, which is
+  // often its installer framework's
+  const icoToTile = (t, b, b64) => {
+    let bytes = null;
+    try { bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); } catch { return; }
+    icoPng(bytes).then((src) => src && setTileIcon(t, b, src)).catch(() => {});
+  };
+  const byoBox = $('byo');
+  let byoFor = null;
+  function bring(t, b) {
+    byoFor = { t, b };
+    byoBox.querySelector('h2').textContent = `Install ${t.name}`;
+    byoBox.querySelector('.why').textContent = `${t.name} is not ours to ship. Download its installer from ${t.name}'s own site; any version will do.`;
+    const a = byoBox.querySelector('a.home');
+    a.href = t.homepage; a.textContent = `Get ${t.name} from ${new URL(t.homepage).host}`;
+    byoBox.classList.add('on');
+    byoBox.querySelector('.choose').focus();
+  }
+  const byoClose = () => { byoBox.classList.remove('on'); byoBox.querySelector('.drop').classList.remove('over'); byoFor = null; };
+  async function brought(f) {
+    if (!byoFor || !f) return;
+    const { t, b } = byoFor;
+    byoClose();
+    console.log('[launcher]', JSON.stringify({ bring: t.id, file: f.name, bytes: f.size }));
+    // the installer's icon at once (until the installed program's comes, when the installer is not that program)
+    peIcon(f).then((src) => { if (src && !byoIcon(t.id)) setTileIcon(t, b, src); }).catch(() => {});
+    open({ ...t, file: f.name, own: f }, b);
+  }
+  {
+    const zone = byoBox.querySelector('.drop'), input = byoBox.querySelector('input');
+    const has = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+    for (const k of ['dragenter', 'dragover']) zone.addEventListener(k, (e) => { if (!has(e)) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy'; zone.classList.add('over'); });
+    zone.addEventListener('dragleave', (e) => { e.stopPropagation(); zone.classList.remove('over'); });
+    zone.addEventListener('drop', (e) => { if (!has(e)) return; e.preventDefault(); e.stopPropagation(); brought(e.dataTransfer.files[0]); });
+    // a drop anywhere else on the dialog is not the page's (the desktop's drop copies to the Wine Desktop)
+    for (const k of ['dragenter', 'dragover', 'drop']) byoBox.addEventListener(k, (e) => { e.preventDefault(); e.stopPropagation(); });
+    byoBox.querySelector('.choose').onclick = () => input.click();
+    input.onchange = () => { const f = input.files[0]; input.value = ''; brought(f); };
+    byoBox.querySelector('.cancel').onclick = byoClose;
+    byoBox.addEventListener('click', (e) => { if (e.target === byoBox) byoClose(); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && byoBox.classList.contains('on')) byoClose(); });
+  }
   // The agent's status window: "windemo-job ID STATE DETAIL".
   const windows = async () => {
     const d = await globalThis.__gexCompositor?.describe?.({ pixels: false }).catch(() => null);
@@ -546,6 +692,7 @@
   loadingBox.querySelector('.back').addEventListener('click', () => { loader.hide(); launcher.classList.remove('gone'); $('apps').classList.remove('on'); });
   // installers/FILE from this site into memory, its row counting (null: the site has none; the agent downloads it)
   async function fetchInstaller(t) {
+    if (t.own) return t.own;
     let res = null;
     try { res = await fetch(`installers/${encodeURIComponent(t.file)}`); } catch { /* not here */ }
     if (!res?.ok || !res.body) return null;
@@ -613,7 +760,9 @@
         row.done(`${mb(file.size)} MB`);
       }
       const id = `${t.id}-${Date.now().toString(36)}`;
-      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'check', 'launch'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`)].join('\r\n') + '\r\n';
+      // a tile whose installer the visitor brought: the installed program's icon, from the agent, for its tile
+      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'check', 'launch'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`),
+        ...(t.homepage ? ['icon=1'] : [])].join('\r\n') + '\r\n';
       const before = new Set(await windows());
       await app.drop([new File([job], `${id}.job`)], { dir: '/pfx/drive_c/windemo/queue' });
       if (!screen) status(`Starting ${t.name}…`);
@@ -637,7 +786,9 @@
         const me = ws.find((w) => w.startsWith(`windemo-job ${id} `));
         const [, , state, ...rest] = (me ?? '').split(' ');
         const detail = rest.join(' ');
-        const fresh = ws.filter((w) => w && !seen.has(w) && !w.startsWith('windemo-job'));
+        const fresh = ws.filter((w) => w && !seen.has(w) && !w.startsWith('windemo-job') && !w.startsWith('windemo-icon'));
+        const ic = t.homepage && ws.find((w) => w.startsWith(`windemo-icon ${id} `));
+        if (ic && !t.iconTaken) { t.iconTaken = true; icoToTile(t, b, ic.slice(`windemo-icon ${id} `.length)); }
         if (state === 'downloading') {
           // the agent's own download (this site has no copy): its row
           const [done, total] = detail.split(' ').map(Number);
@@ -665,7 +816,7 @@
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
-          const win = ws.find((w) => !before.has(w) && !w.startsWith('windemo-job') && w && (!title || title.test(w)));
+          const win = ws.find((w) => !before.has(w) && !w.startsWith('windemo-job') && !w.startsWith('windemo-icon') && w && (!title || title.test(w)));
           if (win) { status(null); if (!shown) loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
           if (Date.now() - started > 3 * 60e3) throw new Error(`${t.name} did not open a window`);
         } else if (state === 'failed') throw new Error(detail || 'it failed');

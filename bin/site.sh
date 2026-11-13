@@ -68,7 +68,7 @@ d=w64/dist/lib/wine/x86_64-windows
 specs=(desktop=$d/shell32.dll#16 exe=$d/shell32.dll#3)
 if [ -n "${INSTALLERS:-}" ]; then
   while IFS=$'\t' read -r id f m; do specs+=("$id=$INSTALLERS/$f${m:+::$m}"); done < <(grep -v '^#' $LAUNCHER |
-    awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } { print $1 "\t" $c["file"] "\t" $c["icon"] }')
+    awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } $c["file"] != "" { print $1 "\t" $c["file"] "\t" $c["icon"] }')
 fi
 python3 -I $WDR/tools/icons.py $out/icons "${specs[@]}" > logs/icons-$out.txt 2> logs/icons-$out.err
 ids=$(paste -sd, logs/icons-$out.txt); sed -i "s|const ICONS = null;|const ICONS = '$ids'.split(',');|" $out/index.html
@@ -78,7 +78,7 @@ python3 -I $WDR/tools/credits.py $WDR/tools/launcher.tsv $out/credits.html
 # installers/FILE, which the page fetches itself; a missing one the guest's agent downloads from its site.
 if [ -n "${INSTALLERS:-}" ]; then
   mkdir -p $out/installers
-  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 { print $6 }' $LAUNCHER | while read -r f; do
+  awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 && $6 != "" { print $6 }' $LAUNCHER | while read -r f; do
     [ -f "$INSTALLERS/$f" ] || { echo "site: no $INSTALLERS/$f (make installers)"; exit 1; }
     ln -f "$INSTALLERS/$f" $out/installers/ 2>/dev/null || cp "$INSTALLERS/$f" $out/installers/
   done
