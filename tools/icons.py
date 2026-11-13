@@ -2,10 +2,11 @@
 """icons.py OUT SPEC...: each SPEC is ID=PATH, a PE (.exe, .dll) or an .msi; OUT/ID.png is the largest image of
 its first icon group (RT_GROUP_ICON; an .msi's from its Icon table), scaled to 96x96 at most.
   ID=PATH#N        the PE's icon group N instead
-  ID=PATH::MEMBER  the icon of MEMBER, a program inside the installer PATH (an NSIS installer or a zip
-                   through 7-Zip's 7zz, an Inno Setup one through innoextract: $INNOEXTRACT, default on PATH)
+  ID=PATH::MEMBER  the icon of MEMBER, a program or an .msi inside the installer PATH (an NSIS installer or a
+                   zip through 7-Zip's 7zz, an Inno Setup one through innoextract: $INNOEXTRACT, default on PATH,
+                   a WiX bundle's attached payload by its file name in the bundle's manifest)
 A file with no icon is skipped and named on stderr. Prints ID for each icon written."""
-import io, os, shutil, struct, subprocess, sys, tempfile
+import io, os, re, shutil, struct, subprocess, sys, tempfile
 import olefile, pefile
 from PIL import Image
 
@@ -72,9 +73,36 @@ def msi_icon(path):
                 best = ico
     return best
 
+def burn_member(path, m, td):
+    """the bytes of payload M of the WiX bundle PATH (its manifest's FilePath), from its attached container, or
+    None: the manifest is the first container's member 0; the attached one a cabinet after it of the size the
+    manifest gives"""
+    subprocess.run(['7zz', 'e', '-y', f'-o{td}', path, '0'], capture_output=True)
+    f = os.path.join(td, '0')
+    if not os.path.isfile(f):
+        return None
+    man = open(f, 'rb').read().decode('utf-8', 'replace')
+    pay = re.search(rf'<Payload [^>]*FilePath="{re.escape(m)}"[^>]*SourcePath="([^"]+)"[^>]*Container="([^"]+)"', man)
+    if not pay:
+        return None
+    box = re.search(rf'<Container Id="{re.escape(pay[2])}" FileSize="(\d+)"[^>]*Attached="yes"', man)
+    if not box:
+        return None
+    d, size, i = open(path, 'rb').read(), int(box[1]), 0
+    while (i := d.find(b'MSCF\0\0\0\0', i + 1)) > 0:
+        if struct.unpack_from('<I', d, i + 8)[0] == size:
+            cab = os.path.join(td, 'attached.cab')
+            open(cab, 'wb').write(d[i:i + size])
+            subprocess.run(['7zz', 'e', '-y', f'-o{td}', cab, pay[1]], capture_output=True)
+            f = os.path.join(td, pay[1])
+            return open(f, 'rb').read() if os.path.isfile(f) else None
+    return None
+
 def member(path, m):
     """the bytes of MEMBER inside the installer PATH, or None"""
     with tempfile.TemporaryDirectory() as td:
+        if (d := burn_member(path, m, td)) is not None:
+            return d
         r = subprocess.run(['7zz', 'e', '-y', f'-o{td}', path, m], capture_output=True)
         f = os.path.join(td, os.path.basename(m))
         if r.returncode or not os.path.isfile(f):
@@ -107,7 +135,12 @@ def main():
         try:
             if m:
                 d = member(path, m)
-                ico = pe_icon(d) if d else None
+                if d and d[:8] == bytes.fromhex('d0cf11e0a1b11ae1'):
+                    with tempfile.NamedTemporaryFile(suffix='.msi') as t:
+                        t.write(d); t.flush()
+                        ico = msi_icon(t.name)
+                else:
+                    ico = pe_icon(d) if d else None
             elif path.lower().endswith('.msi'):
                 ico = msi_icon(path)
             else:

@@ -41,7 +41,7 @@ This repo holds only the pipeline. Its outputs go to `WD_OUT`, never into the re
 
    The page ships the PuTTYs and the 7-Zip `.exe` installers. The Notepad++ x86 zip is only a check's drop, and the msi and the x64 zip are there for the audit, which accounts for their members.
 
-5. **The launcher's installers** (`INSTALLERS`, fetched by `make installers`): the 20 public installers in `tools/launcher.tsv`, each checked against the SHA-256 there. `bin/site.sh` puts them at `installers/` beside the page and writes `credits.html` with each one's licence and upstream source. When one is missing from the site, the guest's agent downloads it from its own site.
+5. **The launcher's installers** (`INSTALLERS`, fetched by `make installers`): the 15 installers in `tools/launcher.tsv`, each checked against the SHA-256 there (Zed's, which has no download site yet, is put in `INSTALLERS` by hand). `bin/site.sh` puts them at `installers/` beside the page and writes `credits.html` with each one's licence and upstream source. When one is missing from the site, the guest's agent downloads it from its own site.
 
 Nothing from real Windows goes in. `tools/audit.py` accounts for every file in the bundle by content, and `mkbundle` and `site` fail if any file is unaccounted for.
 

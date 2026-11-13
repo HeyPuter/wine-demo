@@ -2,7 +2,8 @@
    C:\windemo\queue; the agent takes jobs one at a time. When `check` (a path) is missing, the app is not
    installed yet: the installer C:\users\gex\Downloads\`file` (the page puts it there; else the agent
    downloads `url` to it) runs as it would for anyone, its own windows up and nothing scripted (an .msi
-   through msiexec /i), and the agent waits for it to end. Then, when `check` exists, it runs `launch` (a
+   through msiexec /i; a .zip, which has no installer, through 7-Zip's own extraction window into
+   C:\Program Files\NAME), and the agent waits for it to end. Then, when `check` exists, it runs `launch` (a
    cmd line); when it does not, the user cancelled, and the job ends there. Each job's state is the title
    of a 1x1 tool window, "windemo-job ID STATE DETAIL", which the page reads from the desktop's window list:
    STATE is downloading (DETAIL: bytes done/total), installer (the installer's UI is up to the user),
@@ -100,17 +101,20 @@ out:
     return ok;
 }
 
-/* the installer at PATH as a visitor would run it (an .msi through msiexec /i), shown; its exit code, -1: it
+/* the installer at PATH as a visitor would run it (an .msi through msiexec /i; a .zip unpacked by 7-Zip's
+   extraction window into C:\Program Files\NAME, as a visitor with 7-Zip would), shown; its exit code, -1: it
    did not start */
-static int run_installer(const WCHAR *path)
+static int run_installer(const WCHAR *path, const WCHAR *name)
 {
-    WCHAR cmd[MAX_PATH * 2 + 64];
+    WCHAR cmd[MAX_PATH * 3 + 128];
     STARTUPINFOW si = { sizeof(si) };
     PROCESS_INFORMATION pi;
     DWORD code = 0;
     size_t n = wcslen(path);
-    if (n > 4 && !_wcsicmp(path + n - 4, L".msi")) _snwprintf(cmd, MAX_PATH * 2 + 63, L"C:\\windows\\system32\\msiexec.exe /i \"%s\"", path);
-    else _snwprintf(cmd, MAX_PATH * 2 + 63, L"\"%s\"", path);
+    if (n > 4 && !_wcsicmp(path + n - 4, L".msi")) _snwprintf(cmd, MAX_PATH * 3 + 127, L"C:\\windows\\system32\\msiexec.exe /i \"%s\"", path);
+    else if (n > 4 && !_wcsicmp(path + n - 4, L".zip"))
+        _snwprintf(cmd, MAX_PATH * 3 + 127, L"\"C:\\Program Files\\7-Zip\\7zG.exe\" x \"%s\" \"-oC:\\Program Files\\%s\"", path, name);
+    else _snwprintf(cmd, MAX_PATH * 3 + 127, L"\"%s\"", path);
     si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_SHOWNORMAL;
     if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, DOWNLOADS, &si, &pi)) return -1;
     CloseHandle(pi.hThread);
@@ -146,7 +150,7 @@ static void take_job(const WCHAR *path)
         _snwprintf(dl, MAX_PATH * 2 - 1, L"%s\\%s", DOWNLOADS, file);
         if (!exists(dl) && (!url[0] || !download(url, dl))) { if (!url[0]) say(L"failed", L"no installer"); return; }
         say(L"installer", NULL);
-        int rc = run_installer(dl);
+        int rc = run_installer(dl, name);
         if (rc < 0) { say(L"failed", L"the installer did not start (%lu)", GetLastError()); return; }
         if (check[0] && !exists(check)) { say(L"cancelled", L"%d", rc); return; }
     }

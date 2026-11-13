@@ -6,6 +6,8 @@ set -euo pipefail; . "$(dirname "$0")/../env.sh"
 mkdir -p "$INSTALLERS"; n=0
 while IFS=$'\t' read -r f url h; do
   [ -f "$INSTALLERS/$f" ] && [ "$(sha256sum < "$INSTALLERS/$f" | cut -d' ' -f1)" = "$h" ] && { n=$((n + 1)); continue; }
+  # no url (an installer with no download site yet): put in INSTALLERS by hand
+  [ -n "$url" ] || { echo "installers: no $INSTALLERS/$f with sha256 $h, and no url to fetch it from"; exit 1; }
   curl -sfL --max-time 1800 -o "$INSTALLERS/$f.part" "$url"
   [ "$(sha256sum < "$INSTALLERS/$f.part" | cut -d' ' -f1)" = "$h" ] || { rm -f "$INSTALLERS/$f.part"; echo "installers: $url is not $h"; exit 1; }
   mv "$INSTALLERS/$f.part" "$INSTALLERS/$f"; n=$((n + 1))
