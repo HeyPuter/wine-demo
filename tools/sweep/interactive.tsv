@@ -1,0 +1,10 @@
+# id	installer type	dl file	first window regex	installer windows regex (gone at the end)	pages (unused: Enter until the installer windows are gone)	alt-key before each	launch	title
+npp-ui	nsis	npp.8.6.9.Installer.x64.exe	Installer Language|Notepad\+\+ .*Setup	Installer Language|Setup	10		start "" "C:\Program Files\Notepad++\notepad++.exe"	Notepad\+\+
+audacity-ui	inno	audacity-win-3.6.4-64bit.exe	Select Setup Language|Setup - Audacity	Select Setup Language|Setup - Audacity	13	a	start "" "C:\Program Files\Audacity\Audacity.exe"	^Audacity$
+putty-ui	msi	putty-64bit-0.85-installer.msi	PuTTY.*Setup	PuTTY.*Setup	7	i	start "" "C:\Program Files\PuTTY\putty.exe"	PuTTY
+gvim-ui	nsis	gvim_9.2.1310_x64.exe	Installer Language|Vim .*Setup	Installer Language|Vim .*Setup	6	a	start "" "C:\Program Files\Vim\vim92\gvim.exe"	GVIM|Vim
+cherrytree-ui	inno	cherrytree_1.7.3.0_win64_setup_nolatex.exe	Select Setup Language|Setup - CherryTree	Select Setup Language|Setup - CherryTree	14	a	start "" "C:\Program Files\CherryTree\mingw64\bin\cherrytree.exe"	CherryTree
+copyq-ui	inno	copyq-17.0.0-setup.exe	Select Setup (Language|Install Mode)|Setup - CopyQ	Select Setup (Language|Install Mode)|Setup - CopyQ	14	a	start "" "C:\Program Files\CopyQ\copyq.exe"	CopyQ
+xnviewmp-ui	inno	XnViewMP-win-x64.exe	Select Setup Language|Setup - XnView	Select Setup Language|Setup - XnView	14	a	start "" "C:\Program Files\XnViewMP\xnviewmp.exe"	XnView
+ditto-ui	inno	DittoSetup_3_25_113_0.exe	Select Setup Language|Setup - Ditto	Select Setup Language|Setup - Ditto	14	a	start "" "C:\Program Files\Ditto\Ditto.exe"	Ditto
+notepad3-ui	inno	Notepad3_7.26.602.1_x64_Setup.exe	Select Setup (Language|Install Mode)|Setup - Notepad3	Select Setup (Language|Install Mode)|Setup - Notepad3	14	a	start "" "C:\Program Files\Notepad3\Notepad3.exe"	Notepad3

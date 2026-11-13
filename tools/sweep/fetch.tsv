@@ -1,0 +1,144 @@
+vcredist-x64	200	25635768	cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+vcredist-x86	200	13953392	0c09f2611660441084ce0df425c51c11e147e6447963c3690f97e0b25c55ed64	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+dotnet8-desktop	200	58398672	4de14de0b327e801d7a691cb1afc8a00db5313a698ef53b979fc6f84fce631de	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+dotnetfx48	200	121346568	0a3a390c47e639d0f7fc65b21195fee6b7f65b066f80f70c60fab191d14b7e40	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+directx-jun2010	200	100275120	053f76dcbb28802e23341b6a787e3b0791c0fa5c8d4d011b1044172dbf89c73b	PE32 executable (GUI) Intel 80386, for MS Windows, MS CAB-In
+java-jre	200	35004416	6a85618938fb3a1419455447a9250e15480da1d31fc5b399eb15212a905d50dc	Composite Document File V2 Document, Little Endian, Os: Wind
+7zip	200	1624144	67cb9d3452c9dd974b04f4a5fd842dbcba8184f2344ff72e3662d7cdb68b099b	PE32 executable (GUI) Intel 80386, for MS Windows, 4 section
+notepadpp	200	6541144	3fd473e00fa464f18af2dd930cf5bdba0709fdd841631598acccdb04c32a5cd2	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+vlc	200	44943296	9742689a50e96ddc04d80ceff046b28da2beefd617be18166f8c5e715ec60c59	PE32 executable (GUI) Intel 80386 (stripped to external PDB)
+chrome	200	171970560	55edacd348b4c1c9b291dab19e4665929c7a127c013d9625970be924f893273f	Composite Document File V2 Document, Little Endian, Os: Wind
+firefox	200	94602272	729af643b8e0a3809d6153a57a448cb96a01e6fa5e2e7ff782152ede6202eadd	PE32 executable (GUI) Intel 80386, for MS Windows, UPX compr
+putty	200	3846144	2213ebacf962b709411d654a40087508a694756bc4e41c5a1c24ad86596b2511	Composite Document File V2 Document, Little Endian, Os: Wind
+python	200	26538304	1206721601a62c925d4e4a0dcfc371e88f2ddbe8c0c07962ebb2be9b5bde4570	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+vscode	200	256317640	3f7c8b905cfd4795b9d5ff9cfded9085bd2fa14a1d5001e94d07c89f021d9950	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+git	200	68778832	30e8585fd7055eb1417ca4472dbcfcf65dd80c355613d3a6e115d695e7dc31bd	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+steam	200	2380800	7d3654531c32d941b8cae81c4137fc542172bfa9635f169cb392f245a0a12bcb	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+discord	200	160518072	8a12cb063b452e72dca041e32ccdc067f8200b293b89ca54f1083f13c7db8566	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+winrar	200	3912088	31f7ba37180f820313b2d32e76252344598409cb932109dd84a071cd58b64aa6	PE32+ executable (GUI) x86-64, for MS Windows, 8 sections
+libreoffice	200	365019136	cd7cc555ccafcf42d571662fdc29c37c68b49d32d3f8f5b2a113e782145d59e6	Composite Document File V2 Document, Little Endian, Os: Wind
+gimp	200	344465496	e3515980c9012eed67cf78f1151d216725529e95676c16f5ff7478d46230ddab	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+audacity	200	16441216	b11b3a96639d78ed295ca8a426da628dea951a965bfbce170708de5d4a93a75d	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+paintnet	200	84238734	3cd861b5af3f85bd28666d4a9017d03de237c08ad0103ee9d92b2cd921f8c867	Zip archive data, at least v2.0 to extract, compression meth
+obs	200	139799880	b87b4a52420908ca443b973a854c650b1a0b2ef436854ceeed320bd0357aff43	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+minecraft	200	2248704	e7040addf5fbb1dac0d7e61d0793b1550526accaf80a315e36b636285bd9d90e	Composite Document File V2 Document, Little Endian, Os: Wind
+inkscape	200	142962688	214263cb23d241134af0a22144c54ff1a1c0993d3a1c9ea7d76710f985a145df	Composite Document File V2 Document, Little Endian, Os: Wind
+filezilla	200	8966	8c79d2515832f5def62abbeff80f51a32f76c5bea04080976bce7aeb5a516f26	HTML document, ASCII text, with very long lines (2452)
+winscp	200	11611592	49e17ce8b1df637a71dfac483e9fef72f6747e4235cce3871a1bb3f3a1371127	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+zoom	200	221017600	8e81e0d7dc401880c4cdfd14db8bed51308608b7aa67fa1e2ca31ccaa71cad93	Composite Document File V2 Document, Little Endian, Os: Wind
+spotify	200	1075688	e0a5491cde2bd30afc25fe23ffa9049d037f6546df1f2c553fdab795c7f5c931	PE32+ executable (GUI) x86-64, for MS Windows, 7 sections
+telegram	200	63287944	a1884276d06cb33c459fa0a82887599d42bdeaa62cf8e077a39e57a325ed5454	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+sumatrapdf	200	8246744	2be4a27b83830ea07c6671c3557673d509544e5f70fc6b2dc8cc4388b302c1f2	PE32+ executable (GUI) x86-64, for MS Windows, 7 sections
+sublime	200	16047376	99650270aa32e8997aec2bde30ebe0f2d79a6a83e629293ce4537c74975dd924	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+irfanview	200	4508288	6b7e36c089194347be1bea5fea08dc97316f2181e40427e7e2867ad7ba3906a0	PE32+ executable (GUI) x86-64, for MS Windows, 6 sections
+foobar2000	200	6703322	b8c6ede3b39057170c6252dc660cf5180b06321b64b9774089f205bd3e813f90	PE32+ executable (GUI) x86-64, for MS Windows, Nullsoft Inst
+keepass	200	4399360	ea53f7f944fada950cd7bb154deb078123a357b7bc5e2484851762b3552eb48b	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+keepassxc	200	34394112	3b544343ce369377e54a3a6ac7a023b3c202ac034eea6e6886bb8185e95b6a49	Composite Document File V2 Document, Little Endian, Os: Wind
+everything	200	1913064	dae32a49b6052f0ec70895dd4e35b2b26222f7f4c19c36d9d309033e2fb622bc	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+cpuz	200	3592744	03fa495f824001fa09623b4586be4ccb988d95d4a7bf465850d5e393a98f8223	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+procexp	200	3813190	dab147316264b89ae46ae2ad7d8a94116848ef0b703bcac8de9ff22689ce9d51	Zip archive data, at least v2.0 to extract, compression meth
+sysinternals	200	374742194	e1e75de5cdb12116b0a4eca83725dc7c7a1645266196025cbe5ca6c167161aed	Zip archive data, at least v2.0 to extract, compression meth
+hxd	200	3348036	5065041c7b03c24b9533a5b32b33db58f2b4924cd84bed41834ff2db51c1cb7c	Zip archive data, at least v2.0 to extract, compression meth
+blender	200	322850816	459888a070da5b3755b73245b7d3b8da9d0ff5cdb23124588ea4a34da091f72c	Composite Document File V2 Document, Little Endian, Os: Wind
+thunderbird	200	85123472	70eac5e244f67cb4fbe4386da20f5287573233fc5139bcf0e8e522b61e4b013e	PE32 executable (GUI) Intel 80386, for MS Windows, UPX compr
+qbittorrent	200	35629629	4c3047ca4f9ba6009989906d744a9e71e58c4755e924f0a5fcc60c4ef5c4b009	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+windirstat	200	2535424	ef11b9f1ac15cb15b8d7ecb634120583d326789b4f7e567e3a7a2209f7bd7f64	Composite Document File V2 Document, Little Endian, Os: Wind
+peazip	200	9768250	7cfa0be1225903a167bb26c7448c95291a61a9a1b1d22c6e8ab4e132ea3810fd	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+mpc-hc	200	22053044	30e91b5f4326d0b89e18adfcd281098cccebd9da3190742251a8c27440bc2ca0	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+sharex	200	41055033	8f082b1939af2894fea681e6e807e577d15ea546fc0231f84720ac62867ca7f4	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+greenshot	200	1783200	1687311b4e7a3720be20490e8ed6cc772a32336a7bed8896e475b8ec616c6b81	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+notepad2	200	379899	37a62f7e891335a1e671f444cefe761fcd814a2fa1a3141fe2501d8433d8920b	Zip archive data, at least v2.0 to extract, compression meth
+depends	200	610769	03d73abba0e856c81ba994505373fdb94a13b84eb29e6c268be1bf21b7417ca3	Zip archive data, at least v2.0 to extract, compression meth
+supertux	200	178823737	97502d37e9525a5aa184adf44f9da7cf3a89a96755b61a0de4ea6002c8c1e232	Composite Document File V2 Document, Little Endian, Os: Wind
+openttd	200	8183880	06c44cb90653e48507e3e5050e698cae1efd52a593e754ac288f165cdf5a5579	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+wesnoth	200	434223085	3a83338eb85c9b9d6e7985c1c0bb9fdf59594fe04c72e261c4290ce9f586e0f6	PE32 executable (GUI) Intel 80386 (stripped to external PDB)
+supertuxkart	200	678997296	907a85f34a5355898a9187125affe9b4cdecf8f108c7c3a6a9d9a8ce7950967d	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+mirc	200	4561912	66f5ea8f6fb5612967a488675db58eaf8e5b8be8102b880df48e02b1da929537	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+handbrake	200	23779832	e4c3c965ed05492f73fa261d2e2560ed9f0506474956eefab176c44ee709a1ab	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+gfx-d3d9	200	234599	b6ebed216c289eb498f838eafcbc54329bbd7045c4b7d3a3923c934c8fe7792a	PE32 executable (GUI) Intel 80386, for MS Windows, 17 sectio
+gfx-d3d8	200	234599	d59d680af2492f6f92afcdcd13d9b2b92da4eb6f37ea6dda8456463f9e94df9b	PE32 executable (GUI) Intel 80386, for MS Windows, 17 sectio
+gfx-gl	200	238680	c3bca40074d7f357416e7f0dd9923cc57b13a05b6d821da7364c5ddbaba4eea5	PE32 executable (GUI) Intel 80386, for MS Windows, 17 sectio
+keepass-zip	200	3222872	6fa6c3a240a988447151bda939035f55bb97e937b3d9f1f7d46a807154c64e4c	Zip archive data, at least v2.0 to extract, compression meth
+chrome32	200	161386496	d57347b99605cd231726fdd605a0f21c6ba9750f3b688697f8f008e2b96984fa	Composite Document File V2 Document, Little Endian, Os: Wind
+winmerge	200	10004768	055e960261fc31723856082d2bf1aec2bcc2c71f1ae2d759efec3d766affeaec	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+krita	200	155770144	f419f4f71a99e59c4c65573388f2f5440e65341c47805240659578973a7516d8	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+potplayer	200	51257600	71374ce7f60136b8e8dd1618f736d37ccbefcc5875feb33650f9f8de0bba87e8	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+geany	200	22900496	fdc3e8d183533ae0c87ff3c2b035166e6a4d31379a2014320abd552d5558d8e9	PE32+ executable (GUI) x86-64 (stripped to external PDB), fo
+autohotkey	200	3044864	9224a3bd1757088320bf04c51efa43511160766bfee8d6555168293cd54b4c16	PE32 executable (GUI) Intel 80386, for MS Windows, UPX compr
+rufus	200	1622832	8279696c1d78b14618500e9135886a3667b9decc65946f3729002e4bfdbb20ab	PE32+ executable (GUI) x86-64 (stripped to external PDB), fo
+flameshot	200	43585536	e4559e32213ffa2e60533a02c5845aebfe110d5c8d8592739c6a6d202928fabf	Composite Document File V2 Document, Little Endian, Os: Wind
+gvim	200	12441839	fc24e3fc1ad1c255d5cfbe387360f1bb1e025aa46c3c18cc3f420fef7364c217	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+xnviewmp	200	71849136	ec9129b1262ade2df8c5b6e4d71edf223b99576a3a6e74398c76802b36aa9d81	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+ddnet	200	62012171	e6e81f297bc119ae4835779dfe508bb259090731cf42efe1c908a8607bccbf3a	Zip archive data, at least v2.0 to extract, compression meth
+calibre	200	291291136	05c0f2223866f8082e05b2d4bc9c57b31a833de8355a1191fd79c260c2636d38	Composite Document File V2 Document, Little Endian, Os: Wind
+hexchat	200	10878872	39da96a323ba98583e716a7ee5af1a02a34935dbe3b0865b54c65ce7784e0828	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+nodejs	200	30289920	9eea480bd30c98ae11a97cb89a9278235cbbbd03c171ee5e5198bd86b7965b4b	Composite Document File V2 Document, Little Endian, Os: Wind
+cmake	200	33959936	3e77402d80faec20efeacf0b9c683d405846377efe6f2aec1a8df82afcaadac4	Composite Document File V2 Document, Little Endian, Os: Wind
+golang	200	67469312	614f0e3eed82245dfb4356d4e8d5b96abecca6a4c4f0168c0e389e4dd6284db8	Composite Document File V2 Document, Little Endian, Os: Wind
+mediainfo	200	10297984	51203fc95c45a26fbbcdd78cab28009f4fa205041336c9206579882a3bd7e2af	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+wireshark	200	87277648	69a7f6e94e3744422efbb83528d42dd3ee19c12e253db040c33b75453152dce2	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+mkvtoolnix	200	29190056	1b685cbeb4b05e7cc342c92914486bd71a7ab0bfeb577106db94abfb9771da5a	PE32 executable (GUI) Intel 80386 (stripped to external PDB)
+mgba	200	16213259	d2ebe2e0783462a8c0615769a78318b94536306bf787b6907512e1e563ff5d59	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+lmms	200	36829951	5f20af1d782468507417d0785826b1f064fadba88ed1691e2def269922ace56b	PE32 executable (GUI) Intel 80386 (stripped to external PDB)
+shotcut	200	176385752	82c58ebaa79bc02287098b53c2a52cfbe382c13a6e10c56e31a5356587520d2c	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+darktable	200	120936575	a7255eaad0cd36ad4771441ef5ad052d3069a90991de50f9b394a7c235de61e3	PE32+ executable (GUI) x86-64 (stripped to external PDB), fo
+strawberryperl	200	205966555	29f72c3403d316b5ec48204546a7aad6b5567ff9a346cacd94af81fe0ffdc83e	Composite Document File V2 Document, Little Endian, Os: Wind
+doublecmd	200	10235088	9851f73ef071fa643292989addf0ffdd88defa3a55808b11a0da9704a64a1406	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+librecad	200	25444418	996014cc38e0e98d274fbbb89e4f6ff92455e487e3a06ba46a38feb7c575a9d2	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+stellarium	200	410548144	d137912a94c1f2c3f25b0b36f20e2e7d3610b337b854bcd82bb66dba61e38a01	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+neovim	200	12613528	ab303db898b193c8bbcee229052b7eb60da8c2ef852b0746158902860c2f8c48	Composite Document File V2 Document, Little Endian, Os: Wind
+ruby	200	16531512	e3e35c3508638a7f85724cd42376649b0dc3767e67d643896fa015700a68d3c1	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+powershell	200	109203456	ed331a04679b83d4c013705282d1f3f8d8300485eb04c081f36e11eaf1148bd0	Composite Document File V2 Document, Little Endian, Os: Wind
+pidgin	200	32338984	85b07dcddb160e0861aa4169527309a81e2ab449bf1bb019c7a21673d1c0c76b	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+tuxpaint	200	48009889	f585e63349adf0ff08802a3760ca13073b1a71a41e83669487d4044a84b800df	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+scribus	200	123182211	6d83526a6ff88208e52c474ecbc8b714ee51d8e5e1672cd6527b98d9c4977706	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+scummvm	200	125937424	4fb0d9426465aa6b245871fbb268c903b9bf4aee91b01f3a54363369a682348e	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+codeblocks	200	37451355	0e5f140c9371c39f46dc00cd75d6a7a8782814baefdf604f923e9ac647c59e09	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+thonny	200	22262568	bb600e31bf35c7dab7dc8b4f7830de6922fee5db4bb1854b89dfdb83de0ede69	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+emacs	200	72963436	d2a90dca2cb749288c1c77d174b3b92a03068048bae04e773cbd19284d0a31b5	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+rgui	200	85900616	eb68b50f21927e5e8ae3721d8afa88f74a09cbab19c6a87da41b5a44bd3158df	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+seamonkey	200	48070200	3045cde8d643f4fec93a2cca2139a6e9698fad5ba5f5a2141c3be00392e5c542	PE32 executable (GUI) Intel 80386, for MS Windows, 4 section
+transmission	200	18862080	29417282f2a5405018a211aa94e60d324657cf347e7a496ca7a51798ede0f6c1	Composite Document File V2 Document, Little Endian, Os: Wind
+meld	200	28401664	e1525657ff0e0d9762619b4930fa758756d5e766967764bd12c2f3914f16ece8	Composite Document File V2 Document, Little Endian, Os: Wind
+smplayer	200	65081441	d12626e601d2ac18e28db34360ce58c146a94ba9a174deaf6298b15bdf5ef1b1	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+audacious	200	43685817	1b28b177a191155182d6b0fa9754e0c5853923fd59a677fe2c82c1e81a784251	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+gnucash	200	173946804	a8fdeab6ea49dfb78fa5f6b638005b3e392a8d87c1ed6bc9b0f56ebb48eaa48f	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+freecad	200	511978400	31c499e76701d72a3819349e68e02287045911ab1ee42bd36cde96c55f8e0a8e	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+musescore3	200	112041984	fa3ca0f8cc5b0e8b0c0bb8ef11e227b9b27b2a5c9da28dab58bafcbb0eb657d0	Composite Document File V2 Document, Little Endian, Os: Wind
+gpg4win	200	35521800	2db44b086d860c51a4f45f43a739cd20fb0822189deb1c1cf13e4b5a3b05bc3b	PE32 executable (GUI) Intel 80386 (stripped to external PDB)
+deluge	200	39450759	183f401f088cbb973633dbeeb16ded1326b7aa567acfc9de32855d5be14653ae	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+sigil	200	124778831	1048e93afbb64d7dbfa61be80cfb677f1c6b6bf72efd4b89c891a358e34094bd	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+devcpp	200	74096906	9ea2f0237e5c72d485f9fa29def3f0a11c51f8b252f650be533e09a5e2ada247	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+conemu	200	7965008	2a56edd5515ddd916410de3d84e00069ce07566b2f81c612a4241a8b109d7f4c	PE32 executable (GUI) Intel 80386, for MS Windows, 5 section
+texstudio	200	139450464	c0215d60f9caad4567239bfeb7ecfc4b8d0cd81f9fd3c36313505d31642d86f4	PE32+ executable (GUI) x86-64 (stripped to external PDB), fo
+openshot	200	197841720	fa13e2e48e0b4c25c3ae38f1418d90b967001beedbc8891b6ccfcb9d54118630	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+kdenlive	200	119971032	ef6ce7bac088fa28de1ba845afaf71bb360053bceb48e2cd3476e260859f99f4	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+pdfsam	200	82644992	6c783236d1fb0acd9167dce637837c1ccf9b7b3a52bd5ccb03553273e0d6d3cb	Composite Document File V2 Document, Little Endian, Os: Wind
+warzone2100	200	346619894	1388c14fb73d6b409cf080cdfd7da32b74ab641020ef9ecb0bde9ef95fa15a01	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+lazarus	200	214165176	568ec39f976d789ad4cfee75c999f1fe4fe0cbf54089a2b26d3b098b9190cc75	PE32 executable (GUI) Intel 80386, for MS Windows, 8 section
+heidisql	200	44884312	0f47ca8662511f6182fb5580953cf4b098b5aa8fc1bbe1ff32eb5a1c5052286a	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+dbeaver	200	118934728	2d55c240e25ec6592e0806fe726713987db0a88a7fcbf764d80fdf7411f4b8a6	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+teraterm	200	10321360	b6ccb23a8c42c83cdf57478637b11f5df8dbad086d1b4ee85ca8f483ba9f0112	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+kodi	200	77228442	089519649fccf9fe0e5f9f6369521d035cd64553947a3bcea1acc7614e00a88f	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+hydrogen	200	41976854	3c78f2356ae7641fb7395dde3ebdf3970f0e07fb7dfe600b6b50632c0589a149	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+qview	200	22381673	a5d5912ad6e8efddee847da282d4bad42f3382c6caa704cff312a8edd2e748f5	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+openrct2	200	69915720	563262a3991d1492f5bfec5edd42d58def5b5d6ed6c754d79623616da55e71b3	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+notepad3	200	4882616	9cf68b38bcc1aa679050b9069174ab222383ba004c37bdd47056cafc71626be9	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+cherrytree	200	62149832	b4c8e0a5ef8aa40b9cd9da81dc3e0c819215e666a7452726235a0c70c1500351	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+anki	200	201621504	c35e7b90acf2929a71d70ac755a3dd0685f9fbe1a89d2f9edabb6fe7c0d91cba	Composite Document File V2 Document, Little Endian, Os: Wind
+copyq	200	19207133	33585174067273b391df13c0332adb60a3797ec47bfff9c26ff7c26e7dcd85d8	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+rawtherapee	200	47304123	d27df7ebde717c5efa114338a4b1cf1c426a439e5a1a92e142e87868cbe45383	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+mumble	200	49424160	a0647c20db59eedaa0e3696246c12d5daf9a2e1f1b15e145341621a9724108fe	PE32 executable (GUI) Intel 80386, for MS Windows, 6 section
+xournalpp	200	96924916	0524a354a2c2c680e9c4b3817a3fc9284b1e60760bac1a74c562701a4e355637	PE32 executable (GUI) Intel 80386, for MS Windows, Nullsoft 
+musescore4	200	135020544	41c9ca34fbf0b720f229ed3b0c4ff923b5d41a8c24ad9262e1fce390cd5c34e5	Composite Document File V2 Document, Little Endian, Os: Wind
+sqlitebrowser	200	19857408	d023d54b3a5db10c7e896089bb3dbe6e7f4bc4eaa9bbecb34ca414be5970f688	Composite Document File V2 Document, Little Endian, Os: Wind
+openscad	200	21876824	fbe1e590e1af2af863f5d92bd263eb4644d0ee29352e3ab566366e87a8f6ed12	PE32 executable (GUI) Intel 80386 (stripped to external PDB)
+ditto	200	5773896	fc354f1e9b9d2984099d4da93b4c569866dfe9bf1f590c1313e85e07f41224d3	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+celestia	200	38026435	76413c25dfea4bf096cc371fa8d7856815725ae1617a5e3e0a7f2dcc170a08b8	PE32 executable (GUI) Intel 80386, for MS Windows, 10 sectio
+godot	200	86013866	731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953	Zip archive data, at least v2.0 to extract, compression meth
+tiled	200	23425024	11a0e6c97cc105e07a57ea9995f2704617986722de4ab699d286dab0d2becc3f	Composite Document File V2 Document, Little Endian, Os: Wind
+pencil2d	200	72220430	c8d3044a0ab42b39cb2ac29c84d7d83a511dfe71d96d89a45b9c3dd82910be7c	Zip archive data, at least v2.0 to extract, compression meth
+luanti	200	17634089	bebce52b58555d8208bf16767d0717788479fef23c35ec8d7bf287774d641835	Zip archive data, at least v2.0 to extract, compression meth
+pcsx2	200	46714216	3422f3705ccc641b7e4fdf3f280d635d05c3c8b53a56c3af55d9df115bdcf768	PE32 executable (GUI) Intel 80386, for MS Windows, 11 sectio
+antimicrox	200	16037291	467648540ab4bcf83641cb22b3359669bf1b9130b87d4be0aa438221ef3eb06b	PE32+ executable (GUI) x86-64 (stripped to external PDB), fo
+cutter	200	140530846	a04154a03a392dbf5886a629938582f7d23a93636fa0611c3e1c34905b197e69	Zip archive data, at least v2.0 to extract, compression meth

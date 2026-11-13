@@ -1,0 +1,145 @@
+# id	drop (dl/ file, or x:<id>/<path> from the host-extracted zip)	install (cmd line, run in Desktop; empty: none)	launch (cmd line)	title regex (empty: any new window)
+vcredist-x64	vc_redist.x64.exe	start "" /wait vc_redist.x64.exe /install /quiet /norestart			cmd:reg query "HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" /v Installed
+vcredist-x86	vc_redist.x86.exe	start "" /wait vc_redist.x86.exe /install /quiet /norestart			cmd:reg query "HKLM\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86" /v Installed
+dotnet8-desktop	windowsdesktop-runtime-8-win-x64.exe	start "" /wait windowsdesktop-runtime-8-win-x64.exe /install /quiet /norestart	start "dotnet" cmd /k "C:\Program Files\dotnet\dotnet.exe" --list-runtimes	^dotnet	C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\*
+dotnetfx48	ndp48-x86-x64-allos-enu.exe|x:keepass/	start "" /wait ndp48-x86-x64-allos-enu.exe /q /norestart	start "" "C:\users\gex\Desktop\keepass\KeePass.exe"	KeePass	C:\windows\Microsoft.NET\Framework64\v4.0.30319\clr.dll
+keepass-zip	x:keepass/		start "" "C:\users\gex\Desktop\keepass\KeePass.exe"	KeePass
+directx-jun2010	directx_Jun2010_redist.exe	start "" /wait directx_Jun2010_redist.exe /Q /T:C:\dxtmp /C && start "" /wait C:\dxtmp\DXSETUP.exe /silent			C:\windows\SysWOW64\d3dx9_43.dll
+java-jre	temurin-jre21-x64.msi	start "" /wait msiexec /i temurin-jre21-x64.msi /qn	start "java" cmd /k for /d %d in ("C:\Program Files\Eclipse Adoptium\jre-*") do "%d\bin\java.exe" -version	^java
+7zip	7z2408-x64.exe	start "" /wait 7z2408-x64.exe /S	start "" "C:\Program Files\7-Zip\7zFM.exe"	^7-Zip
+notepadpp	npp.8.6.9.Installer.x64.exe	start "" /wait npp.8.6.9.Installer.x64.exe /S	start "" "C:\Program Files\Notepad++\notepad++.exe"	Notepad\+\+
+vlc	vlc-3.0.21-win64.exe	start "" /wait vlc-3.0.21-win64.exe /L=1033 /S	start "" "C:\Program Files\VideoLAN\VLC\vlc.exe"	VLC
+chrome	googlechromestandaloneenterprise64.msi	start "" /wait msiexec /i googlechromestandaloneenterprise64.msi /qn	start "" "C:\Program Files\Google\Chrome\Application\chrome.exe"	Chrome|New Tab
+firefox	firefox-setup-x64.exe	start "" /wait firefox-setup-x64.exe /S	start "" "C:\Program Files\Mozilla Firefox\firefox.exe"	Firefox|Mozilla
+putty	putty-64bit-0.85-installer.msi	start "" /wait msiexec /i putty-64bit-0.85-installer.msi /qn	start "" "C:\Program Files\PuTTY\putty.exe"	PuTTY
+python	python-3.12.7-amd64.exe	start "" /wait python-3.12.7-amd64.exe /quiet InstallAllUsers=0 PrependPath=1	start "" "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" -m idlelib	IDLE|Python
+vscode	VSCodeUserSetup-x64.exe	start "" /wait VSCodeUserSetup-x64.exe /VERYSILENT /NORESTART	start "" "%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"	Visual Studio Code|Welcome
+git	Git-2.47.0-64-bit.exe	start "" /wait Git-2.47.0-64-bit.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Git\git-bash.exe"	MINGW|mintty|bash
+steam	SteamSetup.exe	start "" /wait SteamSetup.exe /S	start "" "C:\Program Files (x86)\Steam\steam.exe"	Steam
+discord	DiscordSetup.exe	start "" /wait DiscordSetup.exe --silent	start "" "%LOCALAPPDATA%\Discord\Update.exe" --processStart Discord.exe	Discord
+winrar	winrar-x64-701.exe	start "" /wait winrar-x64-701.exe /S	start "" "C:\Program Files\WinRAR\WinRAR.exe"	WinRAR
+libreoffice	LibreOffice_24.2.7.2_Win_x86-64.msi	start "" /wait msiexec /i LibreOffice_24.2.7.2_Win_x86-64.msi /qn /norestart	start "" "C:\Program Files\LibreOffice\program\soffice.exe" --writer	LibreOffice|Writer|Untitled
+gimp	gimp-2.10.38-setup.exe	start "" /wait gimp-2.10.38-setup.exe /VERYSILENT /NORESTART /ALLUSERS	start "" "C:\Program Files\GIMP 2\bin\gimp-2.10.exe"	GIMP|GNU Image
+audacity	audacity-win-3.6.4-64bit.exe	start "" /wait audacity-win-3.6.4-64bit.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Audacity\Audacity.exe"	^Audacity$
+paintnet	x:paintnet/paint.net.5.1.12.install.x64.exe	start "" /wait paint.net.5.1.12.install.x64.exe /auto	start "" "C:\Program Files\paint.net\paintdotnet.exe"	paint\.net
+obs	OBS-Studio-30.2.3-Windows-Installer.exe	start "" /wait OBS-Studio-30.2.3-Windows-Installer.exe /S	start "" /d "C:\Program Files\obs-studio\bin\64bit" obs64.exe	OBS
+minecraft	MinecraftInstaller.msi	start "" /wait msiexec /i MinecraftInstaller.msi /qn	start "" "C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe"	Minecraft
+inkscape	inkscape-1.3.2-x64.msi	start "" /wait msiexec /i inkscape-1.3.2-x64.msi /qn	start "" "C:\Program Files\Inkscape\bin\inkscape.exe"	Inkscape
+winscp	WinSCP-6.3.5-Setup.exe	start "" /wait WinSCP-6.3.5-Setup.exe /VERYSILENT /ALLUSERS /NORESTART	start "" "C:\Program Files (x86)\WinSCP\WinSCP.exe"	WinSCP|Login
+zoom	ZoomInstallerFull.msi	start "" /wait msiexec /i ZoomInstallerFull.msi /qn	start "" "C:\Program Files\Zoom\bin\Zoom.exe"	Zoom
+spotify	SpotifySetup.exe	start "" /wait SpotifySetup.exe /silent	start "" "%APPDATA%\Spotify\Spotify.exe"	Spotify
+telegram	tsetup-x64.exe	start "" /wait tsetup-x64.exe /VERYSILENT /NORESTART	start "" "%APPDATA%\Telegram Desktop\Telegram.exe"	Telegram
+sumatrapdf	SumatraPDF-3.5.2-64-install.exe	start "" /wait SumatraPDF-3.5.2-64-install.exe -s	start "" "%LOCALAPPDATA%\SumatraPDF\SumatraPDF.exe"	Sumatra
+sublime	sublime_text_build_4180_x64_setup.exe	start "" /wait sublime_text_build_4180_x64_setup.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Sublime Text\sublime_text.exe"	Sublime|untitled
+irfanview	iview475_x64_setup.exe	start "" /wait iview475_x64_setup.exe /silent /folder="C:\Program Files\IrfanView"	start "" "C:\Program Files\IrfanView\i_view64.exe"	IrfanView
+foobar2000	foobar2000-x64_v2.1.6.exe	start "" /wait foobar2000-x64_v2.1.6.exe /S	start "" "C:\Program Files\foobar2000\foobar2000.exe"	foobar
+keepass	KeePass-2.57-Setup.exe	start "" /wait KeePass-2.57-Setup.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\KeePass Password Safe 2\KeePass.exe"	KeePass
+keepassxc	KeePassXC-2.7.9-Win64.msi	start "" /wait msiexec /i KeePassXC-2.7.9-Win64.msi /qn	start "" "C:\Program Files\KeePassXC\KeePassXC.exe"	KeePassXC
+everything	Everything-1.4.1.1026.x64-Setup.exe	start "" /wait Everything-1.4.1.1026.x64-Setup.exe /S	start "" "C:\Program Files\Everything\Everything.exe"	Everything
+cpuz	cpu-z_2.11-en.exe	start "" /wait cpu-z_2.11-en.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\CPUID\CPU-Z\cpuz.exe"	CPU-Z
+procexp	x:procexp/procexp64.exe		start "" procexp64.exe -accepteula	Process Explorer
+autoruns	x:sysinternals/Autoruns64.exe		start "" Autoruns64.exe -accepteula	Autoruns
+procmon	x:sysinternals/Procmon64.exe		start "" Procmon64.exe -accepteula	Process Monitor|Filter
+hxd	x:hxd/HxDSetup.exe	start "" /wait HxDSetup.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\HxD\HxD.exe"	HxD
+blender	blender-3.6.23-windows-x64.msi	start "" /wait msiexec /i blender-3.6.23-windows-x64.msi /qn	start "" "C:\Program Files\Blender Foundation\Blender 3.6\blender.exe"	Blender
+thunderbird	thunderbird-setup-x64.exe	start "" /wait thunderbird-setup-x64.exe /S	start "" "C:\Program Files\Mozilla Thunderbird\thunderbird.exe"	Thunderbird|Mozilla
+qbittorrent	qbittorrent_4.6.7_x64_setup.exe	start "" /wait qbittorrent_4.6.7_x64_setup.exe /S	start "" "C:\Program Files\qBittorrent\qbittorrent.exe"	qBittorrent|Legal
+windirstat	WinDirStat-x64.msi	start "" /wait msiexec /i WinDirStat-x64.msi /qn	start "" "C:\Program Files\WinDirStat\WinDirStat.exe"	WinDirStat
+peazip	peazip-9.9.1.WIN64.exe	start "" /wait peazip-9.9.1.WIN64.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\PeaZip\peazip.exe"	PeaZip|Computer.s root
+mpc-hc	MPC-HC.2.3.7.x64.exe	start "" /wait MPC-HC.2.3.7.x64.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\MPC-HC\mpc-hc64.exe"	MPC|Media Player
+sharex	ShareX-16.1.0-setup.exe	start "" /wait ShareX-16.1.0-setup.exe /VERYSILENT /NORESTART /NORUN	start "" "C:\Program Files\ShareX\ShareX.exe"	ShareX
+greenshot	Greenshot-INSTALLER-1.2.10.6-RELEASE.exe	start "" /wait Greenshot-INSTALLER-1.2.10.6-RELEASE.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Greenshot\Greenshot.exe"	Greenshot
+notepad2	x:notepad2/Notepad2.exe		start "" Notepad2.exe	Notepad2|Untitled
+depends	x:depends/depends.exe		start "" depends.exe	Dependency Walker
+supertux	SuperTux-v0.6.3-win64.msi	start "" /wait msiexec /i SuperTux-v0.6.3-win64.msi /qn	start "" /d "C:\Program Files\SuperTux\bin" supertux2.exe	SuperTux
+openttd	openttd-14.1-windows-win64.exe	start "" /wait openttd-14.1-windows-win64.exe /S	start "" "C:\Program Files\OpenTTD\openttd.exe"	OpenTTD
+wesnoth	wesnoth-1.18.2-win64.exe	start "" /wait wesnoth-1.18.2-win64.exe /S	start "" /d "C:\Program Files\Battle for Wesnoth 1.18.2" wesnoth.exe	Wesnoth
+supertuxkart	SuperTuxKart-1.4-installer-x86_64.exe	start "" /wait SuperTuxKart-1.4-installer-x86_64.exe /S	start "" /d "C:\Program Files\SuperTuxKart 1.4" supertuxkart.exe	SuperTuxKart
+mirc	mirc756.exe	start "" /wait mirc756.exe /S	start "" "C:\Program Files (x86)\mIRC\mirc.exe"	mIRC
+handbrake	HandBrake-1.8.2-x86_64-Win_GUI.exe	start "" /wait HandBrake-1.8.2-x86_64-Win_GUI.exe /S	start "" "C:\Program Files\HandBrake\HandBrake.exe"	HandBrake
+gfx-d3d9	gfxtri-d3d9.exe		start "" "C:\users\gex\Desktop\gfxtri-d3d9.exe"	^gfxtri d3d9 [1-9]
+gfx-d3d8	gfxtri-d3d8.exe		start "" "C:\users\gex\Desktop\gfxtri-d3d8.exe"	^gfxtri d3d8 [1-9]
+gfx-gl	gfxtri-gl.exe		start "" "C:\users\gex\Desktop\gfxtri-gl.exe"	^gfxtri gl [1-9]
+chrome32	googlechromestandaloneenterprise.msi	start "" /wait msiexec /i googlechromestandaloneenterprise.msi /qn	start "" "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"	Chrome|New Tab
+winmerge	WinMerge-2.16.44-x64-Setup.exe	start "" /wait WinMerge-2.16.44-x64-Setup.exe /VERYSILENT /NORESTART /SP-	start "" "C:\Program Files\WinMerge\WinMergeU.exe"	WinMerge	C:\Program Files\WinMerge\WinMergeU.exe
+krita	krita-x64-5.2.6-setup.exe	start "" /wait krita-x64-5.2.6-setup.exe /S	start "" "C:\Program Files\Krita (x64)\bin\krita.exe"	Krita	C:\Program Files\Krita (x64)\bin\krita.exe
+potplayer	PotPlayerSetup64.exe	start "" /wait PotPlayerSetup64.exe /S	start "" "C:\Program Files\DAUM\PotPlayer\PotPlayerMini64.exe"	PotPlayer	C:\Program Files\DAUM\PotPlayer\PotPlayerMini64.exe
+geany	geany-2.0_setup.exe	start "" /wait geany-2.0_setup.exe /S	start "" "C:\Program Files\Geany\bin\geany.exe"	Geany	C:\Program Files\Geany\bin\geany.exe
+autohotkey	ahk-v2.exe	start "" /wait ahk-v2.exe /silent	start "" "C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe" "C:\Program Files\AutoHotkey\UX\ui-dash.ahk"	AutoHotkey	C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe
+rufus	rufus-4.6.exe		start "" rufus-4.6.exe	^Rufus
+flameshot	Flameshot-12.1.0-win64.msi	start "" /wait msiexec /i Flameshot-12.1.0-win64.msi /qn	start "" "C:\Program Files\Flameshot\bin\flameshot.exe" & ping -n 30 127.0.0.1 >nul & start "" "C:\Program Files\Flameshot\bin\flameshot.exe" config	Configuration|Flameshot	C:\Program Files\Flameshot\bin\flameshot.exe
+gvim	gvim_9.2.1310_x64.exe	start "" /wait gvim_9.2.1310_x64.exe /S	start "" "C:\Program Files\Vim\vim92\gvim.exe"	GVIM|Vim	C:\Program Files\Vim\vim92\gvim.exe
+xnviewmp	XnViewMP-win-x64.exe	start "" /wait XnViewMP-win-x64.exe /VERYSILENT /NORESTART /SP-	start "" "C:\Program Files\XnViewMP\xnviewmp.exe"	XnView	C:\Program Files\XnViewMP\xnviewmp.exe
+ddnet	x:ddnet/DDNet-18.9-win64/		start "" /d "C:\users\gex\Desktop\DDNet-18.9-win64" DDNet.exe	DDNet
+calibre	calibre-64bit-9.18.0.msi	start "" /wait msiexec /i calibre-64bit-9.18.0.msi /qn	start "" "C:\Program Files\Calibre2\calibre.exe"	calibre	C:\Program Files\Calibre2\calibre.exe
+hexchat	HexChat.2.16.2.x64.exe	start "" /wait HexChat.2.16.2.x64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\HexChat\hexchat.exe"	HexChat	C:\Program Files\HexChat\hexchat.exe
+nodejs	node-v22.11.0-x64.msi	start "" /wait msiexec /i node-v22.11.0-x64.msi /qn	start "node" cmd /k "C:\Program Files\nodejs\node.exe" -e "console.log(process.version, require('os').cpus().length)"	^node	C:\Program Files\nodejs\node.exe
+cmake	cmake-3.31.0-windows-x86_64.msi	start "" /wait msiexec /i cmake-3.31.0-windows-x86_64.msi /qn	start "" "C:\Program Files\CMake\bin\cmake-gui.exe"	CMake	C:\Program Files\CMake\bin\cmake-gui.exe
+golang	go1.23.3.windows-amd64.msi	start "" /wait msiexec /i go1.23.3.windows-amd64.msi /qn	start "go" cmd /k "C:\Program Files\Go\bin\go.exe" version	^go	C:\Program Files\Go\bin\go.exe
+mediainfo	MediaInfo_GUI_24.11_Windows.exe	start "" /wait MediaInfo_GUI_24.11_Windows.exe /S	start "" "C:\Program Files\MediaInfo\MediaInfo.exe"	MediaInfo	C:\Program Files\MediaInfo\MediaInfo.exe
+wireshark	Wireshark-4.4.2-x64.exe	start "" /wait Wireshark-4.4.2-x64.exe /S	start "" "C:\Program Files\Wireshark\Wireshark.exe"	Wireshark	C:\Program Files\Wireshark\Wireshark.exe
+mkvtoolnix	mkvtoolnix-64-bit-88.0-setup.exe	start "" /wait mkvtoolnix-64-bit-88.0-setup.exe /S	start "" "C:\Program Files\MKVToolNix\mkvtoolnix-gui.exe"	MKVToolNix	C:\Program Files\MKVToolNix\mkvtoolnix-gui.exe
+mgba	mGBA-0.10.3-win64-installer.exe	start "" /wait mGBA-0.10.3-win64-installer.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\mGBA\mGBA.exe"	mGBA	C:\Program Files\mGBA\mGBA.exe
+lmms	lmms-1.2.2-win64.exe	start "" /wait lmms-1.2.2-win64.exe /S	start "" "C:\Program Files\LMMS\lmms.exe"	LMMS	C:\Program Files\LMMS\lmms.exe
+shotcut	shotcut-win64-241117.exe	start "" /wait shotcut-win64-241117.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /ALLUSERS	start "" "C:\Program Files\Shotcut\shotcut.exe"	 - Shotcut$	C:\Program Files\Shotcut\shotcut.exe
+darktable	darktable-4.8.1-win64.exe	start "" /wait darktable-4.8.1-win64.exe /S	start "" "C:\Program Files\darktable\bin\darktable.exe"	darktable	C:\Program Files\darktable\bin\darktable.exe
+strawberryperl	strawberry-perl-5.40.0.1-64bit.msi	start "" /wait msiexec /i strawberry-perl-5.40.0.1-64bit.msi /qn	start "perl" cmd /k C:\Strawberry\perl\bin\perl.exe -MConfig -e "print qq($^V $Config{archname})"	^perl	C:\Strawberry\perl\bin\perl.exe
+doublecmd	doublecmd-1.1.19.x86_64-win64.exe	start "" /wait doublecmd-1.1.19.x86_64-win64.exe /VERYSILENT /NORESTART /SP-	start "" "C:\Program Files\Double Commander\doublecmd.exe"	Double Commander	C:\Program Files\Double Commander\doublecmd.exe
+librecad	LibreCAD-Installer-2.2.0.2.exe	start "" /wait LibreCAD-Installer-2.2.0.2.exe /S	start "" "C:\Program Files (x86)\LibreCAD\librecad.exe"	Welcome|LibreCAD	C:\Program Files (x86)\LibreCAD\librecad.exe
+stellarium	stellarium-24.3-qt6-win64.exe	start "" /wait stellarium-24.3-qt6-win64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\Stellarium\stellarium.exe"	Stellarium	C:\Program Files\Stellarium\stellarium.exe
+neovim	nvim-win64.msi	start "" /wait msiexec /i nvim-win64.msi /qn	start "nvim" cmd /k "C:\Program Files\Neovim\bin\nvim.exe" --version	^nvim	C:\Program Files\Neovim\bin\nvim.exe
+ruby	rubyinstaller-3.3.6-1-x64.exe	start "" /wait rubyinstaller-3.3.6-1-x64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /ALLUSERS /DIR=C:\Ruby33-x64 /TASKS=modpath	start "ruby" cmd /k C:\Ruby33-x64\bin\ruby.exe -e "puts RUBY_DESCRIPTION"	^ruby	C:\Ruby33-x64\bin\ruby.exe
+powershell	PowerShell-7.4.6-win-x64.msi	start "" /wait msiexec /i PowerShell-7.4.6-win-x64.msi /qn	start "pwsh" "C:\Program Files\PowerShell\7\pwsh.exe" -NoExit -Command "$PSVersionTable.PSVersion"	pwsh|PowerShell	C:\Program Files\PowerShell\7\pwsh.exe
+pidgin	pidgin-2.14.13-offline.exe	start "" /wait pidgin-2.14.13-offline.exe /S	start "" "C:\Program Files (x86)\Pidgin\pidgin.exe"	Accounts|Pidgin	C:\Program Files (x86)\Pidgin\pidgin.exe
+tuxpaint	tuxpaint-0.9.34-windows-x86_64-installer.exe	start "" /wait tuxpaint-0.9.34-windows-x86_64-installer.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\TuxPaint\tuxpaint.exe"	Tux Paint	C:\Program Files\TuxPaint\tuxpaint.exe
+scribus	scribus-1.6.2-windows-x64.exe	start "" /wait scribus-1.6.2-windows-x64.exe /S	start "" "C:\Program Files\Scribus 1.6.2\Scribus.exe"	Scribus	C:\Program Files\Scribus 1.6.2\Scribus.exe
+scummvm	scummvm-2.8.1-win32.exe	start "" /wait scummvm-2.8.1-win32.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\ScummVM\scummvm.exe"	ScummVM	C:\Program Files\ScummVM\scummvm.exe
+codeblocks	codeblocks-20.03-setup.exe	start "" /wait codeblocks-20.03-setup.exe /S	start "" "C:\Program Files\CodeBlocks\codeblocks.exe"	Code::Blocks	C:\Program Files\CodeBlocks\codeblocks.exe
+thonny	thonny-4.1.4.exe	start "" /wait thonny-4.1.4.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /ALLUSERS /DIR=C:\Thonny	start "" "C:\Thonny\thonny.exe"	Thonny|^$	C:\Thonny\thonny.exe
+emacs	emacs-29.4-installer.exe	start "" /wait emacs-29.4-installer.exe /S	start "" "C:\Program Files\Emacs\emacs-29.4\bin\runemacs.exe"	emacs|GNU Emacs	C:\Program Files\Emacs\emacs-29.4\bin\runemacs.exe
+rgui	R-4.4.1-win.exe	start "" /wait R-4.4.1-win.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /DIR=C:\R	start "" "C:\R\bin\x64\Rgui.exe"	RGui	C:\R\bin\x64\Rgui.exe
+seamonkey	seamonkey-2.53.19.en-US.win64.installer.exe	start "" /wait seamonkey-2.53.19.en-US.win64.installer.exe -ms	start "" "C:\Program Files\SeaMonkey\seamonkey.exe"	SeaMonkey|Welcome	C:\Program Files\SeaMonkey\seamonkey.exe
+transmission	transmission-4.0.6-x64.msi	start "" /wait msiexec /i transmission-4.0.6-x64.msi /qn	start "" "C:\Program Files\Transmission\transmission-qt.exe"	Transmission	C:\Program Files\Transmission\transmission-qt.exe
+meld	Meld-3.22.2-mingw.msi	start "" /wait msiexec /i Meld-3.22.2-mingw.msi /qn	start "" "C:\Program Files\Meld\Meld.exe"	Meld	C:\Program Files\Meld\Meld.exe
+smplayer	smplayer-24.5.0-x64-unsigned.exe	start "" /wait smplayer-24.5.0-x64-unsigned.exe /S	start "" "C:\Program Files\SMPlayer\smplayer.exe"	SMPlayer	C:\Program Files\SMPlayer\smplayer.exe
+audacious	audacious-4.4-win32.exe	start "" /wait audacious-4.4-win32.exe /S	start "" "C:\Program Files (x86)\Audacious\bin\audacious.exe"	Audacious	C:\Program Files (x86)\Audacious\bin\audacious.exe
+gnucash	gnucash-5.8.setup.exe	start "" /wait gnucash-5.8.setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files (x86)\gnucash\bin\gnucash.exe"	GnuCash|Tip of the Day|Welcome	C:\Program Files (x86)\gnucash\bin\gnucash.exe
+freecad	FreeCAD-0.21.2-WIN-x64-installer-1.exe	start "" /wait FreeCAD-0.21.2-WIN-x64-installer-1.exe /S	start "" "C:\Program Files\FreeCAD 0.21\bin\FreeCAD.exe"	FreeCAD	C:\Program Files\FreeCAD 0.21\bin\FreeCAD.exe
+musescore3	MuseScore-3.6.2.548021803-x86_64.msi	start "" /wait msiexec /i MuseScore-3.6.2.548021803-x86_64.msi /qn	start "" "C:\Program Files\MuseScore 3\bin\MuseScore3.exe"	MuseScore	C:\Program Files\MuseScore 3\bin\MuseScore3.exe
+gpg4win	gpg4win-4.3.1.exe	start "" /wait gpg4win-4.3.1.exe /S	start "" "C:\Program Files (x86)\Gpg4win\bin\kleopatra.exe"	Kleopatra	C:\Program Files (x86)\Gpg4win\bin\kleopatra.exe
+deluge	deluge-2.1.1-win64-setup.exe	start "" /wait deluge-2.1.1-win64-setup.exe /S	start "" "C:\Program Files\Deluge\deluge.exe"	Deluge	C:\Program Files\Deluge\deluge.exe
+sigil	Sigil-2.1.0-Windows-x64-Setup.exe	start "" /wait Sigil-2.1.0-Windows-x64-Setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\Sigil\Sigil.exe"	Sigil	C:\Program Files\Sigil\Sigil.exe
+devcpp	Embarcadero_Dev-Cpp_6.3_TDM-GCC_9.2_Setup.exe	start "" /wait Embarcadero_Dev-Cpp_6.3_TDM-GCC_9.2_Setup.exe /S	start "" "C:\Program Files (x86)\Embarcadero\Dev-Cpp\devcpp.exe"	Dev-C\+\+|Embarcadero|^$	C:\Program Files (x86)\Embarcadero\Dev-Cpp\devcpp.exe
+conemu	ConEmuSetup.230724.exe	start "" /wait ConEmuSetup.230724.exe /p:x64 /quiet /norestart	start "" "C:\Program Files\ConEmu\ConEmu64.exe"	ConEmu|Fast Configuration	C:\Program Files\ConEmu\ConEmu64.exe
+texstudio	texstudio-4.8.4-win-qt6-signed.exe	start "" /wait texstudio-4.8.4-win-qt6-signed.exe /S	start "" "C:\Program Files\texstudio\texstudio.exe"	TeXstudio	C:\Program Files\texstudio\texstudio.exe
+openshot	OpenShot-v3.2.1-x86_64.exe	start "" /wait OpenShot-v3.2.1-x86_64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /ALLUSERS	start "" "C:\Program Files\OpenShot Video Editor\openshot-qt.exe"	OpenShot	C:\Program Files\OpenShot Video Editor\openshot-qt.exe
+kdenlive	kdenlive-24.08.3.exe	start "" /wait kdenlive-24.08.3.exe /S	start "" "C:\Program Files\kdenlive\bin\kdenlive.exe"	Kdenlive	C:\Program Files\kdenlive\bin\kdenlive.exe
+pdfsam	pdfsam-5.2.9.msi	start "" /wait msiexec /i pdfsam-5.2.9.msi /qn	start "" "C:\Program Files\PDFsam Basic\pdfsam.exe"	PDFsam	C:\Program Files\PDFsam Basic\pdfsam.exe
+warzone2100	warzone2100_win_x64_installer.exe	start "" warzone2100_win_x64_installer.exe /S & (for /l %i in (1,1,600) do @if not exist "C:\Program Files\Warzone 2100-4.5.5\bin\warzone2100.exe" ping -n 3 127.0.0.1 >nul) & ping -n 60 127.0.0.1 >nul & ver >nul	start "" "C:\Program Files\Warzone 2100-4.5.5\bin\warzone2100.exe"	Warzone	C:\Program Files\Warzone 2100-4.5.5\bin\warzone2100.exe
+lazarus	lazarus-3.6-fpc-3.2.2-win64.exe	start "" /wait lazarus-3.6-fpc-3.2.2-win64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /DIR=C:\lazarus	start "" "C:\lazarus\lazarus.exe"	Lazarus	C:\lazarus\lazarus.exe
+heidisql	HeidiSQL_12.8.0.6908_Setup.exe	start "" /wait HeidiSQL_12.8.0.6908_Setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /ALLUSERS	start "" "C:\Program Files\HeidiSQL\heidisql.exe"	^HeidiSQL	C:\Program Files\HeidiSQL\heidisql.exe
+dbeaver	dbeaver-ce-24.2.4-x86_64-setup.exe	start "" /wait dbeaver-ce-24.2.4-x86_64-setup.exe /S /allusers	start "" "C:\Program Files\DBeaver\dbeaver.exe"	DBeaver	C:\Program Files\DBeaver\dbeaver.exe
+teraterm	teraterm-5.3.exe	start "" /wait teraterm-5.3.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files (x86)\teraterm5\ttermpro.exe"	Tera Term	C:\Program Files (x86)\teraterm5\ttermpro.exe
+kodi	kodi-21.1-Omega-x64.exe	start "" /wait kodi-21.1-Omega-x64.exe /S	start "" "C:\Program Files\Kodi\kodi.exe"	Kodi	C:\Program Files\Kodi\kodi.exe
+hydrogen	Hydrogen-1.2.3-win64.exe	start "" /wait Hydrogen-1.2.3-win64.exe /S	start "" "C:\Program Files\Hydrogen\hydrogen.exe"	^Hydrogen .+	C:\Program Files\Hydrogen\hydrogen.exe
+qview	qView-6.1-win64.exe	start "" /wait qView-6.1-win64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\qView\qView.exe"	qView	C:\Program Files\qView\qView.exe
+openrct2	OpenRCT2-0.4.14-windows-installer-x64.exe	start "" /wait OpenRCT2-0.4.14-windows-installer-x64.exe /S & ver >nul	start "" "C:\Program Files\OpenRCT2\openrct2.exe"	OpenRCT2	C:\Program Files\OpenRCT2\openrct2.exe
+notepad3	Notepad3_7.26.602.1_x64_Setup.exe	start "" /wait Notepad3_7.26.602.1_x64_Setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\Notepad3\Notepad3.exe"	Notepad3	C:\Program Files\Notepad3\Notepad3.exe
+cherrytree	cherrytree_1.7.3.0_win64_setup_nolatex.exe	start "" /wait cherrytree_1.7.3.0_win64_setup_nolatex.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\CherryTree\ucrt64\bin\cherrytree.exe"	CherryTree	C:\Program Files\CherryTree\ucrt64\bin\cherrytree.exe
+anki	anki-26.09.4-win-x64.msi	start "" /wait msiexec /i anki-26.09.4-win-x64.msi /qn	start "" "C:\Program Files\Anki\Anki.exe"	Anki	C:\Program Files\Anki\Anki.exe
+copyq	copyq-17.0.0-setup.exe	start "" /wait copyq-17.0.0-setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\CopyQ\copyq.exe" & ping -n 20 127.0.0.1 >nul & "C:\Program Files\CopyQ\copyq.exe" show	CopyQ	C:\Program Files\CopyQ\copyq.exe
+rawtherapee	RawTherapee_5.13_win64_x86_64_release.exe	start "" /wait RawTherapee_5.13_win64_x86_64_release.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\RawTherapee\5.13\rawtherapee.exe"	RawTherapee	C:\Program Files\RawTherapee\5.13\rawtherapee.exe
+mumble	mumble_client-1.5.939.x64.exe	start "" /wait mumble_client-1.5.939.x64.exe /quiet /norestart	start "" "C:\Program Files\Mumble\client\mumble.exe"	Mumble	C:\Program Files\Mumble\client\mumble.exe
+xournalpp	xournalpp-1.3.8-windows-setup-AMD64.exe	start "" /wait xournalpp-1.3.8-windows-setup-AMD64.exe /S	start "" "C:\Program Files\Xournal++\bin\xournalpp.exe"	Xournal	C:\Program Files\Xournal++\bin\xournalpp.exe
+musescore4	MuseScore-Studio-4.7.6.261022093-x86_64.msi	start "" /wait msiexec /i MuseScore-Studio-4.7.6.261022093-x86_64.msi /qn	start "" "C:\Program Files\MuseScore 4\bin\MuseScore4.exe"	MuseScore	C:\Program Files\MuseScore 4\bin\MuseScore4.exe
+sqlitebrowser	DB.Browser.for.SQLite-v3.13.1-win64.msi	start "" /wait msiexec /i DB.Browser.for.SQLite-v3.13.1-win64.msi /qn	start "" "C:\Program Files\DB Browser for SQLite\DB Browser for SQLite.exe"	DB Browser	C:\Program Files\DB Browser for SQLite\DB Browser for SQLite.exe
+openscad	OpenSCAD-2021.01-x86-64-Installer.exe	start "" /wait OpenSCAD-2021.01-x86-64-Installer.exe /S	start "" "C:\Program Files\OpenSCAD\openscad.exe"	OpenSCAD	C:\Program Files\OpenSCAD\openscad.exe
+ditto	DittoSetup_3_25_113_0.exe	start "" /wait DittoSetup_3_25_113_0.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\Ditto\Ditto.exe"	Ditto	C:\Program Files\Ditto\Ditto.exe
+celestia	celestia-1.6.4.exe	start "" /wait celestia-1.6.4.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES "/DIR=C:\Program Files (x86)\Celestia"	start "" /d "C:\Program Files (x86)\Celestia" celestia.exe	Celestia	C:\Program Files (x86)\Celestia\celestia.exe
+godot	x:godot/Godot_v4.7.2-stable_win64.exe		start "" Godot_v4.7.2-stable_win64.exe --rendering-driver opengl3	Godot
+tiled	Tiled-1.12.2_Windows-10+_x86_64.msi	start "" /wait msiexec /i Tiled-1.12.2_Windows-10+_x86_64.msi /qn	start "" "C:\Program Files\Tiled\tiled.exe"	Tiled	C:\Program Files\Tiled\tiled.exe
+pencil2d	x:pencil2d/Pencil2D/		start "" /d "C:\users\gex\Desktop\Pencil2D" pencil2d.exe	Pencil2D
+luanti	x:luanti/luanti-5.18.0-win64/		start "" /d "C:\users\gex\Desktop\luanti-5.18.0-win64\bin" luanti.exe	Luanti
+pcsx2	pcsx2-v2.8.2-windows-x64-installer.exe	start "" /wait pcsx2-v2.8.2-windows-x64-installer.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES /CURRENTUSER "/DIR=C:\Program Files\PCSX2"	start "" "C:\Program Files\PCSX2\pcsx2-qt.exe"	PCSX2	C:\Program Files\PCSX2\pcsx2-qt.exe
+antimicrox	antimicrox-3.6.1-Windows-AMD64.exe	start "" /wait antimicrox-3.6.1-Windows-AMD64.exe /S	start "" "C:\Program Files\AntiMicroX\bin\antimicrox.exe"	AntiMicroX	C:\Program Files\AntiMicroX\bin\antimicrox.exe
+cutter	x:cutter/Cutter-v2.5.0-Windows-x86_64/		start "" /d "C:\users\gex\Desktop\Cutter-v2.5.0-Windows-x86_64" cutter.exe	Cutter
