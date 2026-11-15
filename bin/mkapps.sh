@@ -55,16 +55,17 @@ v=$c/mklinks.vbs
   done < $WDR/tools/start-menu.tsv
   # The desktop's shortcuts (tools/desktop-links.tsv), in user gex's Desktop folder, which the page's desktop shows
   mkdir -p "$c/users/gex/Desktop"
-  while IFS=$'\t' read -r name exe args; do
+  while IFS=$'\x1f' read -r name exe args icon; do
     case "$name" in ''|'#'*) continue;; esac
     [ -e "$c/$(echo "${exe#C:\\}" | tr '\\' /)" ] || { echo "mkapps: no $exe in the prefix (tools/desktop-links.tsv)"; exit 1; }
     echo "Set l = sh.CreateShortcut(\"C:\\users\\gex\\Desktop\\$name.lnk\")"
     echo "l.TargetPath = \"$exe\""
     [ -z "$args" ] || echo "l.Arguments = \"$args\""
     echo 'l.WorkingDirectory = "C:\users\gex\Desktop"'
-    echo "l.IconLocation = \"$exe,0\""
+    # Wine's desktop leaves out a shortcut it gets no icon from: the icon column for a program with none of its own
+    echo "l.IconLocation = \"${icon:-$exe,0}\""
     echo 'l.Save'
-  done < $WDR/tools/desktop-links.tsv
+  done < <(tr '\t' '\037' < $WDR/tools/desktop-links.tsv)
 } > "$v"
 (cd $c && timeout -k 10 600 systemd-run --user --scope -q -p TasksMax=1024 -p MemoryMax=16G nice -n 10 \
   $G run --env WINEPREFIX=$P --env WINEGEX_WOW64=1 --env WINEDEBUG=err+all,fixme-all --env USER=gex \

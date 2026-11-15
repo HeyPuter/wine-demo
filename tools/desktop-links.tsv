@@ -1,7 +1,8 @@
-# The shortcuts on the desktop (C:\users\gex\Desktop, bin/mkapps.sh): name, program, arguments. Each runs what the
-# launcher's tile for it ran, from the Desktop folder; its icon is the program's own.
+# The shortcuts on the desktop (C:\users\gex\Desktop, bin/mkapps.sh): name, program, arguments, icon. Each runs what
+# the launcher's tile for it ran, from the Desktop folder; its icon is the program's own, or the icon column's (FILE,INDEX;
+# a negative index is a resource id) for a program that has none, which Wine's desktop would otherwise leave out.
 Command Prompt	C:\windows\system32\cmd.exe	
-Files	C:\windows\explorer.exe	C:\users\gex\Desktop
+Files	C:\windows\explorer.exe	C:\users\gex\Desktop	C:\windows\system32\shell32.dll,-4
 Notepad++	C:\Program Files\Notepad++\notepad++.exe	
-Dillo	C:\Program Files\Dillo\dillo.exe	
+Dillo	C:\Program Files\Dillo\dillo.exe		C:\windows\system32\shell32.dll,-14
 7-Zip	C:\Program Files\7-Zip\7zFM.exe	

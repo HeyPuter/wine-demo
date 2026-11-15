@@ -617,9 +617,11 @@
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && byoBox.classList.contains('on')) byoClose(); });
   }
   // The agent's status window: "windemo-job ID STATE DETAIL".
+  // [{id, title}]: a window is told apart by its id, so a program's second window with the first one's title (a
+  // single-instance program asked again) is a new window
   const windows = async () => {
     const d = await globalThis.__gexCompositor?.describe?.({ pixels: false }).catch(() => null);
-    return (d?.list ?? []).map((l) => /"(.*)"$/.exec(l)?.[1] ?? '');
+    return (d?.list ?? []).map((l) => ({ id: /^\S+/.exec(l)?.[0] ?? l, title: /"(.*)"$/.exec(l)?.[1] ?? '' }));
   };
   // The loading screen: one row per item the clicked app is waiting on; done ones tick off.
   const loadingBox = $('loading');
@@ -763,7 +765,7 @@
       // a tile whose installer the visitor brought: the installed program's icon, from the agent, for its tile
       const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'check', 'launch'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`),
         ...(t.homepage ? ['icon=1'] : [])].join('\r\n') + '\r\n';
-      const before = new Set(await windows());
+      const before = new Set((await windows()).map((w) => w.id));
       await app.drop([new File([job], `${id}.job`)], { dir: '/pfx/drive_c/windemo/queue' });
       if (!screen) status(`Starting ${t.name}…`);
       const title = t.title ? new RegExp(t.title) : null;
@@ -782,11 +784,12 @@
       let seen = new Set(before);
       for (;;) {
         await sleep(500);
-        const ws = await windows();
+        const all = await windows();
+        const ws = all.map((w) => w.title);
         const me = ws.find((w) => w.startsWith(`windemo-job ${id} `));
         const [, , state, ...rest] = (me ?? '').split(' ');
         const detail = rest.join(' ');
-        const fresh = ws.filter((w) => w && !seen.has(w) && !w.startsWith('windemo-job') && !w.startsWith('windemo-icon'));
+        const fresh = all.filter((w) => w.title && !seen.has(w.id) && !w.title.startsWith('windemo-job') && !w.title.startsWith('windemo-icon')).map((w) => w.title);
         const ic = t.homepage && ws.find((w) => w.startsWith(`windemo-icon ${id} `));
         if (ic && !t.iconTaken) { t.iconTaken = true; icoToTile(t, b, ic.slice(`windemo-icon ${id} `.length)); }
         if (state === 'downloading') {
@@ -804,19 +807,21 @@
             console.log('[launcher]', JSON.stringify({ id: t.id, installer: fresh[0], s: Math.round((Date.now() - t0) / 100) / 10 }));
           }
           if (!shown && Date.now() - installer > 4 * 60e3) throw new Error(`the ${t.name} installer did not open a window`);
-          seen = new Set(ws);
+          seen = new Set(all.map((w) => w.id));
         } else if (state === 'cancelled') {
           // the installer ended and the app is not there: the desktop as it is
           if (!shown) loader.hide();
           status(null);
           console.log('[launcher]', JSON.stringify({ id: t.id, cancelled: detail }));
           return;
-        } else if (state === 'launching' || state === 'started') {
+        } else if (state === 'launching' || state === 'started' || (started && !me)) {
+          // (its status window goes 15 s after the launch; a program slower than that to show its window is
+          // still looked for until the limit below)
           R('installer').done();
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
-          const win = ws.find((w) => !before.has(w) && !w.startsWith('windemo-job') && !w.startsWith('windemo-icon') && w && (!title || title.test(w)));
+          const win = all.find((w) => !before.has(w.id) && w.title && !w.title.startsWith('windemo-job') && !w.title.startsWith('windemo-icon') && (!title || title.test(w.title)))?.title;
           if (win) { status(null); if (!shown) loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
           if (Date.now() - started > 3 * 60e3) throw new Error(`${t.name} did not open a window`);
         } else if (state === 'failed') throw new Error(detail || 'it failed');
