@@ -12,7 +12,7 @@ vlc	vlc-3.0.21-win64.exe	start "" /wait vlc-3.0.21-win64.exe /L=1033 /S	start ""
 chrome	googlechromestandaloneenterprise64.msi	start "" /wait msiexec /i googlechromestandaloneenterprise64.msi /qn	start "" "C:\Program Files\Google\Chrome\Application\chrome.exe"	Chrome|New Tab
 firefox	firefox-setup-x64.exe	start "" /wait firefox-setup-x64.exe /S	start "" "C:\Program Files\Mozilla Firefox\firefox.exe"	Firefox|Mozilla
 putty	putty-64bit-0.85-installer.msi	start "" /wait msiexec /i putty-64bit-0.85-installer.msi /qn	start "" "C:\Program Files\PuTTY\putty.exe"	PuTTY
-python	python-3.12.7-amd64.exe	start "" /wait python-3.12.7-amd64.exe /quiet InstallAllUsers=0 PrependPath=1	start "" "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" -m idlelib	IDLE|Python
+python	python-3.12.7-amd64.exe	start "" /wait python-3.12.7-amd64.exe /quiet InstallAllUsers=0 PrependPath=1 CompileAll=1	start "" "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" -m idlelib	IDLE|Python
 vscode	VSCodeUserSetup-x64.exe	start "" /wait VSCodeUserSetup-x64.exe /VERYSILENT /NORESTART	start "" "%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"	Visual Studio Code|Welcome
 git	Git-2.47.0-64-bit.exe	start "" /wait Git-2.47.0-64-bit.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Git\git-bash.exe"	MINGW|mintty|bash
 steam	SteamSetup.exe	start "" /wait SteamSetup.exe /S	start "" "C:\Program Files (x86)\Steam\steam.exe"	Steam
