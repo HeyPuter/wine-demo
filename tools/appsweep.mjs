@@ -257,14 +257,29 @@ const freshCmd = async () => {
   log(`a fresh cmd from the agent: ${w ? `${w.w}x${w.h} at ${w.x},${w.y}` : 'none (no agent in the session?)'}`);
   return w;
 };
+// the console's taskbar button: the first after Start, the console being the first window the boot opens
+const cmdButton = async () => {
+  const bar = (await wins()).find((x) => x.w >= 400 && x.h <= 40 && x.y > 0 && !x.title);
+  if (bar) { await click(bar.x + 160, bar.y + Math.floor(bar.h / 2)); await sleep(700); }
+  return !!bar;
+};
+// a point on the screen: a minimised window sits at its iconic place far off it (-32000,-32000), where a click
+// reaches nothing, so only points on the guest's W x H screen are hit-tested or clicked
+const onScreen = async (x, y) => x >= 0 && y >= 0 && x < W && y < H;
 const cmd = async (text) => {
   let w = (await wins()).find((x) => x.id === cmdWin.id) ?? cmdWin;
   const own = (k) => typeof k === 'string' && k.split(':')[0] === String(w.id).split(':')[0];
+  if (!(await onScreen(w.x + Math.min(300, w.w / 2), w.y + Math.min(200, w.h / 2)))) {
+    // minimised (minCmd) or moved off: restored from its taskbar button first, then found where it now is
+    await cmdButton();
+    w = (await wins()).find((x) => x.id === w.id) ?? w;
+    log(`cmd window off-screen: its taskbar button clicked, now ${w.w}x${w.h} at ${w.x},${w.y}`);
+  }
   let at = null;
   const pts = [[Math.min(300, w.w / 2), Math.min(200, w.h / 2)], ...[[0.25, 0.3], [0.75, 0.3], [0.25, 0.8], [0.75, 0.8], [0.5, 0.97], [0.95, 0.5], [0.5, 0.02]].map(([fx, fy]) => [w.w * fx, w.h * fy])];
   for (const [dx, dy] of pts) {
     const x = Math.round(w.x + dx), y = Math.round(w.y + dy);
-    if (own(await hit(x, y))) { at = [x, y]; break; }
+    if (await onScreen(x, y) && own(await hit(x, y))) { at = [x, y]; break; }
   }
   if (!at) {
     // covered: a fresh cmd from the agent, when it is on top (the old one stays where it is)
@@ -277,11 +292,10 @@ const cmd = async (text) => {
   }
   if (at) await click(...at);
   else {
-    // its taskbar button: the first after Start, the console being the first window the boot opens
-    const bar = (await wins()).find((x) => x.w >= 400 && x.h <= 40 && x.y > 0 && !x.title);
-    if (bar) { await click(bar.x + 160, bar.y + Math.floor(bar.h / 2)); await sleep(700); }
-    const x = Math.round(w.x + pts[0][0]), y = Math.round(w.y + pts[0][1]);
-    const up = own(await hit(x, y));
+    await cmdButton();
+    w = (await wins()).find((x) => x.id === w.id) ?? w;
+    const x = Math.round(w.x + Math.min(300, w.w / 2)), y = Math.round(w.y + Math.min(200, w.h / 2));
+    const up = await onScreen(x, y) && own(await hit(x, y));
     log(`cmd window covered: its taskbar button clicked, ${up ? 'now on top' : 'still covered'}`);
     if (up) await click(x, y);
     await sleep(700); await shot('cmd-raised');
