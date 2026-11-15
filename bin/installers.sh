@@ -5,12 +5,13 @@
 set -euo pipefail; . "$(dirname "$0")/../env.sh"
 [ -n "$INSTALLERS" ] || { echo "installers: off (INSTALLERS is empty)"; exit 0; }
 mkdir -p "$INSTALLERS"; n=0
-while IFS=$'\t' read -r f url h; do
+# fields split at \x1f, not tab: read folds runs of a whitespace IFS, so an empty url would take the hash's place
+while IFS=$'\x1f' read -r f url h; do
   [ -f "$INSTALLERS/$f" ] && [ "$(sha256sum < "$INSTALLERS/$f" | cut -d' ' -f1)" = "$h" ] && { n=$((n + 1)); continue; }
   # no url (an installer with no download site yet): put in INSTALLERS by hand
   [ -n "$url" ] || { echo "installers: no $INSTALLERS/$f with sha256 $h, and no url to fetch it from"; exit 1; }
   curl -sfL --max-time 1800 -o "$INSTALLERS/$f.part" "$url"
   [ "$(sha256sum < "$INSTALLERS/$f.part" | cut -d' ' -f1)" = "$h" ] || { rm -f "$INSTALLERS/$f.part"; echo "installers: $url is not $h"; exit 1; }
   mv "$INSTALLERS/$f.part" "$INSTALLERS/$f"; n=$((n + 1))
-done < <(grep -v '^#' "$WDR/tools/launcher.tsv" | awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } $c["file"] != "" { print $c["file"] "\t" $c["url"] "\t" $c["sha256"] }')
+done < <(grep -v '^#' "$WDR/tools/launcher.tsv" | awk -F'\t' '$1 == "id" { for (i = 1; i <= NF; i++) c[$i] = i; next } $c["file"] != "" { print $c["file"] "\x1f" $c["url"] "\x1f" $c["sha256"] }')
 echo "installers: $INSTALLERS ($n files)"
