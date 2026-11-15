@@ -229,19 +229,19 @@ out:
 }
 
 /* the installer at PATH as a visitor would run it (an .msi through msiexec /i; a .zip unpacked by 7-Zip's
-   extraction window into C:\Program Files\NAME, as a visitor with 7-Zip would), shown; its exit code, -1: it
-   did not start */
-static int run_installer(const WCHAR *path, const WCHAR *name)
+   extraction window into C:\Program Files\NAME, as a visitor with 7-Zip would), shown, with ARGS after it (an
+   installer's or msiexec's; not a .zip's); its exit code, -1: it did not start */
+static int run_installer(const WCHAR *path, const WCHAR *name, const WCHAR *args)
 {
-    WCHAR cmd[MAX_PATH * 3 + 128];
+    WCHAR cmd[MAX_PATH * 3 + 128 + 512];
     STARTUPINFOW si = { sizeof(si) };
     PROCESS_INFORMATION pi;
     DWORD code = 0;
     size_t n = wcslen(path);
-    if (n > 4 && !_wcsicmp(path + n - 4, L".msi")) _snwprintf(cmd, MAX_PATH * 3 + 127, L"C:\\windows\\system32\\msiexec.exe /i \"%s\"", path);
+    if (n > 4 && !_wcsicmp(path + n - 4, L".msi")) _snwprintf(cmd, MAX_PATH * 3 + 127 + 512, L"C:\\windows\\system32\\msiexec.exe /i \"%s\" %s", path, args);
     else if (n > 4 && !_wcsicmp(path + n - 4, L".zip"))
         _snwprintf(cmd, MAX_PATH * 3 + 127, L"\"C:\\Program Files\\7-Zip\\7zG.exe\" x \"%s\" \"-oC:\\Program Files\\%s\"", path, name);
-    else _snwprintf(cmd, MAX_PATH * 3 + 127, L"\"%s\"", path);
+    else _snwprintf(cmd, MAX_PATH * 3 + 127 + 512, L"\"%s\" %s", path, args);
     si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_SHOWNORMAL;
     if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, DOWNLOADS, &si, &pi)) return -1;
     CloseHandle(pi.hThread);
@@ -258,7 +258,7 @@ static int run_installer(const WCHAR *path, const WCHAR *name)
 
 static void take_job(const WCHAR *path)
 {
-    WCHAR text[8192] = L"", name[128], url[2048], file[MAX_PATH], check[MAX_PATH], launch[2048], icon[8];
+    WCHAR text[8192] = L"", name[128], url[2048], file[MAX_PATH], check[MAX_PATH], launch[2048], icon[8], args[512];
     WCHAR dl[MAX_PATH * 2], found[MAX_PATH];
     char raw[16384];
     DWORD n = 0;
@@ -269,7 +269,7 @@ static void take_job(const WCHAR *path)
     MultiByteToWideChar(CP_UTF8, 0, raw, -1, text, 8191);
     field(text, L"id", job_id, 64); field(text, L"name", name, 128); field(text, L"url", url, 2048);
     field(text, L"file", file, MAX_PATH); field(text, L"check", check, MAX_PATH); field(text, L"launch", launch, 2048);
-    field(text, L"icon", icon, 8);
+    field(text, L"icon", icon, 8); field(text, L"args", args, 512);
     if (!job_id[0]) return;
     if (check[0]) { WCHAR x[MAX_PATH]; if (ExpandEnvironmentStringsW(check, x, MAX_PATH)) wcscpy(check, x); }
     if (file[0] && !(check[0] && resolve(check, found, MAX_PATH)))
@@ -278,7 +278,7 @@ static void take_job(const WCHAR *path)
         _snwprintf(dl, MAX_PATH * 2 - 1, L"%s\\%s", DOWNLOADS, file);
         if (!exists(dl) && (!url[0] || !download(url, dl))) { if (!url[0]) say(L"failed", L"no installer"); return; }
         say(L"installer", NULL);
-        int rc = run_installer(dl, name);
+        int rc = run_installer(dl, name, args);
         if (rc < 0) { say(L"failed", L"the installer did not start (%lu)", GetLastError()); return; }
         if (check[0] && !resolve(check, found, MAX_PATH)) { say(L"cancelled", L"%d", rc); return; }
     }

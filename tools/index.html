@@ -763,7 +763,7 @@
       }
       const id = `${t.id}-${Date.now().toString(36)}`;
       // a tile whose installer the visitor brought: the installed program's icon, from the agent, for its tile
-      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'check', 'launch'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`),
+      const job = [`id=${id}`, `name=${t.name}`, ...['url', 'file', 'args', 'check', 'launch'].filter((k) => t[k]).map((k) => `${k}=${t[k]}`),
         ...(t.homepage ? ['icon=1'] : [])].join('\r\n') + '\r\n';
       const before = new Set((await windows()).map((w) => w.id));
       await app.drop([new File([job], `${id}.job`)], { dir: '/pfx/drive_c/windemo/queue' });
