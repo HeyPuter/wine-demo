@@ -9,10 +9,12 @@
 #   nocl     the start check again, the site served by tools/serve-nocl.mjs (no Content-Length, Range ignored,
 #            text gzipped) on NOCL_PORT (default 4384): it must start there too; and how many times the page
 #            took the rest bundle whole (a host that ignores Range gives nothing less)
+#   desk     the desktop's shortcuts: one icon each, and a shortcut to a program with no icon shows too
+#            (tools/desktop-check.mjs, headless Chromium here, not on the bench box)
 #   win32    the Win32 drops under WoW64 (DROPS: make drops): putty-x86.exe; the 7-Zip x86 installer, Install,
 #            then the installed 7zFM.exe opening test.zip; Notepad++ x86 portable (notepad++.exe)
 set -uo pipefail; . "$(dirname "$0")/../env.sh"; B=$WDR/bin; cd "$WD_OUT"
-t=${1:?TAG}; shift; STEPS=${*:-start launch banner prefs c2 win32}
+t=${1:?TAG}; shift; STEPS=${*:-start launch banner prefs c2 win32 desk}
 C=(SMOKE_SPKI=$SPKI SMOKE_PRELOAD_FILE=./start-preload.js SMOKE_OUT_W=1300 SMOKE_OUT_H=713)
 wins() { grep -a '\[wins\]' runs/out-$1/console.txt | tail -n1 | tr '|' '\n' | grep -o '"[^"]*"' | grep -v '""' | sort -u | tr '\n' ' '; }
 # at TAG KEY TITLE: seconds from the last KEY press (an Enter or a click) to the first window titled TITLE
@@ -40,6 +42,7 @@ prefs)
   bash $B/sweep.sh $t-pref 175 "92:click:20:703,95:click:30:612,98:click:170:$(row np),122:click:279:41,125:click:290:61" SMOKE_TCPU=500 | head -1
   echo "prefs: Preferences $(at sw-$t-pref 'click:290:61' '"Preferences"')";;
 c2) bash $B/redo-c2.sh $URL $t 2>&1 | grep -v REDO-DONE;;
+desk) SMOKE_SPKI=$SPKI $NODE_BIN/node $WDR/tools/desktop-check.mjs $URL runs/out-$t-desk 2>&1 | grep -a '^ok\|^FAIL\|^desktop-check';;
 win32)
   K="105:click:100:703,108:click:300:200,109:type:cd+desktop,110:Enter"
   bash $B/sweep.sh $t-putty 165 "$K,113:type:putty-x86,114:Enter" "SMOKE_DROP=100:900:400:@/putty-x86.exe" | head -1
