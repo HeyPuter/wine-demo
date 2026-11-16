@@ -366,9 +366,10 @@ const vmData = () => {
 // it, whether its process ran on wine.m64 and the renderer's VmData go to res.starts; the program is started
 // plan.restarts times more after the first, and with plan.reload once more after a reload of the page (the
 // record of which programs need 64-bit memory outlives it). The usual check then runs on the last start's window.
-async function restarts(appRe, t0, seen) {
-  res.starts = [];
-  const one = async (k, from) => {
+// One start's outcome, from `from`: the program's window or gex's notice (res.starts)
+async function startOne(appRe, seen, k, from) {
+  res.starts ??= [];
+  {
     const r = new RegExp(appRe);
     for (const end = from + (plan.timeout?.launch ?? 900); now() < end;) {
       await watch();
@@ -384,16 +385,23 @@ async function restarts(appRe, t0, seen) {
     }
     const st = { start: k, outcome: 'nothing', secs: +(now() - from).toFixed(1), m64: m64Execs.some((x) => x >= from), vmdata_mib: vmData() };
     res.starts.push(st); await shot(`start-${k}`); return st;
-  };
-  const again = async (k) => {
-    // a window the last start left (the program up) is closed by its process first: taskkill on its image
-    if (plan.image) { await cmd(`taskkill /f /im ${plan.image} >nul 2>&1 & title killed`); await waitWin('^killed$', 60); await sleep(5000); }
-    for (const w of await wins()) seen.add(w.id);
-    const t = now(); await cmd(`title launching & ${plan.launch}`); await minCmd();
-    return one(k, t);
-  };
-  let last = await one(1, t0);
-  for (let k = 2; k <= 1 + plan.restarts; k++) last = await again(k);
+  }
+}
+// The program started again (the plan's launch line)
+async function startAgain(appRe, seen, k) {
+  // a window the last start left (the program up) is closed by its process first: taskkill on its image
+  if (plan.image) { await cmd(`taskkill /f /im ${plan.image} >nul 2>&1 & title killed`); await waitWin('^killed$', 60); await sleep(5000); }
+  for (const w of await wins()) seen.add(w.id);
+  const t = now(); await cmd(`title launching & ${plan.launch}`); await minCmd();
+  return startOne(appRe, seen, k, t);
+}
+// Any start that ends on gex's notice gets one more, however many came before (a visitor starts it again, and
+// that start gets 64-bit memory), up to this many starts in all
+const MAX_STARTS = 5;
+async function restarts(appRe, t0, seen) {
+  const one = (k, from) => startOne(appRe, seen, k, from), again = (k) => startAgain(appRe, seen, k);
+  let last = await one(1, t0), k = 1;
+  while (k < 1 + (plan.restarts ?? 0) || (last.outcome === 'notice' && k < MAX_STARTS)) last = await again(++k);
   const pre = last;
   if (plan.reload) {
     phase = 'reload';
@@ -408,7 +416,8 @@ async function restarts(appRe, t0, seen) {
     if (plan.check) { await cmd(`if exist "${plan.check}" (title HAVE) else (title NOFILE)`); const c = await waitWin('^(HAVE|NOFILE)$', 60); res.notes.push(`after the reload: ${c?.title === 'HAVE' ? 'still installed' : 'not installed any more'}`); if (c?.title !== 'HAVE') done(); }
     for (const w of await wins()) seen.add(w.id);
     const t = now(); await cmd(`title launching & ${plan.launch}`); await minCmd();
-    last = await one(2 + plan.restarts, t);
+    last = await one(++k, t);
+    while (last.outcome === 'notice' && k < MAX_STARTS) last = await again(++k);
   }
   // the memory64 restart's window is the launch: a start after the reload that maps none is a note, and the
   // program is not there for the usable check
@@ -604,6 +613,16 @@ if (drawn) res.notes.push(`drawn: ${Math.round(drawn.frac * 100)}% of its ${live
 const undrawn = drawn && (drawn.frac <= 0.5 || drawn.top > 0.97);
 res.usable = !still ? 'window gone' : why ? why : undrawn ? `not drawn (${Math.round(drawn.frac * 100)}% of its window, ${Math.round(drawn.top * 100)}% one colour)` : changed === 0 ? 'no change' : 'ok';
 res.changed_px = changed;
+// The window gone on gex's notice in the interaction: that start ended on the notice too, so it is started
+// again (as any start that ends on it), and the starts after it are recorded; the usable check stays this one's
+if (!still && notices.some((x) => x.t >= t4)) {
+  const n = notices.find((x) => x.t >= t4);
+  res.notes.push(`the window went on the 64-bit memory notice in the interaction (${n.text}): started again`);
+  if (!res.starts?.length) res.starts = [{ start: 1, outcome: 'window', secs: res.times.launch, window: `${app.w}x${app.h} "${app.title}"`, ended: 'notice in the interaction' }];
+  let k = res.starts.length, last;
+  do last = await startAgain(appRe, seen, ++k); while (last.outcome === 'notice' && k < MAX_STARTS);
+  if (last.outcome === 'window') res.usable = `window gone on the 64-bit memory notice; start ${k}${last.m64 ? ' (memory64)' : ''}: ${last.window} in ${last.secs} s`;
+}
 if (res.usable !== 'ok') res.first_error = firstErr(t4) ?? res.usable;
 res.err_lines = errs.filter((e) => e.t >= t2).length; res.first_err_line = firstErr(t2);
 // any later plan steps (a second interaction to look at by eye)
