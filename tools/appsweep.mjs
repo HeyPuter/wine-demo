@@ -704,4 +704,27 @@ if (res.usable !== 'ok') res.first_error = firstErr(t4) ?? res.usable;
 res.err_lines = errs.filter((e) => e.t >= t2).length; res.first_err_line = firstErr(t2);
 // any later plan steps (a second interaction to look at by eye)
 if (plan.after) await run(plan.after);
+// a tile's second start after a page reload (plan.tile_reload: {secs}): the page reloaded, the tile clicked again
+// (installed now: straight to the program), and the window list followed each second for that long, its changes
+// logged ([wins]) with pictures every 30 s, to read the program's real window off (a splash has its title too)
+if (plan.tile && plan.tile_reload) {
+  phase = 'reload';
+  await s('Page.reload', { ignoreCache: false }).catch((e) => log('reload: ' + e.message));
+  const tr = now();
+  if (!(await waitWin(' - Wine Desktop$', 300))) res.notes.push('after the reload: no desktop in 300 s');
+  else {
+    res.times.reload_desktop = +(now() - tr).toFixed(1);
+    let have = false;
+    for (let i = 0; i < 120 && !have; i++) { have = await ev("!!document.querySelector('#launcher .tile')").catch(() => false); if (!have) await sleep(1000); }
+    const ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(plan.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false);
+    const tc = now(); log(`reload: tile clicked again: ${ok}`); res.times.reload_click = +(tc - tr).toFixed(1);
+    const r = new RegExp(plan.title ?? '.'); let first = null, lastShot = tc;
+    for (const end = tc + (plan.tile_reload.secs ?? 600); now() < end;) {
+      await watch();
+      if (!first && (await wins()).some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8)) { first = now(); res.times.reload_window = +(first - tc).toFixed(1); log(`reload: first ${plan.title} window ${res.times.reload_window} s after the click`); }
+      if (now() - lastShot >= 30) { lastShot = now(); await shot(`reload-${Math.round(now() - tc)}s`); }
+      await sleep(1000);
+    }
+  }
+}
 done();
