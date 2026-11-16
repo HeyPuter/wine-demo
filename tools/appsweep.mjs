@@ -499,7 +499,8 @@ if (plan.tile) {
       const ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(plan.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false);
       log(`tile clicked again: ${ok}`); res.times.again = +(now() - t2).toFixed(1);
     }
-    const inst = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100);
+    // (a progress window, titled with its percentage, is left alone: Enter there is its Cancel, as in 7-Zip's extraction)
+    const inst = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100 && !/^\d+% /.test(w.title));
     // plan.inst_steps: the installer's first window answered by these steps instead (a page whose default is
     // not the Enter key's: Python's "Install Now" link), once
     if (inst.length && plan.inst_steps && !instRan) { instRan = true; await shot('inst-steps'); const why = await run(plan.inst_steps); log(`installer steps${why ? ': ' + why : ''}`); }
