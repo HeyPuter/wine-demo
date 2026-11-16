@@ -515,6 +515,16 @@ if (!started) { await cmd(`title launching & ${plan.launch}`); await minCmd(); }
 // the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
 const appRe = plan.title ?? '^(?!launching$|RC-?\\d+$|Desktop$|$).+';
+// Any row: a first start that ends on gex's notice that the program needs 64-bit memory (the crash notice, recorded)
+// is started again, as a visitor would, and that start gets it; as a plan's restarts, with one.
+if (!plan.restarts) {
+  const r = new RegExp(appRe);
+  for (const end = now() + (plan.timeout?.launch ?? 180); now() < end;) {
+    if (notices.some((x) => x.t >= t3)) { res.notes.push('the first start ended on the 64-bit memory notice: started again'); plan.restarts = 1; break; }
+    if ((await wins()).some((w) => !seen.has(w.id) && r.test(w.title) && w.w > 8 && w.h > 8)) break;
+    await sleep(1000);
+  }
+}
 if (plan.restarts) await restarts(appRe, t3, seen);
 let app = await waitWin(appRe, plan.timeout?.launch ?? 180, seen, true);
 if (!app) { await shot('launch'); await newWins(); res.launch = bailed ? 'error box' : 'fail'; res.first_error = bailed ?? firstErr(t3) ?? `no window in ${plan.timeout?.launch ?? 180} s`; done(); }

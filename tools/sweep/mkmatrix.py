@@ -45,7 +45,10 @@ def verdict(i, r):
     if i in BLOCKED and r.get('usable') != 'ok': return BLOCKED[i]
     if r.get('wrong_dir'): return f'blocked: x64 install under {r["wrong_dir"]}'
     if r['pass'] in GPU and r.get('usable') == 'ok': return f"pass (GPU leg {r['pass']}: {GPU[r['pass']]})"
-    if r.get('usable') == 'ok' or ((r.get('install') or '').startswith('ok') and not r.get('launch') and not r.get('first_error')): return 'pass'
+    # a row with no launch line passes on its install alone; one the sweep started (or killed before its launch
+    # was judged) does not
+    started = r.get('starts') or any('killed' in n for n in r.get('notes') or [])
+    if r.get('usable') == 'ok' or ((r.get('install') or '').startswith('ok') and not r.get('launch') and not r.get('first_error') and not started): return 'pass'
     if (r.get('install') or '').startswith('ok') and r.get('launch') == 'ok': return 'partial (launches, interaction failed)'
     return 'fail'
 def rank(i): return RANK.get(i, lst.get(i, (999,))[0])
