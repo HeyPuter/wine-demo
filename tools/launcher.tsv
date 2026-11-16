@@ -28,4 +28,4 @@ godot	Godot	Development	86013866	https://github.com/godotengine/godot/releases/d
 zed	Zed	Development	39972142		Zed-x86_64.exe	start "" /wait Zed-x86_64.exe /VERYSILENT /NORESTART	start "" "%LOCALAPPDATA%\Programs\Zed\Zed.exe"	^(?![A-Z]:\\)	%LOCALAPPDATA%\Programs\Zed\Zed.exe	GPL-3.0-or-later		b2fa76a74ee7cae72c0ee1c014c3f55429732ba37ae01598ba46f06bb2bef052			
 flstudio	FL Studio	Media	0				start "" "C:\Program Files\Image-Line\FL Studio *\FL64.exe"	FL Studio	C:\Program Files\Image-Line\FL Studio *\FL64.exe	proprietary (trial)				https://www.image-line.com/fl-studio-download/	
 sublimetext	Sublime Text	Development	0				start "" "C:\Program Files\Sublime Text*\sublime_text.exe"	Sublime Text	C:\Program Files\Sublime Text*\sublime_text.exe	proprietary (evaluation)				https://www.sublimetext.com/download	
-winrar	WinRAR	Tools	0				start "" "C:\Program Files*\WinRAR\WinRAR.exe"	WinRAR	C:\Program Files*\WinRAR\WinRAR.exe	proprietary (trial)				https://www.win-rar.com/download.html	
+winrar	WinRAR	Tools	0				start "" "C:\Program Files*\WinRAR\WinRAR.exe"	 - WinRAR	C:\Program Files*\WinRAR\WinRAR.exe	proprietary (trial)				https://www.win-rar.com/download.html	
