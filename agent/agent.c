@@ -14,6 +14,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wininet.h>
+#include <tlhelp32.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -160,6 +161,27 @@ done:
     return ok;
 }
 
+/* whether a process of the program PATH runs (by its full image path, case aside) */
+static BOOL running(const WCHAR *path)
+{
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32W e = { sizeof e };
+    const WCHAR *base = wcsrchr(path, L'\\');
+    BOOL found = FALSE;
+    base = base ? base + 1 : path;
+    if (snap == INVALID_HANDLE_VALUE) return FALSE;
+    for (BOOL ok = Process32FirstW(snap, &e); ok && !found; ok = Process32NextW(snap, &e))
+    {
+        if (_wcsicmp(e.szExeFile, base)) continue;
+        HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, e.th32ProcessID);
+        WCHAR img[MAX_PATH]; DWORD n = MAX_PATH;
+        if (h && QueryFullProcessImageNameW(h, 0, img, &n) && !_wcsicmp(img, path)) found = TRUE;
+        if (h) CloseHandle(h);
+    }
+    CloseHandle(snap);
+    return found;
+}
+
 /* LINE with each PATTERN in it replaced by PATH (a launch line names the check's pattern) */
 static void replace_all(WCHAR *line, size_t cap, const WCHAR *pattern, const WCHAR *path)
 {
@@ -281,6 +303,9 @@ static void take_job(const WCHAR *path)
         int rc = run_installer(dl, name, args);
         if (rc < 0) { say(L"failed", L"the installer did not start (%lu)", GetLastError()); return; }
         if (check[0] && !resolve(check, found, MAX_PATH)) { say(L"cancelled", L"%d", rc); return; }
+        /* the installer's last page started the program (a "Run NAME" box, checked): not a second copy, which
+           can find the first one's settings file in use */
+        if (check[0] && running(found)) { say(L"started", NULL); return; }
     }
     if (launch[0])
     {
