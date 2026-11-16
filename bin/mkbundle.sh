@@ -41,8 +41,8 @@ key=$( { (cd w64/dist && { find . -type f -print0 | xargs -0 -P8 -n64 sha256sum;
 # the loose copies and the loader's memory64 module from before lowering (wcc64's OUT.64.wasm) are build
 # outputs nothing opens.
 rm -f w64/dist-s/lib/wine/x86_64-unix/{wine,wineserver}.wasm w64/dist-s/lib/wine/x86_64-unix/wine.64.wasm
-# ICU's data is icu.dll's alone, which the dist leaves out (noicu); nothing else opens it.
-rm -f w64/dist-s/share/wine/nls/icudtl.dat
+# ICU's data (share/wine/nls/icudtl.dat, icu.dll's) ships: a lazy file in the rest bundle, read by ICU users only
+# (.NET's globalization, among them), after the ordered files (tools/rest-order-all.txt does not name it).
 # Wine's raster fonts come with the dist (wine64-dist.sh's fon step).
 ls w64/dist-s/share/wine/fonts/*.fon > /dev/null || { echo 'mkbundle: the dist has no .fon fonts'; exit 1; }
 
