@@ -482,7 +482,7 @@ let t2 = now();
 if (plan.tile) {
   phase = 'install';
   t2 = now(); const r = new RegExp(plan.title ?? '.');
-  let presses = 0, up = false, quiet = 0, asked = 0, again = false;
+  let presses = 0, up = false, quiet = 0, asked = 0, again = false, instRan = false;
   const CONFIRM = /^exit setup$|cancel|abort|^confirm/i;
   for (const end = now() + (plan.timeout?.install ?? 1500); !up;) {
     await watch();
@@ -500,7 +500,10 @@ if (plan.tile) {
       log(`tile clicked again: ${ok}`); res.times.again = +(now() - t2).toFixed(1);
     }
     const inst = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100);
-    if (inst.length) {
+    // plan.inst_steps: the installer's first window answered by these steps instead (a page whose default is
+    // not the Enter key's: Python's "Install Now" link), once
+    if (inst.length && plan.inst_steps && !instRan) { instRan = true; await shot('inst-steps'); const why = await run(plan.inst_steps); log(`installer steps${why ? ': ' + why : ''}`); }
+    else if (inst.length) {
       const w = inst[inst.length - 1];
       if (presses < 40) await shot(`inst-${presses}`);
       await click(w.x + Math.floor(w.w / 2), w.y + 10); await sleep(300);
