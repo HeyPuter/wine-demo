@@ -490,6 +490,9 @@ if (plan.tile) {
     up = l.some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8);
     if (up) break;
     if (now() >= end) { await shot('install-timeout'); await newWins(); res.install = 'timeout'; res.first_error = firstErr(t2) ?? `no ${plan.title} window in ${plan.timeout?.install ?? 1500} s (${presses} presses)`; done(); }
+    // the loading screen's failure box (the desktop exited, the job failed): the row ends on its words
+    const box = await ev("(() => { const b = document.querySelector('#loading .why.on'); return b ? b.innerText.replace(/\\s+/g, ' ') : null; })()").catch(() => null);
+    if (box) { await shot('page-failed'); res.install = 'page: ' + box; res.first_error = firstErr(t2) ?? box; done(); }
     // the program's first start ended on gex's 64-bit memory notice: its tile clicked again, as a visitor would
     if (!again && notices.some((x) => x.t >= t2)) {
       again = true; res.notes.push('the first start ended on the 64-bit memory notice: the tile clicked again'); await sleep(8000);
