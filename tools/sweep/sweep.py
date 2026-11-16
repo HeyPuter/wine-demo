@@ -33,12 +33,15 @@ RANK = {'procexp': 39, 'autoruns': 40.1, 'procmon': 40.2}
 # Shotcut: a 320x320 splash titled Shotcut while it loads its plugins, then "Untitled - Shotcut".
 # Stellarium rewrites its own code while it starts (the JIT's self-modifying-code path): main window 481 s after exec.
 # Rows whose start is JIT-heavy like that wait at least 900 s.
-LAUNCH_T = {'audacity': 900, 'anki': 600, 'rawtherapee': 600, 'openshot': 900, 'dbeaver': 900, 'pdfsam': 900, 'thunderbird': 900, 'firefox': 900, 'firefox32': 900, 'thunderbird32': 900, 'seamonkey': 900, 'thonny': 600, 'deluge': 1200, 'shotcut': 600, 'pidgin': 600, 'openscad': 900, 'libreoffice': 1500, 'stellarium': 900}
+# The Minecraft Launcher updates itself first (a "Minecraft Updater" window, then a new launcher process).
+LAUNCH_T = {'audacity': 900, 'anki': 600, 'rawtherapee': 600, 'openshot': 900, 'dbeaver': 900, 'pdfsam': 900, 'thunderbird': 900, 'firefox': 900, 'firefox32': 900, 'thunderbird32': 900, 'seamonkey': 900, 'thonny': 600, 'deluge': 1200, 'shotcut': 600, 'pidgin': 600, 'openscad': 900, 'libreoffice': 1500, 'stellarium': 900, 'minecraft': 900, 'gnucash': 900, 'freecad': 900}
 # Settle before the usable keys past appsweep's 6 s: SuperTux and SuperTuxKart show a Loading screen for tens of
 # seconds after their window (STK's keys landed on it).
 # Krita: a 160x160 splash at its first window, its main window 2 to 3 min after it on a GPU.
+# TeXstudio and Kodi: their splash is the program's window under its own title (Kodi's fullscreen), and the
+# sweep's keys landed on it: 300 s.
 # Transmission (Qt 6): its first paint some 10 s after its window alone, past 20 s with three runs at once.
-SETTLE = {'supertuxkart': 60000, 'supertux': 45000, 'krita': 300000, 'zoom': 90000, 'doublecmd': 60000, 'mkvtoolnix': 90000, 'shotcut': 120000, 'darktable': 180000, 'scribus': 180000, 'steam': 1500000, 'transmission': 30000, 'libreoffice': 300000}
+SETTLE = {'texstudio': 300000, 'kodi': 300000, 'supertuxkart': 60000, 'supertux': 45000, 'krita': 300000, 'zoom': 90000, 'doublecmd': 60000, 'mkvtoolnix': 90000, 'shotcut': 120000, 'darktable': 180000, 'scribus': 180000, 'steam': 1500000, 'transmission': 30000, 'libreoffice': 300000}
 # (Zoom's window is white for 30-60 s on the page before its D3D content)
 # a picture every that many seconds of a plan's settle
 SHOTS = {'steam': 60}
@@ -79,6 +82,8 @@ RESTARTS = {'firefox': {'restarts': 1, 'reload': True, 'image': 'firefox.exe'},
             'dbeaver': {'restarts': 1, 'reload': True, 'image': 'dbeaver.exe'},
             'pdfsam': {'restarts': 1, 'reload': True, 'image': 'pdfsam.exe'}}
 USE = {'krita': [{'click': [124, 200], 'in': '^Krita$'}, {'sleep': 5}],
+       # Ditto's popup is its whole UI and closes on Alt (the default keys): its search box takes a letter
+       'ditto': [{'type': 'a'}, {'sleep': 3}], 'ditto-ui': [{'type': 'a'}, {'sleep': 3}],
        # MediaInfo's empty view draws nothing new on a click: its Help menu does
        'mediainfo': [{'click': [228, 25], 'in': 'MediaInfo$'}, {'sleep': 3}]}
 UI = {}

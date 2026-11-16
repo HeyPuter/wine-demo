@@ -24,7 +24,7 @@ gimp	gimp-2.10.38-setup.exe	start "" /wait gimp-2.10.38-setup.exe /VERYSILENT /N
 audacity	audacity-win-3.6.4-64bit.exe	start "" /wait audacity-win-3.6.4-64bit.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Audacity\Audacity.exe"	^Audacity$
 paintnet	x:paintnet/paint.net.5.1.12.install.x64.exe	start "" /wait paint.net.5.1.12.install.x64.exe /auto	start "" "C:\Program Files\paint.net\paintdotnet.exe"	paint\.net
 obs	OBS-Studio-30.2.3-Windows-Installer.exe	start "" /wait OBS-Studio-30.2.3-Windows-Installer.exe /S	start "" /d "C:\Program Files\obs-studio\bin\64bit" obs64.exe	OBS
-minecraft	MinecraftInstaller.msi	start "" /wait msiexec /i MinecraftInstaller.msi /qn	start "" "C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe"	Minecraft
+minecraft	MinecraftInstaller.msi	start "" /wait msiexec /i MinecraftInstaller.msi /qn	start "" "C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe"	^Minecraft Launcher$
 inkscape	inkscape-1.3.2-x64.msi	start "" /wait msiexec /i inkscape-1.3.2-x64.msi /qn	start "" "C:\Program Files\Inkscape\bin\inkscape.exe"	Inkscape
 winscp	WinSCP-6.3.5-Setup.exe	start "" /wait WinSCP-6.3.5-Setup.exe /VERYSILENT /ALLUSERS /NORESTART	start "" "C:\Program Files (x86)\WinSCP\WinSCP.exe"	WinSCP|Login
 zoom	ZoomInstallerFull.msi	start "" /wait msiexec /i ZoomInstallerFull.msi /qn	start "" "C:\Program Files\Zoom\bin\Zoom.exe"	Zoom
@@ -70,7 +70,7 @@ geany	geany-2.0_setup.exe	start "" /wait geany-2.0_setup.exe /S	start "" "C:\Pro
 autohotkey	ahk-v2.exe	start "" /wait ahk-v2.exe /silent	start "" "C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe" "C:\Program Files\AutoHotkey\UX\ui-dash.ahk"	AutoHotkey	C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe
 rufus	rufus-4.6.exe		start "" rufus-4.6.exe	^Rufus
 flameshot	Flameshot-12.1.0-win64.msi	start "" /wait msiexec /i Flameshot-12.1.0-win64.msi /qn	start "" "C:\Program Files\Flameshot\bin\flameshot.exe" & ping -n 30 127.0.0.1 >nul & start "" "C:\Program Files\Flameshot\bin\flameshot.exe" gui	flameshot|Flameshot	C:\Program Files\Flameshot\bin\flameshot.exe
-gvim	gvim_9.2.1310_x64.exe	start "" /wait gvim_9.2.1310_x64.exe /S /allusers	start "" "C:\Program Files\Vim\vim92\gvim.exe"	GVIM|Vim	C:\Program Files\Vim\vim92\gvim.exe
+gvim	gvim_9.2.1310_x64.exe	start "" /wait gvim_9.2.1310_x64.exe /S /allusers	start "" "C:\Program Files\Vim\gvim.exe"	GVIM|Vim	C:\Program Files\Vim\gvim.exe
 xnviewmp	XnViewMP-win-x64.exe	start "" /wait XnViewMP-win-x64.exe /VERYSILENT /NORESTART /SP-	start "" "C:\Program Files\XnViewMP\xnviewmp.exe"	XnView	C:\Program Files\XnViewMP\xnviewmp.exe
 ddnet	x:ddnet/DDNet-18.9-win64/		start "" /d "C:\users\gex\Desktop\DDNet-18.9-win64" DDNet.exe	DDNet
 calibre	calibre-64bit-9.18.0.msi	start "" /wait msiexec /i calibre-64bit-9.18.0.msi /qn	start "" "C:\Program Files\Calibre2\calibre.exe"	calibre	C:\Program Files\Calibre2\calibre.exe
@@ -105,8 +105,8 @@ transmission	transmission-4.0.6-x64.msi	start "" /wait msiexec /i transmission-4
 meld	Meld-3.22.2-mingw.msi	start "" /wait msiexec /i Meld-3.22.2-mingw.msi /qn	start "" "C:\Program Files\Meld\Meld.exe"	Meld	C:\Program Files\Meld\Meld.exe
 smplayer	smplayer-24.5.0-x64-unsigned.exe	start "" /wait smplayer-24.5.0-x64-unsigned.exe /S	start "" "C:\Program Files\SMPlayer\smplayer.exe"	SMPlayer	C:\Program Files\SMPlayer\smplayer.exe
 audacious	audacious-4.4-win32.exe	start "" /wait audacious-4.4-win32.exe /S	start "" "C:\Program Files (x86)\Audacious\bin\audacious.exe"	Audacious	C:\Program Files (x86)\Audacious\bin\audacious.exe
-gnucash	gnucash-5.8.setup.exe	start "" /wait gnucash-5.8.setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files (x86)\gnucash\bin\gnucash.exe"	GnuCash|Tip of the Day|Welcome	C:\Program Files (x86)\gnucash\bin\gnucash.exe
-freecad	FreeCAD-0.21.2-WIN-x64-installer-1.exe	start "" /wait FreeCAD-0.21.2-WIN-x64-installer-1.exe /S	start "" "C:\Program Files\FreeCAD 0.21\bin\FreeCAD.exe"	FreeCAD	C:\Program Files\FreeCAD 0.21\bin\FreeCAD.exe
+gnucash	gnucash-5.8.setup.exe	start "" /wait gnucash-5.8.setup.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files (x86)\gnucash\bin\gnucash.exe"	^(GnuCash Tip Of The Day|Tip of the Day|Welcome.*|.+ - GnuCash)$	C:\Program Files (x86)\gnucash\bin\gnucash.exe
+freecad	FreeCAD-0.21.2-WIN-x64-installer-1.exe	start "" /wait FreeCAD-0.21.2-WIN-x64-installer-1.exe /S	start "" "C:\Program Files\FreeCAD 0.21\bin\FreeCAD.exe"	^FreeCAD [0-9]	C:\Program Files\FreeCAD 0.21\bin\FreeCAD.exe
 musescore3	MuseScore-3.6.2.548021803-x86_64.msi	start "" /wait msiexec /i MuseScore-3.6.2.548021803-x86_64.msi /qn	start "" "C:\Program Files\MuseScore 3\bin\MuseScore3.exe"	MuseScore	C:\Program Files\MuseScore 3\bin\MuseScore3.exe
 gpg4win	gpg4win-4.3.1.exe	start "" /wait gpg4win-4.3.1.exe /S	start "" "C:\Program Files (x86)\Gpg4win\bin\kleopatra.exe"	Kleopatra	C:\Program Files (x86)\Gpg4win\bin\kleopatra.exe
 deluge	deluge-2.1.1-win64-setup.exe	start "" /wait deluge-2.1.1-win64-setup.exe /S	start "" "C:\Program Files\Deluge\deluge.exe"	Deluge	C:\Program Files\Deluge\deluge.exe
