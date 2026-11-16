@@ -481,7 +481,7 @@ let t2 = now();
 if (plan.tile) {
   phase = 'install';
   t2 = now(); const r = new RegExp(plan.title ?? '.');
-  let presses = 0, up = false, quiet = 0, asked = 0;
+  let presses = 0, up = false, quiet = 0, asked = 0, again = false;
   const CONFIRM = /^exit setup$|cancel|abort|^confirm/i;
   for (const end = now() + (plan.timeout?.install ?? 1500); !up;) {
     await watch();
@@ -489,6 +489,12 @@ if (plan.tile) {
     up = l.some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8);
     if (up) break;
     if (now() >= end) { await shot('install-timeout'); await newWins(); res.install = 'timeout'; res.first_error = firstErr(t2) ?? `no ${plan.title} window in ${plan.timeout?.install ?? 1500} s (${presses} presses)`; done(); }
+    // the program's first start ended on gex's 64-bit memory notice: its tile clicked again, as a visitor would
+    if (!again && notices.some((x) => x.t >= t2)) {
+      again = true; res.notes.push('the first start ended on the 64-bit memory notice: the tile clicked again'); await sleep(8000);
+      const ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(plan.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false);
+      log(`tile clicked again: ${ok}`); res.times.again = +(now() - t2).toFixed(1);
+    }
     const inst = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100);
     if (inst.length) {
       const w = inst[inst.length - 1];
