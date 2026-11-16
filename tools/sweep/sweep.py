@@ -31,7 +31,9 @@ RANK = {'procexp': 39, 'autoruns': 40.1, 'procmon': 40.2}
 # Firefox (Gecko, on the twin): GL at 81 s and a content process at 89 s, no window in 240 s: 900 to tell slow from stuck.
 # LibreOffice Writer was still loading at 555 s: 1500.
 # Shotcut: a 320x320 splash titled Shotcut while it loads its plugins, then "Untitled - Shotcut".
-LAUNCH_T = {'audacity': 900, 'anki': 600, 'rawtherapee': 600, 'openshot': 900, 'dbeaver': 900, 'pdfsam': 900, 'thunderbird': 900, 'firefox': 900, 'firefox32': 900, 'thunderbird32': 900, 'seamonkey': 900, 'thonny': 600, 'deluge': 1200, 'shotcut': 600, 'pidgin': 600, 'openscad': 900, 'libreoffice': 1500}
+# Stellarium rewrites its own code while it starts (the JIT's self-modifying-code path): main window 481 s after exec.
+# Rows whose start is JIT-heavy like that wait at least 900 s.
+LAUNCH_T = {'audacity': 900, 'anki': 600, 'rawtherapee': 600, 'openshot': 900, 'dbeaver': 900, 'pdfsam': 900, 'thunderbird': 900, 'firefox': 900, 'firefox32': 900, 'thunderbird32': 900, 'seamonkey': 900, 'thonny': 600, 'deluge': 1200, 'shotcut': 600, 'pidgin': 600, 'openscad': 900, 'libreoffice': 1500, 'stellarium': 900}
 # Settle before the usable keys past appsweep's 6 s: SuperTux and SuperTuxKart show a Loading screen for tens of
 # seconds after their window (STK's keys landed on it).
 # Krita: a 160x160 splash at its first window, its main window 2 to 3 min after it on a GPU.
