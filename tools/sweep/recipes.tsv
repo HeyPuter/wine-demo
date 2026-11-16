@@ -67,7 +67,7 @@ potplayer	PotPlayerSetup64.exe	start "" /wait PotPlayerSetup64.exe /S	start "" "
 geany	geany-2.0_setup.exe	start "" /wait geany-2.0_setup.exe /S	start "" "C:\Program Files\Geany\bin\geany.exe"	Geany	C:\Program Files\Geany\bin\geany.exe
 autohotkey	ahk-v2.exe	start "" /wait ahk-v2.exe /silent	start "" "C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe" "C:\Program Files\AutoHotkey\UX\ui-dash.ahk"	AutoHotkey	C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe
 rufus	rufus-4.6.exe		start "" rufus-4.6.exe	^Rufus
-flameshot	Flameshot-12.1.0-win64.msi	start "" /wait msiexec /i Flameshot-12.1.0-win64.msi /qn	start "" "C:\Program Files\Flameshot\bin\flameshot.exe" & ping -n 30 127.0.0.1 >nul & start "" "C:\Program Files\Flameshot\bin\flameshot.exe" config	Configuration|Flameshot	C:\Program Files\Flameshot\bin\flameshot.exe
+flameshot	Flameshot-12.1.0-win64.msi	start "" /wait msiexec /i Flameshot-12.1.0-win64.msi /qn	start "" "C:\Program Files\Flameshot\bin\flameshot.exe" & ping -n 30 127.0.0.1 >nul & start "" "C:\Program Files\Flameshot\bin\flameshot.exe" gui	flameshot|Flameshot	C:\Program Files\Flameshot\bin\flameshot.exe
 gvim	gvim_9.2.1310_x64.exe	start "" /wait gvim_9.2.1310_x64.exe /S	start "" "C:\Program Files\Vim\vim92\gvim.exe"	GVIM|Vim	C:\Program Files\Vim\vim92\gvim.exe
 xnviewmp	XnViewMP-win-x64.exe	start "" /wait XnViewMP-win-x64.exe /VERYSILENT /NORESTART /SP-	start "" "C:\Program Files\XnViewMP\xnviewmp.exe"	XnView	C:\Program Files\XnViewMP\xnviewmp.exe
 ddnet	x:ddnet/DDNet-18.9-win64/		start "" /d "C:\users\gex\Desktop\DDNet-18.9-win64" DDNet.exe	DDNet

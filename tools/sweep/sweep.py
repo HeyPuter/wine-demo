@@ -46,6 +46,8 @@ LAUNCH_STEPS = {'ditto': [{'sleep': 20}, {'ctrl': '`'}], 'obs': [{'wait': '^Wine
                 # first-run boxes before the main window: LMMS's "Working directory" (create it) and MediaInfo's
                 # "Preferences" (OK): a click on the title, then Enter
                 'lmms': [{'wait': '^Working directory$', 't': 300}, {'click': [200, 10], 'in': '^Working directory$'}, {'key': 'Enter'}],
+                # PCSX2's "Missing Font File" (download a font for this language's on-screen text?): No, with Escape
+                'pcsx2': [{'wait': '^Missing Font File$', 't': 300}, {'click': [254, 10], 'in': '^Missing Font File$'}, {'key': 'Escape'}],
                 'mediainfo': [{'wait': '^Preferences$', 't': 300}, {'click': [200, 10], 'in': '^Preferences$'}, {'key': 'Enter'}],
                 # XnView MP's first-run Startup Wizard: its OK (the defaults)
                 'xnviewmp': [{'wait': '^Startup Wizard$', 't': 300}, {'click': [201, 386], 'in': '^Startup Wizard$'}],
