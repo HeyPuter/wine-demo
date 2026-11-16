@@ -481,7 +481,8 @@ let t2 = now();
 if (plan.tile) {
   phase = 'install';
   t2 = now(); const r = new RegExp(plan.title ?? '.');
-  let presses = 0, up = false;
+  let presses = 0, up = false, quiet = 0, asked = 0;
+  const CONFIRM = /^exit setup$|cancel|abort|^confirm/i;
   for (const end = now() + (plan.timeout?.install ?? 1500); !up;) {
     await watch();
     const l = await wins();
@@ -493,9 +494,14 @@ if (plan.tile) {
       const w = inst[inst.length - 1];
       if (presses < 40) await shot(`inst-${presses}`);
       await click(w.x + Math.floor(w.w / 2), w.y + 10); await sleep(300);
-      if (plan.accept !== false) { await alt('a'); await sleep(300); }
-      await key('Enter'); presses++;
-      log(`installer "${w.title}" ${w.w}x${w.h}: press ${presses}`);
+      // Enter on a page whose only button is Cancel (a copy in progress) asks whether to stop: No, and the
+      // installer is left alone for a while (longer each time)
+      if (CONFIRM.test(w.title)) { await alt('n'); quiet = now() + 15 * ++asked; log(`installer "${w.title}": No, quiet ${15 * asked} s`); }
+      else if (now() >= quiet) {
+        if (plan.accept !== false) { await alt('a'); await sleep(300); }
+        await key('Enter'); presses++;
+        log(`installer "${w.title}" ${w.w}x${w.h}: press ${presses}`);
+      }
     }
     await sleep((plan.every ?? 6) * 1000);
   }
