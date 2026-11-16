@@ -72,7 +72,7 @@ gvim	gvim_9.2.1310_x64.exe	start "" /wait gvim_9.2.1310_x64.exe /S	start "" "C:\
 xnviewmp	XnViewMP-win-x64.exe	start "" /wait XnViewMP-win-x64.exe /VERYSILENT /NORESTART /SP-	start "" "C:\Program Files\XnViewMP\xnviewmp.exe"	XnView	C:\Program Files\XnViewMP\xnviewmp.exe
 ddnet	x:ddnet/DDNet-18.9-win64/		start "" /d "C:\users\gex\Desktop\DDNet-18.9-win64" DDNet.exe	DDNet
 calibre	calibre-64bit-9.18.0.msi	start "" /wait msiexec /i calibre-64bit-9.18.0.msi /qn	start "" "C:\Program Files\Calibre2\calibre.exe"	calibre	C:\Program Files\Calibre2\calibre.exe
-hexchat	HexChat.2.16.2.x64.exe	start "" /wait HexChat.2.16.2.x64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES	start "" "C:\Program Files\HexChat\hexchat.exe"	HexChat	C:\Program Files\HexChat\hexchat.exe
+hexchat	HexChat.2.16.2.x64.exe	start "" /wait HexChat.2.16.2.x64.exe /VERYSILENT /NORESTART /SP- /SUPPRESSMSGBOXES "/COMPONENTS=libs,translations,plugins\upd,langs\lua"	start "" "C:\Program Files\HexChat\hexchat.exe"	HexChat	C:\Program Files\HexChat\hexchat.exe
 nodejs	node-v22.11.0-x64.msi	start "" /wait msiexec /i node-v22.11.0-x64.msi /qn	start "node" cmd /k "C:\Program Files\nodejs\node.exe" -e "console.log(process.version, require('os').cpus().length)"	^node	C:\Program Files\nodejs\node.exe
 cmake	cmake-3.31.0-windows-x86_64.msi	start "" /wait msiexec /i cmake-3.31.0-windows-x86_64.msi /qn	start "" "C:\Program Files\CMake\bin\cmake-gui.exe"	CMake	C:\Program Files\CMake\bin\cmake-gui.exe
 golang	go1.23.3.windows-amd64.msi	start "" /wait msiexec /i go1.23.3.windows-amd64.msi /qn	start "go" cmd /k "C:\Program Files\Go\bin\go.exe" version	^go	C:\Program Files\Go\bin\go.exe
