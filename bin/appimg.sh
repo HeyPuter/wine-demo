@@ -11,7 +11,8 @@ grep -v '^#' $WDR/tools/app-images.tsv | while IFS=$'\t' read -r folder inst arg
   out=appimg/drive_c/$folder; have=1
   for f in $files; do [ -f "$out/$f" ] || have=; done
   [ -n "$have" ] && { echo "appimg: $folder kept"; continue; }
-  k=$S/work/appimg-pfx; rm -rf "$k"; mkdir -p "$k"
+  # (--keep makes the prefix: an empty directory there reads as a broken 32-bit one)
+  k=$S/work/appimg-pfx; rm -rf "$k"; mkdir -p "$(dirname "$k")"
   # shellcheck disable=SC2086
   systemd-run --user --scope -q -p TasksMax=2048 nice -n 10 timeout 1800 $GEX/wine/run.sh --dist $WINE64_DIST \
     --prefix $WINE64_PREFIX --native $WINE64_NATIVE --keep "$k" --null --timeout 1700 "$INSTALLERS/$inst" $args \
