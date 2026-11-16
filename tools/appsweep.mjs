@@ -512,7 +512,11 @@ if (plan.tile) {
       await click(w.x + Math.floor(w.w / 2), w.y + 10); await sleep(300);
       // Enter on a page whose only button is Cancel (a copy in progress) asks whether to stop: No, and the
       // installer is left alone for a while (longer each time)
-      if (CONFIRM.test(w.title)) { await alt('n'); quiet = now() + 15 * ++asked; log(`installer "${w.title}": No, quiet ${15 * asked} s`); }
+      // plan.answers: [{in: regex, click: [x, y] in that window}] a window's own answer (a question with no
+      // default button: MuseScore's telemetry box), clicked instead of Enter
+      const ans = (plan.answers ?? []).find((a) => new RegExp(a.in).test(w.title));
+      if (ans) { await click(w.x + ans.click[0], w.y + ans.click[1]); log(`installer "${w.title}": answered at ${ans.click}`); }
+      else if (CONFIRM.test(w.title)) { await alt('n'); quiet = now() + 15 * ++asked; log(`installer "${w.title}": No, quiet ${15 * asked} s`); }
       else if (now() >= quiet) {
         if (plan.accept !== false) { await alt('a'); await sleep(300); }
         await key('Enter'); presses++;
