@@ -182,6 +182,37 @@ static BOOL running(const WCHAR *path)
     return found;
 }
 
+/* the processes' identity (their count and ids), to tell when a new one has started */
+static unsigned long long procs_sig(void)
+{
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32W e = { sizeof e };
+    unsigned long long sig = 0;
+    if (snap == INVALID_HANDLE_VALUE) return 0;
+    for (BOOL ok = Process32FirstW(snap, &e); ok; ok = Process32NextW(snap, &e)) sig = sig * 1000003 + e.th32ProcessID + 1;
+    CloseHandle(snap);
+    return sig;
+}
+
+/* After the installer has exited: whether the program PATH runs, once its children have settled (no process
+   started or ended for 2 s, 30 s at most), so a Finish page's late start is seen. Messages pumped meanwhile. */
+static BOOL settled_running(const WCHAR *path)
+{
+    unsigned long long sig = procs_sig();
+    DWORD t0 = GetTickCount(), still = GetTickCount();
+    while (GetTickCount() - t0 < 30000)
+    {
+        MSG m;
+        if (running(path)) return TRUE;
+        MsgWaitForMultipleObjects(0, NULL, FALSE, 250, QS_ALLINPUT);
+        while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) { TranslateMessage(&m); DispatchMessageW(&m); }
+        unsigned long long now = procs_sig();
+        if (now != sig) { sig = now; still = GetTickCount(); }
+        else if (GetTickCount() - still >= 2000) break;
+    }
+    return running(path);
+}
+
 /* LINE with each PATTERN in it replaced by PATH (a launch line names the check's pattern) */
 static void replace_all(WCHAR *line, size_t cap, const WCHAR *pattern, const WCHAR *path)
 {
@@ -305,7 +336,7 @@ static void take_job(const WCHAR *path)
         if (check[0] && !resolve(check, found, MAX_PATH)) { say(L"cancelled", L"%d", rc); return; }
         /* the installer's last page started the program (a "Run NAME" box, checked): not a second copy, which
            can find the first one's settings file in use */
-        if (check[0] && running(found)) { say(L"started", NULL); return; }
+        if (check[0] && settled_running(found)) { say(L"started", NULL); return; }
     }
     if (launch[0])
     {
