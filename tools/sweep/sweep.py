@@ -36,7 +36,7 @@ LAUNCH_T = {'audacity': 900, 'anki': 600, 'rawtherapee': 600, 'openshot': 900, '
 # seconds after their window (STK's keys landed on it).
 # Krita: a 160x160 splash at its first window, its main window 2 to 3 min after it on a GPU.
 # Transmission (Qt 6): its first paint some 10 s after its window alone, past 20 s with three runs at once.
-SETTLE = {'supertuxkart': 60000, 'supertux': 45000, 'krita': 300000, 'zoom': 90000, 'doublecmd': 60000, 'mkvtoolnix': 90000, 'shotcut': 120000, 'darktable': 180000, 'scribus': 180000, 'steam': 1500000, 'transmission': 30000}
+SETTLE = {'supertuxkart': 60000, 'supertux': 45000, 'krita': 300000, 'zoom': 90000, 'doublecmd': 60000, 'mkvtoolnix': 90000, 'shotcut': 120000, 'darktable': 180000, 'scribus': 180000, 'steam': 1500000, 'transmission': 30000, 'libreoffice': 300000}
 # (Zoom's window is white for 30-60 s on the page before its D3D content)
 # a picture every that many seconds of a plan's settle
 SHOTS = {'steam': 60}
