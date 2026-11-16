@@ -10,6 +10,7 @@
 9	vlc	nsis	vlc-3.0.21-win64.exe	https://download.videolan.org/pub/videolan/vlc/3.0.21/win64/vlc-3.0.21-win64.exe
 10	chrome	msi	googlechromestandaloneenterprise64.msi	https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi
 11	firefox	nsis	firefox-setup-x64.exe	https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US
+11.5	firefox32	nsis	firefox-setup-win32.exe	https://download.mozilla.org/?product=firefox-latest-ssl&os=win&lang=en-US
 12	putty	msi	putty-64bit-0.85-installer.msi	https://the.earth.li/~sgtatham/putty/0.85/w64/putty-64bit-0.85-installer.msi
 13	python	exe-burn	python-3.12.7-amd64.exe	https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe
 14	vscode	inno	VSCodeUserSetup-x64.exe	https://update.code.visualstudio.com/latest/win32-x64-user/stable
@@ -42,6 +43,7 @@
 41	hxd	zip	HxDSetup.zip	https://mh-nexus.de/downloads/HxDSetup.zip
 42	blender	msi	blender-3.6.23-windows-x64.msi	https://download.blender.org/release/Blender3.6/blender-3.6.23-windows-x64.msi
 43	thunderbird	nsis	thunderbird-setup-x64.exe	https://download.mozilla.org/?product=thunderbird-latest-ssl&os=win64&lang=en-US
+43.5	thunderbird32	nsis	thunderbird-setup-win32.exe	https://download.mozilla.org/?product=thunderbird-latest-ssl&os=win&lang=en-US
 44	qbittorrent	nsis	qbittorrent_4.6.7_x64_setup.exe	https://downloads.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.7/qbittorrent_4.6.7_x64_setup.exe
 45	windirstat	msi	WinDirStat-x64.msi	https://github.com/windirstat/windirstat/releases/download/release/v2.0.3/WinDirStat-x64.msi
 46	peazip	inno	peazip-9.9.1.WIN64.exe	https://github.com/peazip/PeaZip/releases/download/9.9.1/peazip-9.9.1.WIN64.exe
