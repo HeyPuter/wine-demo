@@ -6,6 +6,7 @@
 #   ID  unsupported  TEXT   decided: nobody works on it
 #   ID  blocked      TEXT   waits on a named fix (while the row does not pass)
 #   ID  note         TEXT   said beside the row
+#   ID  pass-pending TEXT   counted a pass on a fix not on the site yet (a test build's run), to re-verify
 #   ID  x64cr        TEXT   TEXT when the row stops at gex's address-space message (x64 Electron/Chromium)
 #   PASS gpu-pass    TEXT   a pass run on a GPU: its passes say so, with TEXT
 # MATRIX_SITE: a line naming the site, written first.
@@ -25,7 +26,7 @@ RANK = {'procexp': 39, 'autoruns': 40.1, 'procmon': 40.2}
 V = {}
 for f in table('verdicts.tsv'):
     V.setdefault(f[1], {})[f[0]] = f[2] if len(f) > 2 else ''
-UNSUP, BLOCKED, NOTES, X64CR, GPU = (V.get(k, {}) for k in ('unsupported', 'blocked', 'note', 'x64cr', 'gpu-pass'))
+UNSUP, BLOCKED, NOTES, X64CR, GPU, PENDING = (V.get(k, {}) for k in ('unsupported', 'blocked', 'note', 'x64cr', 'gpu-pass', 'pass-pending'))
 rows = {}
 for p in passes:
     d = f'{A}/runs/{p}'
@@ -41,6 +42,7 @@ def says_aspace(r):
     return os.path.exists(c) and ASPACE in open(c, errors='replace').read()
 def verdict(i, r):
     if i in UNSUP: return UNSUP[i]
+    if i in PENDING: return f'pass, fix pending: {PENDING[i]}'
     if i in X64CR and says_aspace(r): return X64CR[i]
     if i in BLOCKED and r.get('usable') != 'ok': return BLOCKED[i]
     if r.get('wrong_dir'): return f'blocked: x64 install under {r["wrong_dir"]}'
