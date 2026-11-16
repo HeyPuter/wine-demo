@@ -7,6 +7,11 @@
 //        launch_steps: [steps] (its own dialogs on the way to that window), settle: ms, settle_shots: s,
 //        dismiss: [{in: regex, alt|key}] (boxes answered while waiting, named in the notes), okrc: [codes], use: [steps],
 //        restarts: N, reload: true, image: "x.exe" (the memory64 fallback's starts: restarts() below)}
+// A tile's flow instead (tile: the launcher tile's name; bring: a host path, the installer a bring-your-own tile
+// is given through its dialog's file input): the launcher's tile is clicked, the installer it runs gets the
+// installer windows' default buttons (Alt+A first, an "I accept" box, unless accept: false; every `every` s, 6
+// by default) until the program's window (title) is up, which the page's agent starts; no drop, cmd install
+// or cmd launch. The URL is the launcher's (no ?desktop=1).
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"}, {ctrl: "`"},
 //        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t}, {cmd: "line"} (typed into the driver's console),
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
@@ -435,13 +440,35 @@ async function restarts(appRe, t0, seen) {
   if (last.outcome !== 'window') { res.launch = last.outcome === 'notice' ? 'notice' : 'fail'; res.first_error = last.notice ?? `no window in ${plan.timeout?.launch ?? 900} s`; done(); }
 }
 
+// 0. a tile's flow: its click on the launcher (a bring-your-own tile: its installer into the dialog's input)
+const isBase = (w) => /cmd\.exe$|^Desktop$| - Wine Desktop$|^launching ?$/.test(w.title) || !w.title;
+// an installer's own window (its title names the program too: "foobar2000 v2.1.6 (x64) Setup"), and the agent's job windows
+const isSetup = (w) => /setup|install|wizard|licen[cs]e agreement|^windemo-job /i.test(w.title);
+if (plan.tile) {
+  let have = false;
+  for (let i = 0; i < 120 && !have; i++) { have = await ev("!!document.querySelector('#launcher .tile')").catch(() => false); if (!have) await sleep(1000); }
+  const clicked = have && await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(plan.tile)}); if (!b) return false; b.click(); return true; })()`);
+  log(`tile ${JSON.stringify(plan.tile)}: ${clicked ? 'clicked' : 'not found'}`);
+  if (!clicked) { res.first_error = `no tile ${plan.tile}`; done(); }
+  res.times.tile = +now().toFixed(1);
+  if (plan.bring) {
+    await sleep(1000);
+    const { root } = await s('DOM.getDocument', { depth: 0 });
+    const { nodeId } = await s('DOM.querySelector', { nodeId: root.nodeId, selector: '#byo input[type=file]' });
+    await s('DOM.setFileInputFiles', { nodeId, files: [plan.bring] });
+    log('brought ' + plan.bring.replace(/^.*\//, ''));
+  }
+}
+
 // 1. boot: the desktop and its cmd window
-cmdWin = await waitWin('cmd\\.exe$', 300);
+// (a tile's desktop has no cmd window and no file manager: Wine's desktop window is the boot)
+cmdWin = plan.tile ? null : await waitWin('cmd\\.exe$', 300);
+if (plan.tile && !(await waitWin(' - Wine Desktop$', 300))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 // The windows there before the install: a timeout notes the others by title (a box's title says what stopped
 // it, as Blender's "Unsupported CPU" did; its picture is the dialog-N-box.png the error-box wait crops).
 const startWins = new Set((await wins()).map((w) => w.id));
 const newWins = async () => { const t = (await wins()).filter((w) => !startWins.has(w.id) && w.title).map((w) => `"${w.title}" ${w.w}x${w.h}`); if (t.length) res.notes.push('windows at the timeout: ' + t.join(', ')); };
-if (!cmdWin || !(await waitWin('^Desktop$', 60))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
+if (!plan.tile && (!cmdWin || !(await waitWin('^Desktop$', 60)))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 res.times.desktop = Math.round(now());
 await sleep(3000);
 const deskList = await wins(), desk = await shot('desktop');
@@ -449,8 +476,35 @@ const deskList = await wins(), desk = await shot('desktop');
 const fm = (await wins()).find((w) => w.title === 'Desktop');
 if (fm) { await click(fm.x + fm.w - 14, fm.y + 15); await sleep(1500); }
 
+// a tile's install: its installer's windows, each one's default button, until the program's window is up
+let t2 = now();
+if (plan.tile) {
+  phase = 'install';
+  t2 = now(); const r = new RegExp(plan.title ?? '.');
+  let presses = 0, up = false;
+  for (const end = now() + (plan.timeout?.install ?? 1500); !up;) {
+    await watch();
+    const l = await wins();
+    up = l.some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8);
+    if (up) break;
+    if (now() >= end) { await shot('install-timeout'); await newWins(); res.install = 'timeout'; res.first_error = firstErr(t2) ?? `no ${plan.title} window in ${plan.timeout?.install ?? 1500} s (${presses} presses)`; done(); }
+    const inst = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100);
+    if (inst.length) {
+      const w = inst[inst.length - 1];
+      if (presses < 40) await shot(`inst-${presses}`);
+      await click(w.x + Math.floor(w.w / 2), w.y + 10); await sleep(300);
+      if (plan.accept !== false) { await alt('a'); await sleep(300); }
+      await key('Enter'); presses++;
+      log(`installer "${w.title}" ${w.w}x${w.h}: press ${presses}`);
+    }
+    await sleep((plan.every ?? 6) * 1000);
+  }
+  res.drop = 'n/a'; res.install = 'ok (tile)'; res.times.install = Math.round(now() - t2);
+}
+
 // 2. the installer dragged in from the host
 phase = 'drop';
+if (!plan.tile) {
 const t1 = now();
 const nDrop = drops.length;
 const data = { items: [], files: plan.drop, dragOperationsMask: 1 };
@@ -472,7 +526,7 @@ await sleep(2000 + bytes / 20e3);
 
 // 3. install: cmd with delayed expansion, the exit status into cmd's title
 phase = 'install';
-const t2 = now();
+t2 = now();
 await cmd('cmd /v:on'); await sleep(1500);
 await cmd('cd /d %USERPROFILE%\\Desktop'); await sleep(800);
 const before = new Set((await wins()).map((w) => w.id));
@@ -509,10 +563,11 @@ if (plan.install) {
   if (why) { res.install = 'fail'; res.first_error = firstErr(t2) ?? why; done(); }
   res.install = 'ok (interactive)'; res.times.install = Math.round(now() - t2);
 } else res.install = 'n/a';
+} // not a tile
 
 // 4. launch the installed program: a new window
 phase = 'launch';
-if (!plan.launch) done();
+if (!plan.launch && !plan.tile) done();
 const t3 = now();
 let seen = new Set((await wins()).map((w) => w.id));
 // An installer's last page may start the program itself (a "Run ..." box, checked): a window of the
@@ -527,6 +582,7 @@ if (plan.title) {
   }
   if (started) { log('the install started the program'); seen = startWins; }
 }
+if (plan.tile) { started = true; seen = new Set((await wins()).filter((w) => !new RegExp(plan.title ?? '.').test(w.title) || isBase(w) || isSetup(w)).map((w) => w.id)); }
 if (!started) { await cmd(`title launching & ${plan.launch}`); await minCmd(); }
 // the program's own dialog on the way to its window (OBS's "Wine detected": Launch Anyway), answered as the plan says
 if (plan.launch_steps) { const why = await run(plan.launch_steps); if (why) res.notes.push('launch steps: ' + why); }
@@ -549,7 +605,7 @@ res.launch = 'ok'; res.times.launch = +(now() - t3).toFixed(1); res.window = app
 // (settle-90s), to tell from them when a slow program's own screen (a game's main menu) is up
 if (plan.settle_shots) {
   const t5 = now(), step = plan.settle_shots * 1000;
-  for (let k = 1; k * step <= (plan.settle ?? 6000); k++) { await sleep(Math.max(0, t5 * 1000 + k * step - now() * 1000)); await shot(`settle-${Math.round(now() - t3 - res.times.launch)}s`); }
+  for (let k = 1; k * step <= (plan.settle ?? 6000); k++) { await sleep(Math.max(0, t5 * 1000 + k * step - now() * 1000)); await watch(); await shot(`settle-${Math.round(now() - t3 - res.times.launch)}s`); }
 } else await sleep(plan.settle ?? 6000);
 // A first window that closed in the settle (a splash) hands over to the program's next one of the same title,
 // the largest that came since the launch
