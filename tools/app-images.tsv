@@ -1,6 +1,6 @@
 # The launcher apps' own images that tools/dll-bases pins (bin/appimg.sh puts them in WD_OUT/appimg for bin/units.sh):
 # folder (the app's install, under the page's /pfx/drive_c, as a visitor's tile run leaves it), installer
 # (tools/launcher.tsv's file), args (a native install of the same files to C:\appimg), files (its pinned images,
-# space-separated, relative to the folder).
-folder	installer	args	files
-users/gex/AppData/Local/Programs/Python/Python312	python-3.12.7-amd64.exe	/quiet InstallAllUsers=0 TargetDir=C:\appimg Include_launcher=0 Include_test=0 Include_doc=0 Include_pip=0	python312.dll DLLs/tcl86t.dll DLLs/tk86t.dll DLLs/_tkinter.pyd DLLs/zlib1.dll
+# space-separated, relative to the folder), row (the sweep row bin/appcov.sh runs for their coverage).
+folder	installer	args	files	row
+users/gex/AppData/Local/Programs/Python/Python312	python-3.12.7-amd64.exe	/quiet InstallAllUsers=0 TargetDir=C:\appimg Include_launcher=0 Include_test=0 Include_doc=0 Include_pip=0	python312.dll DLLs/tcl86t.dll DLLs/tk86t.dll DLLs/_tkinter.pyd DLLs/zlib1.dll	idle-cov

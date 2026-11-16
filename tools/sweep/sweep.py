@@ -84,8 +84,18 @@ RESTARTS = {'firefox': {'restarts': 1, 'reload': True, 'image': 'firefox.exe'},
 USE = {'krita': [{'click': [124, 200], 'in': '^Krita$'}, {'sleep': 5}],
        # Ditto's popup is its whole UI and closes on Alt (the default keys): its search box takes a letter
        'ditto': [{'type': 'a'}, {'sleep': 3}], 'ditto-ui': [{'type': 'a'}, {'sleep': 3}],
+       # IDLE past its shell: an editor window (File > New, Ctrl+N) and Options > Configure IDLE, each one's time
+       # logged (a split unit's first use of their code is a cold fetch)
+       'python': [{'ctrl': 'n'}, {'wait': '^untitled$', 't': 300}, {'shot': 'editor'},
+                  {'click': [162, 30], 'in': '^untitled$'}, {'sleep': 2}, {'shot': 'options'},
+                  {'click': [190, 52], 'in': '^untitled$'}, {'wait': 'Settings', 't': 300}, {'shot': 'settings'}],
        # MediaInfo's empty view draws nothing new on a click: its Help menu does
        'mediainfo': [{'click': [228, 25], 'in': 'MediaInfo$'}, {'sleep': 3}]}
+# idle-cov: bin/appcov.sh's run for IDLE's coverage on an instrumented site, IDLE with no subprocess (an instrumented
+# subprocess starts past IDLE's 10 s wait for it): python's steps, then Cancel and IDLE ended from the driver's
+# console, as the units say what ran when their process exits
+USE['idle-cov'] = USE['python'] + [{'click': [272, 526], 'in': '^Settings$'}, {'sleep': 2}, {'cmd': 'taskkill /f /im pythonw.exe'},
+                                   {'gone': '^(untitled|IDLE Shell.*)$', 't': 120}, {'sleep': 10}]
 UI = {}
 for f in table('interactive.tsv'):
     UI[f[0]] = f

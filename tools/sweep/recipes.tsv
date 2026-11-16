@@ -14,6 +14,7 @@ firefox	firefox-setup-x64.exe	start "" /wait firefox-setup-x64.exe /S	start "" "
 firefox32	firefox-setup-win32.exe	start "" /wait firefox-setup-win32.exe /S	start "" "C:\Program Files (x86)\Mozilla Firefox\firefox.exe"	Firefox|Mozilla	C:\Program Files (x86)\Mozilla Firefox\firefox.exe
 putty	putty-64bit-0.85-installer.msi	start "" /wait msiexec /i putty-64bit-0.85-installer.msi /qn	start "" "C:\Program Files\PuTTY\putty.exe"	PuTTY
 python	python-3.12.7-amd64.exe	start "" /wait python-3.12.7-amd64.exe /quiet InstallAllUsers=0 PrependPath=1	start "" "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" -m idlelib	IDLE|Python
+idle-cov	python-3.12.7-amd64.exe	start "" /wait python-3.12.7-amd64.exe /quiet InstallAllUsers=0 PrependPath=1	start "" "%LOCALAPPDATA%\Programs\Python\Python312\pythonw.exe" -m idlelib -n	IDLE|Python
 vscode	VSCodeUserSetup-x64.exe	start "" /wait VSCodeUserSetup-x64.exe /VERYSILENT /NORESTART	start "" "%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"	Visual Studio Code|Welcome
 git	Git-2.47.0-64-bit.exe	start "" /wait Git-2.47.0-64-bit.exe /VERYSILENT /NORESTART	start "" "C:\Program Files\Git\git-bash.exe"	MINGW|mintty|bash
 steam	SteamSetup.exe	start "" /wait SteamSetup.exe /S	start "" "C:\Program Files (x86)\Steam\steam.exe"	Steam

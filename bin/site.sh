@@ -13,21 +13,42 @@ set -euo pipefail
 export PATH=$NODE_BIN:$PATH; REST_ORDER=${REST_ORDER-$WDR/tools/rest-order-all.txt}
 rec=$1 out=$2; shift 2; P=proj-$out; LAUNCHER=$(realpath "${LAUNCHER:-$WDR/tools/launcher.tsv}")
 rm -rf $P $out
-# The launcher apps' pinned images (tools/dll-bases' /pfx lines, bin/appimg.sh, bin/units.sh) ship their units too:
-# no recording runs those apps, so they are added to the recording's units (the compact flavour units.sh built).
-python3 -I - runs/$rec/wine32-session.json $WDR/tools/dll-bases <<'PY'
+# The recording as the site uses it: a copy (runs/.site-OUT) whose session also has
+#  - the launcher apps' pinned images' units (tools/dll-bases' /pfx lines, bin/appimg.sh, bin/units.sh): no
+#    recording runs those apps, so they are added (the compact flavour units.sh built);
+#  - their coverage, from WD_OUT/coverage/apps.json (bin/appcov.sh: an instrumented site's runs of them), so a
+#    split ("cold": a clustering, the default chunk:256) ships what their starts ran up front and the rest on demand;
+#  - with a split, every other unit's every slot: a unit the coverage does not name stays whole (the eject would
+#    make it all cold).
+cold=chunk:256; for kv in "$@"; do case $kv in cold=*) cold=${kv#cold=};; esac; done
+rm -rf runs/.site-$out; mkdir -p runs/.site-$out; cp -a runs/$rec/. runs/.site-$out/; rec=.site-$out
+python3 -I - runs/$rec/wine32-session.json $WDR/tools/dll-bases "$cold" <<'PY'
 import glob, json, os, re, sys
-p = sys.argv[1]; s = json.load(open(p)); have = {u['key'] for u in s['units']}; n = 0
-for l in open(sys.argv[2]):
+p, bases, cold = sys.argv[1:4]; s = json.load(open(p)); have = {u['key'] for u in s['units']}; n = 0; app = set()
+for l in open(bases):
     if l.startswith('#') or not l.strip(): continue
     a, path = l.split(None, 1); path = path.strip()
     if not path.startswith('/pfx/drive_c/'): continue
     base = hex(int(a, 16)); log = f"logs/units/{os.path.basename(path)}-{base}-compact.log"
     m = os.path.exists(log) and re.search(r' at ' + base + r': .*/([0-9a-f]{64})/c\.wasm', open(log).read())
     if not m: print(f"site: no unit for {path} at {base} ({log})", file=sys.stderr); continue
+    app.add(m.group(1))
     if m.group(1) in have: continue
     s['units'].append({'key': m.group(1), 'path': '/pfx/dosdevices/c:/' + path[len('/pfx/drive_c/'):], 'at': 0, 'base': base}); n += 1
-if n: json.dump(s, open(p, 'w'), indent=2); print(f"site: {n} launcher app units added to {p}")
+if n: print(f"site: {n} launcher app units added")
+cov = s.setdefault('coverage', {}) or {}
+if os.path.exists('coverage/apps.json'):
+    for k, r in json.load(open('coverage/apps.json')).items():
+        if k in app: cov[k] = r
+if cold not in ('none', 'instrument'):
+    split = sum(k in cov for k in app); whole = 0
+    for u in s['units']:
+        if u['key'] in cov: continue
+        e = f"units/{u['key']}/c.entries"
+        if os.path.exists(e): cov[u['key']] = f"0-{os.path.getsize(e) // 8 - 1}"; whole += 1
+    print(f"site: cold {cold}: {split} launcher app units split by their coverage, {whole} other units whole")
+s['coverage'] = cov
+json.dump(s, open(p, 'w'), indent=2)
 PY
 nice -n 10 $GEXC eject runs/$rec --out $P --web-src $W/page --unit-cache units > logs/eject-$out.log 2>&1
 python3 -I - $P/user/eject.json "$@" <<'PY'
@@ -36,7 +57,7 @@ p = sys.argv[1]; d = json.load(open(p))
 # GL kept (Wine's Direct3D is wined3d on GL): Mesa is started by the first process that opens opengl32
 # (nt.json gl_lazy), never on the way to the desktop.
 d['features'].update(gl=True, translation=True)
-d.update(bundle='split', cold='none', resources='trim', helpers='strip', wineboot='skip', desktop='explorer')
+d.update(bundle='split', cold='chunk:256', resources='trim', helpers='strip', wineboot='skip', desktop='explorer')
 for kv in sys.argv[2:]:
     k, v = kv.split('=', 1)
     if k.startswith('features.'): d['features'][k[9:]] = v == 'true'  # features.gl=false

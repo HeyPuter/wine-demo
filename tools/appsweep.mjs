@@ -8,7 +8,7 @@
 //        dismiss: [{in: regex, alt|key}] (boxes answered while waiting, named in the notes), okrc: [codes], use: [steps],
 //        restarts: N, reload: true, image: "x.exe" (the memory64 fallback's starts: restarts() below)}
 // Steps (interactive installs, and `after`): {wait: "regex", t}, {key: "Enter"|"Tab"|...}, {alt: "n"}, {ctrl: "`"},
-//        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t},
+//        {type: "text"}, {click: [x, y]} (in: "regex": x, y in that window), {sleep: s}, {shot: name, page: true (the whole page, its notes too)}, {gone: "regex", t}, {cmd: "line"} (typed into the driver's console),
 //        {press: "Enter", until: "regex", alt: "a", every: s, t} (the key, each `every` s, until no window matches)
 // Writes OUTDIR/console.txt, OUTDIR/out.txt (the program's terminal output), OUTDIR/*.png (the compositor's readout) and OUTDIR/result.json:
 //   {id, drop, install, launch, usable, first_error, times}
@@ -98,10 +98,16 @@ const workers = new Set();
 cdp.on('Target.attachedToTarget', (e) => {
   workers.add(e.sessionId);
   cdp.send('Runtime.enable', {}, e.sessionId).catch(() => {});
+  cdp.send('Network.enable', {}, e.sessionId).catch(() => {});
   cdp.send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true }, e.sessionId).catch(() => {});
   cdp.send('Runtime.runIfWaitingForDebugger', {}, e.sessionId).catch(() => {});
 });
 cdp.on('Runtime.consoleAPICalled', (e) => line(e.args.map((a) => a.value ?? a.description).join(' ')));
+// A split unit's cold code fetched (a Worker's ranged read of a unit's cold.bin): each one is code the program waited
+// for, logged with its range so a run can count them
+cdp.on('Network.requestWillBeSent', (e) => {
+  if (/\/cold\.bin/.test(e.request?.url ?? '')) line(`[sweep] cold fetch ${e.request.url.replace(/^.*\/units\//, '')} ${e.request.headers?.Range ?? e.request.headers?.range ?? 'whole'}`);
+});
 cdp.on('Runtime.exceptionThrown', (e) => line('threw ' + (e.exceptionDetails?.exception?.description ?? e.exceptionDetails?.text)));
 cdp.on('Inspector.targetCrashed', () => { line('[sweep] RENDERER CRASHED'); res.notes.push('renderer crashed'); done(); });
 await s('Runtime.enable'); await s('Page.enable'); await s('Inspector.enable').catch(() => {});
@@ -318,7 +324,7 @@ const minCmd = async () => {
 };
 const run = async (steps) => {
   for (const st of steps ?? []) {
-    if (st.wait) { const w = await waitWin(st.wait, st.t ?? 120); if (!w) return `no window /${st.wait}/ in ${st.t ?? 120} s`; await sleep(1500); }
+    if (st.wait) { const t0 = now(), w = await waitWin(st.wait, st.t ?? 120); if (!w) return `no window /${st.wait}/ in ${st.t ?? 120} s`; log(`/${st.wait}/ up in ${(now() - t0).toFixed(1)} s`); await sleep(1500); }
     else if (st.gone) { const r = new RegExp(st.gone); let gone = false; for (const end = now() + (st.t ?? 600); now() < end && !gone;) { await watch(); gone = !(await wins()).some((x) => r.test(x.title)); if (!gone) await sleep(1000); } if (!gone) return `/${st.gone}/ still open after ${st.t ?? 600} s`; }
     else if (st.press) {
       // st.press (a key) every st.every s (default 6), st.alt first when given, until no window matches
@@ -336,6 +342,7 @@ const run = async (steps) => {
       }
       log(`${st.press}: /${st.until}/ gone after ${n} presses`);
     }
+    else if (st.cmd) await cmd(st.cmd);
     else if (st.key) await key(st.key);
     else if (st.alt) await alt(st.alt);
     else if (st.ctrl) await ctrl(st.ctrl);

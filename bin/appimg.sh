@@ -6,7 +6,7 @@
 set -euo pipefail
 . "$(dirname "$0")/../env.sh"; need_gex; S=$WD_OUT; cd $S
 . <(sed 's/^/export /' logs/dist.out)
-grep -v '^#' $WDR/tools/app-images.tsv | while IFS=$'\t' read -r folder inst args files; do
+grep -v '^#' $WDR/tools/app-images.tsv | while IFS=$'\t' read -r folder inst args files _row; do
   [ "$folder" = folder ] && continue
   out=appimg/drive_c/$folder; have=1
   for f in $files; do [ -f "$out/$f" ] || have=; done
