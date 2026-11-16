@@ -1,3 +1,18 @@
+# dll-bases: ADDRESS (hex) UNIXPATH, one image at one address in every process of every run (the Wine server's
+# pinned_map_address), so the function-tier units built for that address (bin/units.sh) are used. A line that
+# does not start with an address (these) is skipped. An image whose range is taken in a process loads elsewhere
+# there and misses its unit, nothing worse.
+#
+# Every page process is in 64-bit Wine's compact space (hosts/browser/src/winspace.rs), which keeps the island
+# [0x10000000, 0x1a600000) for images:
+#   0x10000000-0x11000000  the exe slot: executables at a fixed 0x10000000. A compact process's own program goes
+#                          top-down with the floaters instead, so the slot is free where no such exe runs:
+#                          IDLE's images are pinned there (python312, Tcl/Tk), 0x10000000-0x10a6a000.
+#   0x11000000-0x18ab0000  Wine's builtins (these lines up to msimg32).
+#   0x18b00000-0x19000000  free: about 5 MiB for the next app's pins.
+#   0x19000000-0x195f0000  the images no line pins, placed top-down (the program, a .pyd, a game's DLL): not for pins.
+#   0x195f0000-0x1a5f0000  the native PE core's data window.
+# Above 0x1a600000 a compact process keeps nothing: the heap may take it, and a pin there misses.
 11000000 /w64/lib/wine/x86_64-windows/advapi32.dll
 11160000 /w64/lib/wine/x86_64-windows/sechost.dll
 11210000 /w64/lib/wine/x86_64-windows/rpcrt4.dll
@@ -69,3 +84,9 @@
 18490000 /w64/lib/wine/x86_64-windows/nsiproxy.sys
 184d0000 /w64/lib/wine/x86_64-windows/comctl32_v6.dll
 18a90000 /w64/lib/wine/x86_64-windows/msimg32.dll
+# IDLE (the launcher's Python, installed for the visitor at its default folder), in the exe slot
+10000000 /pfx/drive_c/users/gex/AppData/Local/Programs/Python/Python312/python312.dll
+106c0000 /pfx/drive_c/users/gex/AppData/Local/Programs/Python/Python312/DLLs/tcl86t.dll
+10890000 /pfx/drive_c/users/gex/AppData/Local/Programs/Python/Python312/DLLs/tk86t.dll
+10a20000 /pfx/drive_c/users/gex/AppData/Local/Programs/Python/Python312/DLLs/_tkinter.pyd
+10a40000 /pfx/drive_c/users/gex/AppData/Local/Programs/Python/Python312/DLLs/zlib1.dll

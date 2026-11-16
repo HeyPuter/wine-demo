@@ -13,6 +13,22 @@ set -euo pipefail
 export PATH=$NODE_BIN:$PATH; REST_ORDER=${REST_ORDER-$WDR/tools/rest-order-all.txt}
 rec=$1 out=$2; shift 2; P=proj-$out; LAUNCHER=$(realpath "${LAUNCHER:-$WDR/tools/launcher.tsv}")
 rm -rf $P $out
+# The launcher apps' pinned images (tools/dll-bases' /pfx lines, bin/appimg.sh, bin/units.sh) ship their units too:
+# no recording runs those apps, so they are added to the recording's units (the compact flavour units.sh built).
+python3 -I - runs/$rec/wine32-session.json $WDR/tools/dll-bases <<'PY'
+import glob, json, os, re, sys
+p = sys.argv[1]; s = json.load(open(p)); have = {u['key'] for u in s['units']}; n = 0
+for l in open(sys.argv[2]):
+    if l.startswith('#') or not l.strip(): continue
+    a, path = l.split(None, 1); path = path.strip()
+    if not path.startswith('/pfx/drive_c/'): continue
+    base = hex(int(a, 16)); log = f"logs/units/{os.path.basename(path)}-{base}-compact.log"
+    m = os.path.exists(log) and re.search(r' at ' + base + r': .*/([0-9a-f]{64})/c\.wasm', open(log).read())
+    if not m: print(f"site: no unit for {path} at {base} ({log})", file=sys.stderr); continue
+    if m.group(1) in have: continue
+    s['units'].append({'key': m.group(1), 'path': '/pfx/dosdevices/c:/' + path[len('/pfx/drive_c/'):], 'at': 0, 'base': base}); n += 1
+if n: json.dump(s, open(p, 'w'), indent=2); print(f"site: {n} launcher app units added to {p}")
+PY
 nice -n 10 $GEXC eject runs/$rec --out $P --web-src $W/page --unit-cache units > logs/eject-$out.log 2>&1
 python3 -I - $P/user/eject.json "$@" <<'PY'
 import json, sys

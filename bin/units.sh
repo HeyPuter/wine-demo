@@ -11,8 +11,14 @@ python3 -I - "$@" <<'PY' | sort -u > logs/units-todo.txt
 import json, os, sys
 # The pinned DLLs at their pins (WDR/tools/dll-bases), and what the recordings missed besides.
 for l in open(os.environ['WDR'] + '/tools/dll-bases'):
-    a, p = l.split(None, 1)
-    h = f"w64/dist-s/{p.strip()[5:]}"
+    if l.startswith('#') or not l.strip(): continue
+    a, p = l.split(None, 1); p = p.strip()
+    if p.startswith('/pfx/'):
+        # a launcher app's own image (bin/appimg.sh's copy)
+        h = f"appimg/{p[5:]}"
+        if not os.path.exists(h): print(f"units: no {h} (bin/appimg.sh)", file=sys.stderr); continue
+        print(f"{h}\t{hex(int(a, 16))}"); continue
+    h = f"w64/dist-s/{p[5:]}"
     # a builtin that is a native module (NAME.wasm beside its skeleton) has no x86 code to translate
     if not os.path.exists(h + '.wasm'): print(f"{h}\t{hex(int(a, 16))}")
 for r in sys.argv[1:]:
