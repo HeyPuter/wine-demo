@@ -777,7 +777,8 @@
       const tick = () => {
         if (!loader.on || shown) return;
         if (installer && !shown) loader.row('setup').set(`Opening the ${t.name} installer`, secsSince(installer), null);
-        else if (started) loader.row('launch').set(`Starting ${t.name}`, `waiting for its window · ${secsSince(started)}`, null);
+        // (past 3 minutes: still starting, as long as any of its processes lives; a first start can be long)
+        else if (started) loader.row('launch').set(`Starting ${t.name}`, `${Date.now() - started > 3 * 60e3 ? 'still starting' : 'waiting for its window'} · ${secsSince(started)}`, null);
       };
       if (screen) loader.row(needsInstall ? 'setup' : 'launch').set(needsInstall ? `Opening the ${t.name} installer` : `Starting ${t.name}`, 'waiting for Windows', null);
       ticker = setInterval(tick, 1000);
@@ -814,16 +815,16 @@
           status(null);
           console.log('[launcher]', JSON.stringify({ id: t.id, cancelled: detail }));
           return;
-        } else if (state === 'launching' || state === 'started' || (started && !me)) {
-          // (its status window goes 15 s after the launch; a program slower than that to show its window is
-          // still looked for until the limit below)
+        } else if (state === 'launching' || state === 'started' || state === 'exited' || (started && !me)) {
+          // (its status window stays while the program or any process its launch started lives, then says
+          // exited, and goes 15 s later: the program is waited for as long as it lives, however slow its start)
           R('installer').done();
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
           const win = all.find((w) => !before.has(w.id) && w.title && !w.title.startsWith('windemo-job') && !w.title.startsWith('windemo-icon') && (!title || title.test(w.title)))?.title;
           if (win) { status(null); if (!shown) loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
-          if (Date.now() - started > 3 * 60e3) throw new Error(`${t.name} did not open a window`);
+          if (state === 'exited' || !me) throw new Error(`${t.name} ended without opening a window`);
         } else if (state === 'failed') throw new Error(detail || 'it failed');
         else if (!installer && !started && Date.now() - t0 > 5 * 60e3) throw new Error(`${t.name} took too long to start`);
       }

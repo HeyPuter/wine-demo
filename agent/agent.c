@@ -10,7 +10,9 @@
    window titled "windemo-icon ID BASE64" (a one-image .ico). Each job's state is the title
    of a 1x1 tool window, "windemo-job ID STATE DETAIL", which the page reads from the desktop's window list:
    STATE is downloading (DETAIL: bytes done/total), installer (the installer's UI is up to the user),
-   launching, started, cancelled (the installer ended and the app is not there) or failed (DETAIL: why). */
+   launching, started (the program, or any process its launch started, is alive), exited (all of them have
+   ended), cancelled (the installer ended and the app is not there) or failed (DETAIL: why). A started job's
+   window stays while the program lives, so the page waits as long as the program does. */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wininet.h>
@@ -26,6 +28,10 @@
 static HWND status, owner;
 static HINSTANCE hinst;
 static WCHAR job_id[64];
+/* the job being taken: its launch's processes (a job object) and its program's path, for the watch below */
+static HANDLE watch_job;
+struct watch { HANDLE job; WCHAR exe[MAX_PATH]; WCHAR id[64]; };
+static WCHAR watch_exe[MAX_PATH];
 static void poll_queue(void);
 
 static void say(const WCHAR *state, const WCHAR *fmt, ...)
@@ -234,7 +240,7 @@ static void replace_all(WCHAR *line, size_t cap, const WCHAR *pattern, const WCH
 }
 
 /* cmd /c LINE in DIR; its exit code, or -1 when it could not start */
-static int run(const WCHAR *line, const WCHAR *dir, BOOL wait)
+static int run(const WCHAR *line, const WCHAR *dir, BOOL wait, HANDLE job)
 {
     WCHAR cmd[4200];
     STARTUPINFOW si = { sizeof(si) };
@@ -242,7 +248,9 @@ static int run(const WCHAR *line, const WCHAR *dir, BOOL wait)
     DWORD code = 0;
     _snwprintf(cmd, 4199, L"C:\\windows\\system32\\cmd.exe /d /c %s", line);
     si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_HIDE;
-    if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, dir, &si, &pi)) return -1;
+    if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW | (job ? CREATE_SUSPENDED : 0), NULL, dir, &si, &pi)) return -1;
+    /* (in the job before it runs, so every process it starts is in it too) */
+    if (job) { AssignProcessToJobObject(job, pi.hProcess); ResumeThread(pi.hThread); }
     if (wait) { WaitForSingleObject(pi.hProcess, INFINITE); GetExitCodeProcess(pi.hProcess, &code); }
     CloseHandle(pi.hThread); CloseHandle(pi.hProcess);
     return code;
@@ -336,7 +344,7 @@ static void take_job(const WCHAR *path)
         if (check[0] && !resolve(check, found, MAX_PATH)) { say(L"cancelled", L"%d", rc); return; }
         /* the installer's last page started the program (a "Run NAME" box, checked): not a second copy, which
            can find the first one's settings file in use */
-        if (check[0] && settled_running(found)) { say(L"started", NULL); return; }
+        if (check[0] && settled_running(found)) { wcscpy(watch_exe, found); say(L"started", NULL); return; }
     }
     if (launch[0])
     {
@@ -356,7 +364,9 @@ static void take_job(const WCHAR *path)
             }
         }
         say(L"launching", NULL);
-        if (run(launch, L"C:\\users\\gex\\Desktop", FALSE) < 0) { say(L"failed", L"%s did not start", name); return; }
+        watch_job = CreateJobObjectW(NULL, NULL);
+        if (check[0] && resolve(check, found, MAX_PATH)) wcscpy(watch_exe, found);
+        if (run(launch, L"C:\\users\\gex\\Desktop", FALSE, watch_job) < 0) { say(L"failed", L"%s did not start", name); return; }
     }
     say(L"started", NULL);
 }
@@ -371,14 +381,50 @@ static void take(const WCHAR *path)
     status = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"WindemoAgent", L"windemo-job - taking", WS_POPUP,
                              0, 0, 1, 1, owner, NULL, hinst, NULL);
     ShowWindow(status, SW_SHOWNOACTIVATE);
+    watch_job = NULL; watch_exe[0] = 0;
     take_job(path);
-    SetTimer(status, 1, 15000, NULL);
+    if (watch_job || watch_exe[0])
+    {
+        /* a started program: its job window watched each second (timer 2) until all its processes are gone */
+        struct watch *wt = calloc(1, sizeof *wt);
+        wt->job = watch_job; wcscpy(wt->exe, watch_exe);
+        SetPropW(status, L"windemo-watch", wt);
+        wcscpy(wt->id, job_id);
+        SetTimer(status, 2, 1000, NULL);
+    }
+    else SetTimer(status, 1, 15000, NULL);
     status = outer;
     wcscpy(job_id, outer_id);
 }
 
+/* whether any process of a watched program lives: its launch's job, or a process of its program's path */
+static BOOL alive(const struct watch *wt)
+{
+    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION a;
+    if (wt->job && QueryInformationJobObject(wt->job, JobObjectBasicAccountingInformation, &a, sizeof a, NULL) && a.ActiveProcesses) return TRUE;
+    return wt->exe[0] && running(wt->exe);
+}
+
 static LRESULT CALLBACK proc(HWND w, UINT msg, WPARAM wp, LPARAM lp)
 {
+    if (msg == WM_TIMER && wp == 2)
+    {
+        struct watch *wt = GetPropW(w, L"windemo-watch");
+        if (wt && alive(wt)) return 0;
+        KillTimer(w, 2);
+        if (wt)
+        {
+            WCHAR title[200];
+            _snwprintf(title, 199, L"windemo-job %s exited ", wt->id);
+            SetWindowTextW(w, title);
+            RedrawWindow(w, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_UPDATENOW);
+            RemovePropW(w, L"windemo-watch");
+            if (wt->job) CloseHandle(wt->job);
+            free(wt);
+        }
+        SetTimer(w, 1, 15000, NULL);
+        return 0;
+    }
     if (msg == WM_TIMER) { DestroyWindow(w); return 0; }
     return DefWindowProcW(w, msg, wp, lp);
 }
