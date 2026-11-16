@@ -1000,6 +1000,8 @@
       clearTimeout(resizing);
       resizing = setTimeout(() => app.resize?.('fit'), 250);
     });
+    // the desktop's end in the console, its first process's exit status with it (rare: the desktop outlives its programs)
+    app.exited.then((status) => console.log('[launcher]', JSON.stringify({ desktop_exit: status ?? null })), (e) => console.log('[launcher]', JSON.stringify({ desktop_failed: String(e?.message ?? e) })));
     app.exited.then((status) => { if (status && !serverFailed) show((exitShown = `The program exited (${status}).`)); }, show);
   } catch (e) {
     failed = String(e?.message ?? e);
