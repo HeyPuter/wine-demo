@@ -599,6 +599,7 @@ const drawn = (() => {
   let walls = 0;
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (!under(x, y)) walls++;
   const wallOnly = walls >= ((x1 - x0) * (y1 - y0)) / 10;
+  // (the colours' counts folded, not spread: a photo-like window has more colours than a call takes arguments)
   let n = 0, tot = 0, all = 0; const hist = new Map();
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
     const i = (y * a.w + x) * 4; all++;
@@ -607,7 +608,7 @@ const drawn = (() => {
     tot++;
     if (Math.abs(a.b[i] - desk.b[i]) + Math.abs(a.b[i + 1] - desk.b[i + 1]) + Math.abs(a.b[i + 2] - desk.b[i + 2]) > 24) n++;
   }
-  return tot ? { frac: wallOnly ? n / tot : 1, over: wallOnly ? tot / all : 0, top: Math.max(...hist.values()) / all } : null;
+  return tot ? { frac: wallOnly ? n / tot : 1, over: wallOnly ? tot / all : 0, top: [...hist.values()].reduce((m, v) => (v > m ? v : m), 0) / all } : null;
 })();
 if (drawn) res.notes.push(`drawn: ${Math.round(drawn.frac * 100)}% of its ${live.w}x${live.h} window, measured over the ${Math.round(drawn.over * 100)}% of it on the bare desktop in the desktop picture (most common colour ${Math.round(drawn.top * 100)}%)`);
 const undrawn = drawn && (drawn.frac <= 0.5 || drawn.top > 0.97);
