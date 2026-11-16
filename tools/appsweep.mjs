@@ -443,7 +443,8 @@ async function restarts(appRe, t0, seen) {
 // 0. a tile's flow: its click on the launcher (a bring-your-own tile: its installer into the dialog's input)
 const isBase = (w) => /cmd\.exe$|^Desktop$| - Wine Desktop$|^launching ?$/.test(w.title) || !w.title;
 // an installer's own window (its title names the program too: "foobar2000 v2.1.6 (x64) Setup"), and the agent's job windows
-const isSetup = (w) => /setup|install|wizard|licen[cs]e agreement|^windemo-job /i.test(w.title);
+// (a console window, titled with its program's path, is not the program's window either: Blender's MSI runs blender.exe in one)
+const isSetup = (w) => /setup|install|wizard|licen[cs]e agreement|^windemo-job |\.exe$/i.test(w.title);
 if (plan.tile) {
   let have = false;
   for (let i = 0; i < 120 && !have; i++) { have = await ev("!!document.querySelector('#launcher .tile')").catch(() => false); if (!have) await sleep(1000); }
