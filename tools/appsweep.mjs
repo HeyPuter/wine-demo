@@ -278,6 +278,8 @@ const cmdButton = async () => {
 // reaches nothing, so only points on the guest's W x H screen are hit-tested or clicked
 const onScreen = async (x, y) => x >= 0 && y >= 0 && x < W && y < H;
 const cmd = async (text) => {
+  // no console yet (a tile's desktop has none): a fresh one from the agent
+  if (!cmdWin) { cmdWin = await freshCmd(); if (!cmdWin) { log('cmd: no console, and the agent opened none'); return; } await sleep(1500); }
   let w = (await wins()).find((x) => x.id === cmdWin.id) ?? cmdWin;
   const own = (k) => typeof k === 'string' && k.split(':')[0] === String(w.id).split(':')[0];
   if (!(await onScreen(w.x + Math.min(300, w.w / 2), w.y + Math.min(200, w.h / 2)))) {
