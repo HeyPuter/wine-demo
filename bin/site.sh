@@ -104,13 +104,18 @@ PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
 # NO_UNITS: the eject still adds the NT trampoline page's units (it fails without them); they go too, and the page
-# runs that page on the JIT like every other x86 page.
+# runs that page on the JIT like every other x86 page, with no unit looked up.
 if [ -n "${NO_UNITS:-}" ]; then
   python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
 p = sys.argv[1]; s = json.load(open(p)); n = len(s.get('units', []))
-s['units'] = []; os.remove(p); json.dump(s, open(p, 'w'), indent=2)
-print(f"site: NO_UNITS: the eject's {n} trampoline units dropped")
+s['units'] = []
+# (and the page told there are none, cgen '0': the Wine page turns unit lookups on itself, and each image a process
+# maps then cost a synchronous request for a unit that is not there; vlc-cache-gen.exe's 365 plugins took 106 s for
+# 25 s without them)
+s.setdefault('params', {})['cgen'] = '0'
+os.remove(p); json.dump(s, open(p, 'w'), indent=2)
+print(f"site: NO_UNITS: the eject's {n} trampoline units dropped, unit lookups off")
 PY
   rm -rf $out/project/build/web/units
   sed -i '$ s/; [0-9]* units;/; 0 units (NO_UNITS: the trampoline units dropped);/' logs/site-$out.log
