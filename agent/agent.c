@@ -188,6 +188,50 @@ static BOOL running(const WCHAR *path)
     return found;
 }
 
+/* whether process PID runs the program PATH */
+static BOOL is_program(DWORD pid, const WCHAR *path)
+{
+    HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    WCHAR img[MAX_PATH]; DWORD n = MAX_PATH;
+    BOOL yes = h && QueryFullProcessImageNameW(h, 0, img, &n) && !_wcsicmp(img, path);
+    if (h) CloseHandle(h);
+    return yes;
+}
+
+struct shown { const WCHAR *path; int normal, restored; };
+
+static BOOL CALLBACK restore_one(HWND w, LPARAM lp)
+{
+    struct shown *s = (struct shown *)lp;
+    DWORD pid = 0;
+    if (!IsWindowVisible(w) || GetWindow(w, GW_OWNER) || (GetWindowLongW(w, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)) return TRUE;
+    GetWindowThreadProcessId(w, &pid);
+    if (!is_program(pid, s->path)) return TRUE;
+    if (!IsIconic(w)) { s->normal++; return TRUE; }
+    /* as a taskbar button's click does */
+    PostMessageW(w, WM_SYSCOMMAND, SC_RESTORE, 0);
+    SetForegroundWindow(w);
+    s->restored++;
+    return TRUE;
+}
+
+/* A program its installer's last page started is shown as a launch from the tile would show it: an installer
+   may start it minimized (WinSCP's does, for its "Getting started" web page), and what the visitor sees is the
+   tile's choice, not the installer's. Its minimized top-level windows are restored, for up to 10 s, until one
+   of its windows is up. */
+static void show_normal(const WCHAR *path)
+{
+    for (DWORD t0 = GetTickCount(); GetTickCount() - t0 < 10000;)
+    {
+        MSG m;
+        struct shown s = { path, 0, 0 };
+        EnumWindows(restore_one, (LPARAM)&s);
+        if (s.normal && !s.restored) return;
+        MsgWaitForMultipleObjects(0, NULL, FALSE, 250, QS_ALLINPUT);
+        while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) { TranslateMessage(&m); DispatchMessageW(&m); }
+    }
+}
+
 /* the processes' identity (their count and ids), to tell when a new one has started */
 static unsigned long long procs_sig(void)
 {
@@ -344,7 +388,7 @@ static void take_job(const WCHAR *path)
         if (check[0] && !resolve(check, found, MAX_PATH)) { say(L"cancelled", L"%d", rc); return; }
         /* the installer's last page started the program (a "Run NAME" box, checked): not a second copy, which
            can find the first one's settings file in use */
-        if (check[0] && settled_running(found)) { wcscpy(watch_exe, found); say(L"started", NULL); return; }
+        if (check[0] && settled_running(found)) { show_normal(found); wcscpy(watch_exe, found); say(L"started", NULL); return; }
     }
     if (launch[0])
     {
@@ -442,6 +486,37 @@ static void poll_queue(void)
     }
 }
 
+/* agent.exe --open URL: the http and https handler (HKCR\\http(s)\\shell\\open\\command, bin/mkbundle.sh): a web page
+   a program opens (ShellExecute) goes to the page, as a 1x1 window titled "windemo-open N PROGRAM|URL" for 30 s
+   (N tells two asks apart; PROGRAM: the asking process's file name), and the page offers to open it in a tab */
+static int open_url(const WCHAR *url)
+{
+    WCHAR prog[MAX_PATH] = L"A program", t[4200];
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32W e = { sizeof e };
+    DWORD me = GetCurrentProcessId(), parent = 0;
+    MSG m;
+    if (snap != INVALID_HANDLE_VALUE)
+    {
+        for (BOOL ok = Process32FirstW(snap, &e); ok; ok = Process32NextW(snap, &e)) if (e.th32ProcessID == me) parent = e.th32ParentProcessID;
+        e.dwSize = sizeof e;
+        for (BOOL ok = Process32FirstW(snap, &e); ok && parent; ok = Process32NextW(snap, &e))
+            if (e.th32ProcessID == parent) { wcsncpy(prog, e.szExeFile, MAX_PATH - 1); break; }
+        CloseHandle(snap);
+    }
+    /* a cmd.exe or start in between names nothing: the program behind it is not known */
+    if (!_wcsicmp(prog, L"cmd.exe") || !_wcsicmp(prog, L"explorer.exe") || !_wcsicmp(prog, L"rundll32.exe")) wcscpy(prog, L"A program");
+    _snwprintf(t, 4199, L"windemo-open %lu %s|%s", (unsigned long)GetTickCount(), prog, url);
+    HWND w = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"WindemoAgent", t, WS_POPUP, 0, 0, 1, 1, owner, NULL, hinst, NULL);
+    ShowWindow(w, SW_SHOWNOACTIVATE);
+    for (DWORD t0 = GetTickCount(); GetTickCount() - t0 < 30000;)
+    {
+        MsgWaitForMultipleObjects(0, NULL, FALSE, 500, QS_ALLINPUT);
+        while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) DispatchMessageW(&m);
+    }
+    return 0;
+}
+
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
 {
     WNDCLASSW wc = { 0 };
@@ -451,6 +526,18 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
     hinst = inst;
     /* the status windows' owner, never shown, so no taskbar shows a button for them (the page reads their titles) */
     owner = CreateWindowExW(WS_EX_TOOLWINDOW, L"WindemoAgent", L"", WS_POPUP, 0, 0, 0, 0, NULL, NULL, inst, NULL);
+    if (!wcsncmp(cmdline, L"--open ", 7))
+    {
+        WCHAR url[4096];
+        const WCHAR *u = cmdline + 7;
+        size_t n;
+        while (*u == L' ') u++;
+        if (*u == L'"') u++;
+        wcsncpy(url, u, 4095); url[4095] = 0;
+        n = wcslen(url);
+        while (n && (url[n - 1] == L'"' || url[n - 1] == L' ')) url[--n] = 0;
+        return open_url(url);
+    }
     CreateDirectoryW(L"C:\\windemo", NULL); CreateDirectoryW(QUEUE, NULL);
     for (;;)
     {
