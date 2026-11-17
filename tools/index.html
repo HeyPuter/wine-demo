@@ -189,6 +189,7 @@
                     border-left: 3px solid #f88; font: 13px system-ui, sans-serif; pointer-events: auto; }
   #crashes .crash .what { font-weight: 600; overflow-wrap: anywhere; }
   #crashes .crash .why { margin-top: 2px; color: #b8bec7; font-size: 12px; overflow-wrap: anywhere; }
+  #crashes .crash.open a { color: #9cf; margin-left: 4px; }
   #crashes .crash button { float: right; margin-left: 8px; background: none; border: 0; color: #aaa; cursor: pointer; font: inherit; }
   /* The files' store open in another tab: the choice, over everything. */
   #busy { position: fixed; inset: 0; z-index: 2147483647; display: none; align-items: center; justify-content: center;
@@ -623,6 +624,40 @@
     const d = await globalThis.__gexCompositor?.describe?.({ pixels: false }).catch(() => null);
     return (d?.list ?? []).map((l) => ({ id: /^\S+/.exec(l)?.[0] ?? l, title: /"(.*)"$/.exec(l)?.[1] ?? '' }));
   };
+  // A web page a program opens (ShellExecute of an http(s) URL: the agent's "windemo-open N PROGRAM|URL" window,
+  // agent.exe --open): a note that names the program and the page, with a link that opens it in a new tab (the
+  // visitor's click, so no popup blocker). Shown once per ask, for a minute.
+  const asked = new Set();
+  setInterval(async () => {
+    if (!globalThis.__gexCompositor) return;
+    for (const w of await windows()) {
+      const m = /^windemo-open (\S+) ([^|]*)\|(.+)$/.exec(w.title);
+      if (!m || asked.has(m[1])) continue;
+      asked.add(m[1]);
+      let url;
+      try { url = new URL(m[3].trim()); } catch { continue; }
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') continue;
+      const box = document.createElement('div');
+      box.className = 'crash open';
+      const close = document.createElement('button');
+      close.title = 'Close';
+      close.textContent = '\u2715';
+      close.onclick = () => box.remove();
+      const what = document.createElement('div');
+      what.className = 'what';
+      what.textContent = `${m[2] || 'A program'} wants to open a web page`;
+      const why = document.createElement('div');
+      why.className = 'why';
+      const a = document.createElement('a');
+      a.href = url.href; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = 'Open';
+      a.onclick = () => setTimeout(() => box.remove(), 0);
+      why.append(`${url.href} `, a);
+      box.append(close, what, why);
+      crashes.append(box);
+      setTimeout(() => box.remove(), 60e3);
+      console.log('[open]', JSON.stringify({ program: m[2], url: url.href }));
+    }
+  }, 1000);
   // The loading screen: one row per item the clicked app is waiting on; done ones tick off.
   const loadingBox = $('loading');
   const loader = {
@@ -793,7 +828,7 @@
         const me = ws.find((w) => w.startsWith(`windemo-job ${id} `));
         const [, , state, ...rest] = (me ?? '').split(' ');
         const detail = rest.join(' ');
-        const fresh = all.filter((w) => w.title && !seen.has(w.id) && !w.title.startsWith('windemo-job') && !w.title.startsWith('windemo-icon')).map((w) => w.title);
+        const fresh = all.filter((w) => w.title && !seen.has(w.id) && !w.title.startsWith('windemo-')).map((w) => w.title);
         const ic = t.homepage && ws.find((w) => w.startsWith(`windemo-icon ${id} `));
         if (ic && !t.iconTaken) { t.iconTaken = true; icoToTile(t, b, ic.slice(`windemo-icon ${id} `.length)); }
         if (state === 'downloading') {
@@ -825,7 +860,7 @@
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
-          const win = all.find((w) => !before.has(w.id) && w.title && !w.title.startsWith('windemo-job') && !w.title.startsWith('windemo-icon') && (!title || title.test(w.title)))?.title;
+          const win = all.find((w) => !before.has(w.id) && w.title && !w.title.startsWith('windemo-') && (!title || title.test(w.title)))?.title;
           if (win) { status(null); if (!shown) loader.hide(); console.log('[launcher]', JSON.stringify({ id: t.id, window: win, s: Math.round((Date.now() - t0) / 100) / 10 })); return; }
           if (state === 'exited' || !me) throw new Error(`${t.name} ended without opening a window`);
         } else if (state === 'failed') throw new Error(detail || 'it failed');

@@ -97,6 +97,17 @@ s, n = re.subn(r'(\[Software\\\\(?:Wow6432Node\\\\)?Microsoft\\\\Windows NT\\\\C
 assert n in (0, 2), f'AeDebug Debugger values: {n}, want 2 (or 0: a prefix that has none)'
 open(p, 'w', encoding='utf-8').write(s)
 PY
+# http and https (a program's ShellExecute of a web page, its installer's "open the website" box) go to the page
+# through the agent (agent.exe --open): Wine's winebrowser finds no browser here, and the page offers a tab.
+python3 -I - stage/pfx/system.reg <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+for k in ('http', 'https'):
+    s, n = re.subn(r'(\[Software\\\\Classes\\\\' + k + r'\\\\shell\\\\open\\\\command\][^\n]*\n(?:#[^\n]*\n)*)@="[^\n]*"\n',
+                   lambda m: m.group(1) + '@="\\"C:\\\\windemo\\\\agent.exe\\" --open \\"%1\\""\n', s)
+    assert n == 1, f'{k}: {n} open commands'
+open(p, 'w', encoding='utf-8').write(s)
+PY
 # The keyboard's XKB data (Debian's xkb-data, MIT): winewayland compiles the compositor's keymap
 # against /usr/share/X11/xkb in every process; without it no key reaches a window.
 mkdir -p stage/usr/share/X11; cp -rL /usr/share/X11/xkb stage/usr/share/X11/
