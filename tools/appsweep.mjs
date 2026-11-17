@@ -883,7 +883,7 @@ if (res.usable !== 'ok') res.first_error = firstErr(t4) ?? res.usable;
 res.err_lines = errs.filter((e) => e.t >= t2).length; res.first_err_line = firstErr(t2);
 // any later plan steps (a second interaction to look at by eye)
 if (plan.after) await run(plan.after);
-// a tile's second start after a page reload (plan.tile_reload: {secs}): the page reloaded, the tile clicked again
+// a tile's second start after a page reload (plan.tile_reload: {secs, after: [steps], settle: s}): the page reloaded, the tile clicked again
 // (installed now: straight to the program), and the window list followed each second for that long, its changes
 // logged ([wins]) with pictures every 30 s, to read the program's real window off (a splash has its title too)
 if (plan.tile && plan.tile_reload) {
@@ -900,7 +900,11 @@ if (plan.tile && plan.tile_reload) {
     const r = new RegExp(plan.title ?? '.'); let first = null, lastShot = tc;
     for (const end = tc + (plan.tile_reload.secs ?? 600); now() < end;) {
       await watch();
-      if (!first && (await wins()).some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8)) { first = now(); res.times.reload_window = +(first - tc).toFixed(1); log(`reload: first ${plan.title} window ${res.times.reload_window} s after the click`); }
+      if (!first && (await wins()).some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8)) {
+        first = now(); res.times.reload_window = +(first - tc).toFixed(1); log(`reload: first ${plan.title} window ${res.times.reload_window} s after the click`);
+        // plan.tile_reload.after: steps once the window is up (e.g. ending the program, for its exit's own report)
+        if (plan.tile_reload.after) { await sleep((plan.tile_reload.settle ?? 5) * 1000); const why = await run(plan.tile_reload.after); log(`reload: after steps ${why ?? 'done'}`); }
+      }
       if (now() - lastShot >= 30) { lastShot = now(); await shot(`reload-${Math.round(now() - tc)}s`); }
       await sleep(1000);
     }
