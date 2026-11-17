@@ -100,6 +100,7 @@ const ERR = /threw|RuntimeError|unreachable|trap|gex-console-error|\berr:|wine: 
 const QUIET = /memory reaches \d+ MiB for |\[sig\] pid \d+ takes a signal|\[wins\]|\[mem\]|\[sweep\]|\[drop\]|native wasm32 module for|fixme:|\[sig\] pid \d+ sends signal|no function-tier unit/;
 const line = (t) => {
   appendFileSync(`${outDir}/console.txt`, stamp() + ' ' + t + '\n');
+  if (t.startsWith('[gex] ')) gexLine(t);
   if (!QUIET.test(t) && ERR.test(t)) errs.push({ t: now(), phase, text: t.slice(0, 300) });
   if (t.startsWith('[drop] ')) drops.push(t);
   if (/needs 64-bit memory/.test(t)) notices.push({ t: now(), text: t.slice(0, 300) });
@@ -108,8 +109,47 @@ const line = (t) => {
 const notices = [], m64Execs = [];
 const drops = [];
 const workers = new Set();
+const workerInfo = new Map();
+// A stalled start (a process that said "loaded X" and then nothing, while the run waits): 15 s after a "[gex] loaded"
+// line with no [gex] line since, every attached Worker paused (Debugger.pause) and its JS and wasm stack logged, twice,
+// 2 s apart -- a spin's pc moves inside a loop, a stuck await has nothing running (the pause never lands). Three
+// probes a run at most.
+let gexQuiet = null, probes = 0;
+const gexLine = (t) => {
+  clearTimeout(gexQuiet);
+  gexQuiet = null;
+  if (/^\[gex\] loaded /.test(t) && probes < 3) gexQuiet = setTimeout(() => { probes++; stuckProbe(t).catch((e) => log(`stuck probe failed: ${e?.message ?? e}`)); }, 15000);
+};
+const pausedAt = new Map();
+cdp.on('Debugger.paused', (e, sid) => pausedAt.get(sid)?.(e));
+const frameName = (f) => `${f.functionName || '(anonymous)'} ${String(f.url || '').replace(/^.*\//, '') || `script ${f.location?.scriptId}`}:${(f.location?.lineNumber ?? 0) + 1}:${(f.location?.columnNumber ?? 0) + 1}`;
+async function stackOf(sid) {
+  const got = new Promise((r) => { pausedAt.set(sid, r); setTimeout(() => r(null), 1500); });
+  await lim(cdp.send('Debugger.enable', {}, sid), 'Debugger.enable', 20000);
+  await lim(cdp.send('Debugger.pause', {}, sid), 'Debugger.pause', 5000);
+  const e = await got;
+  pausedAt.delete(sid);
+  if (e) await cdp.send('Debugger.resume', {}, sid).catch(() => {});
+  // (a pause that never landed is cancelled with the domain)
+  await cdp.send('Debugger.disable', {}, sid).catch(() => {});
+  return e ? e.callFrames.slice(0, 14).map(frameName) : null;
+}
+async function stuckProbe(last) {
+  log(`stuck probe ${probes}: no [gex] line for 15 s since "${last.slice(0, 120)}": pausing each of ${workers.size} Workers`);
+  for (const round of [1, 2]) {
+    if (round === 2) await sleep(2000);
+    for (const sid of [sessionId, ...workers]) {
+      const w = sid === sessionId ? 'the page' : workerInfo.get(sid);
+      let st;
+      try { st = await stackOf(sid); } catch (e) { log(`stuck probe ${probes}.${round} ${w ?? sid}: ${e?.message ?? e}`); continue; }
+      if (!st) { log(`stuck probe ${probes}.${round} ${w ?? sid}: idle (nothing running to pause in 1.5 s)`); continue; }
+      log(`stuck probe ${probes}.${round} ${w ?? sid}: ${st.join(' < ')}`);
+    }
+  }
+}
 cdp.on('Target.attachedToTarget', (e) => {
   workers.add(e.sessionId);
+  workerInfo.set(e.sessionId, `${e.targetInfo?.type ?? '?'} "${e.targetInfo?.title ?? ''}" ${e.targetInfo?.targetId?.slice(0, 8) ?? ''}`);
   cdp.send('Runtime.enable', {}, e.sessionId).catch(() => {});
   cdp.send('Network.enable', {}, e.sessionId).catch(() => {});
   cdp.send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true }, e.sessionId).catch(() => {});
@@ -128,7 +168,7 @@ cdp.on('Target.targetCrashed', (e) => {
   line(`[sweep] TARGET CRASHED ${e.targetId}${e.targetId === targetId ? ' (the page)' : ''} status ${e.status} code ${e.errorCode}`);
   if (e.targetId === targetId) { res.notes.push(`renderer crashed (${e.status} ${e.errorCode})`); done(); }
 });
-cdp.on('Target.detachedFromTarget', (e) => { if (e.sessionId === sessionId) line('[sweep] the page detached'); });
+cdp.on('Target.detachedFromTarget', (e) => { workers.delete(e.sessionId); if (e.sessionId === sessionId) line('[sweep] the page detached'); });
 await cdp.send('Target.setDiscoverTargets', { discover: true }).catch(() => {});
 // Every 10 s: the page's JS heap (performance.memory) and the resident memory of this browser's processes (its own
 // profile's): the renderer's growth before a crash is in the log.
