@@ -217,16 +217,19 @@ static BOOL CALLBACK restore_one(HWND w, LPARAM lp)
 
 /* A program its installer's last page started is shown as a launch from the tile would show it: an installer
    may start it minimized (WinSCP's does, for its "Getting started" web page), and what the visitor sees is the
-   tile's choice, not the installer's. Its minimized top-level windows are restored, for up to 10 s, until one
-   of its windows is up. */
+   tile's choice, not the installer's. Its minimized top-level windows are restored until one of its windows is
+   up: for as long as its first window takes (2 minutes at most; a program on the JIT may take most of one), then
+   for 5 s more. */
 static void show_normal(const WCHAR *path)
 {
-    for (DWORD t0 = GetTickCount(); GetTickCount() - t0 < 10000;)
+    DWORD first = 0;
+    for (DWORD t0 = GetTickCount(); GetTickCount() - t0 < 120000 && (!first || GetTickCount() - first < 5000);)
     {
         MSG m;
         struct shown s = { path, 0, 0 };
         EnumWindows(restore_one, (LPARAM)&s);
         if (s.normal && !s.restored) return;
+        if ((s.normal || s.restored) && !first) first = GetTickCount();
         MsgWaitForMultipleObjects(0, NULL, FALSE, 250, QS_ALLINPUT);
         while (PeekMessageW(&m, NULL, 0, 0, PM_REMOVE)) { TranslateMessage(&m); DispatchMessageW(&m); }
     }
@@ -388,7 +391,7 @@ static void take_job(const WCHAR *path)
         if (check[0] && !resolve(check, found, MAX_PATH)) { say(L"cancelled", L"%d", rc); return; }
         /* the installer's last page started the program (a "Run NAME" box, checked): not a second copy, which
            can find the first one's settings file in use */
-        if (check[0] && settled_running(found)) { show_normal(found); wcscpy(watch_exe, found); say(L"started", NULL); return; }
+        if (check[0] && settled_running(found)) { wcscpy(watch_exe, found); say(L"started", NULL); show_normal(found); return; }
     }
     if (launch[0])
     {
