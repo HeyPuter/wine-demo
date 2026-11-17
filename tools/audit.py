@@ -209,6 +209,8 @@ def main():
     with tempfile.TemporaryDirectory() as td:
         subprocess.run([os.path.join(REPO, 'agent/build.sh'), os.path.join(td, 'agent.exe')], check=True)
         ours[sha(open(os.path.join(td, 'agent.exe'), 'rb').read())] = 'agent.exe'
+        if os.path.exists(os.path.join(td, 'agent.exe.wasm')):
+            ours[sha(open(os.path.join(td, 'agent.exe.wasm'), 'rb').read())] = 'agent.exe.wasm'
     i386 = tree_hashes('w64/dist-s/lib/wine/i386-windows')
     codebad = []
     allowed = re.compile('(' + '|'.join(ALLOWED) + ')$')
