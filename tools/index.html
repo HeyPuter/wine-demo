@@ -400,7 +400,7 @@
   };
   const crashed = ({ pid, name, reason, code }) => {
     if (/(^|[\\/])wineserver$/.test(name ?? '')) return serverFailure();
-    note(`${name || `Process ${pid}`} crashed`, reason || (code ? `exception ${code}` : 'it ended unexpectedly'), 30000);
+    note(`${launchedBy(name) || `Process ${pid}`} crashed`, reason || (code ? `exception ${code}` : 'it ended unexpectedly'), 30000);
     console.log('[crash]', JSON.stringify({ pid, name, reason, code }));
   };
 
@@ -758,7 +758,7 @@
   // Windows process by); else that name alone. Capitalised: it starts the note.
   const launchedBy = (name) => {
     const base = String(name ?? '').replace(/^.*[\\/]/, '');
-    const own = base && !/^wine(64)?(-preloader)?$/.test(base) ? base : '';
+    const own = base && !/^wine(64)?(-preloader)?(\.m64)?$/.test(base) ? base : '';
     const tile = lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch.name : '';
     const by = tile && own ? `${tile} (${own})` : tile || own;
     return by.charAt(0).toUpperCase() + by.slice(1);
@@ -1011,7 +1011,9 @@
     const noticed = ({ pid, name, text }) => {
       const prog = launchedBy(name) || `Process ${pid}`;
       const t = String(text ?? '').replace(/^wine: /, '');
-      show(/needs more than 16 GiB/.test(t) ? `${prog}: ${t}: this program is not supported here (its 32-bit build may be)` : `${prog}: ${t}`);
+      // a card, as a crash's (the error line under the desktop is the page's own failures')
+      if (/needs more than 16 GiB/.test(t)) note(`${prog} is not supported here`, `It ${t}; its 32-bit build may run.`, 60000);
+      else note(prog, t, 30000);
       console.log('[notice]', JSON.stringify({ pid, name, program: prog, text }));
     };
     // A runtime without onNotice (before round AF): Wine's own line, from the log.
