@@ -645,7 +645,7 @@
       close.onclick = () => box.remove();
       const what = document.createElement('div');
       what.className = 'what';
-      what.textContent = `${m[2] || 'A program'} wants to open a web page`;
+      what.textContent = `${launchedBy(m[2]) || 'A program'} wants to open a web page`;
       const why = document.createElement('div');
       why.className = 'why';
       const a = document.createElement('a');
@@ -655,7 +655,7 @@
       box.append(close, what, why);
       crashes.append(box);
       setTimeout(() => box.remove(), 60e3);
-      console.log('[open]', JSON.stringify({ program: m[2], url: url.href }));
+      console.log('[open]', JSON.stringify({ program: m[2], by: what.textContent.replace(/ wants to open a web page$/, ''), url: url.href }));
     }
   }, 1000);
   // The loading screen: one row per item the clicked app is waiting on; done ones tick off.
@@ -753,6 +753,16 @@
   // The program a tile last started (its installer, then the program), for a notice whose process gex names only
   // by its loader (wine): {name, at}
   let lastLaunch = null;
+  // Who a notice is from: the tile a launch started within the last 10 minutes (its installer while that runs),
+  // with the program's own name beside it when it has one of its own (not Wine's loader, which gex names a
+  // Windows process by); else that name alone. Capitalised: it starts the note.
+  const launchedBy = (name) => {
+    const base = String(name ?? '').replace(/^.*[\\/]/, '');
+    const own = base && !/^wine(64)?(-preloader)?$/.test(base) ? base : '';
+    const tile = lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch.name : '';
+    const by = tile && own ? `${tile} (${own})` : tile || own;
+    return by.charAt(0).toUpperCase() + by.slice(1);
+  };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const secsSince = (t0) => `${Math.round((Date.now() - t0) / 1000)} s`;
   async function open(t, b) {
@@ -999,9 +1009,7 @@
     // like any other crash. gex names the process by its loader (wine): the program is the one a tile last
     // started, within 10 minutes, else the process.
     const noticed = ({ pid, name, text }) => {
-      const base = String(name ?? '').replace(/^.*[\\/]/, '');
-      const prog = base && !/^wine(64)?(-preloader)?$/.test(base) ? base
-        : lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch.name : `Process ${pid}`;
+      const prog = launchedBy(name) || `Process ${pid}`;
       const t = String(text ?? '').replace(/^wine: /, '');
       show(/needs more than 16 GiB/.test(t) ? `${prog}: ${t}: this program is not supported here (its 32-bit build may be)` : `${prog}: ${t}`);
       console.log('[notice]', JSON.stringify({ pid, name, program: prog, text }));
