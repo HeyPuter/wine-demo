@@ -113,12 +113,14 @@ const workerInfo = new Map();
 // A stalled start (a process that said "loaded X" and then nothing, while the run waits): 15 s after a "[gex] loaded"
 // line with no [gex] line since, every attached Worker paused (Debugger.pause) and its JS and wasm stack logged, twice,
 // 2 s apart -- a spin's pc moves inside a loop, a stuck await has nothing running (the pause never lands). Three
-// probes a run at most.
+// probes a run at most. Only with APPSWEEP_STUCK_PROBE=1: pausing a heavy program's Workers (Godot on the JIT)
+// hung the page and crashed its renderer, which a tile's own run must not see.
+const stuckProbeOn = process.env.APPSWEEP_STUCK_PROBE === '1';
 let gexQuiet = null, probes = 0;
 const gexLine = (t) => {
   clearTimeout(gexQuiet);
   gexQuiet = null;
-  if (/^\[gex\] loaded /.test(t) && probes < 3) gexQuiet = setTimeout(() => { probes++; stuckProbe(t).catch((e) => log(`stuck probe failed: ${e?.message ?? e}`)); }, 15000);
+  if (stuckProbeOn && /^\[gex\] loaded /.test(t) && probes < 3) gexQuiet = setTimeout(() => { probes++; stuckProbe(t).catch((e) => log(`stuck probe failed: ${e?.message ?? e}`)); }, 15000);
 };
 const pausedAt = new Map();
 cdp.on('Debugger.paused', (e, sid) => pausedAt.get(sid)?.(e));
