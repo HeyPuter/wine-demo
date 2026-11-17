@@ -220,7 +220,7 @@ if (process.env.APPSWEEP_CPU === '1') {
   const HZ = 100;
   let last = new Map();
   const tick = () => {
-    const now = new Map(), by = new Map();
+    const now = new Map(), by = new Map(), tops = [];
     for (const pid of readdirSync('/proc')) {
       if (!/^\d+$/.test(pid)) continue;
       let type;
@@ -241,13 +241,14 @@ if (process.env.APPSWEEP_CPU === '1') {
           const t = +f[11] + +f[12];
           now.set(tid, t);
           const d = t - (last.get(tid) ?? t);
+          if (d > 0) tops.push([d, `${type}/${comm}:${tid}`]);
           if (d > 0) { const k = `${type}/${comm}`; const e = by.get(k) ?? [0, 0]; e[0] += d; e[1]++; by.set(k, e); }
         } catch {}
       }
     }
     last = now;
     const all = [...by.values()].reduce((a, e) => a + e[0], 0);
-    if (all) line(`[cpu] ${phase} ${(all / HZ).toFixed(1)} s in 5 s: ${[...by].sort((a, b) => b[1][0] - a[1][0]).slice(0, 8).map(([k, e]) => `${k}${e[1] > 1 ? `x${e[1]}` : ''} ${(e[0] / HZ).toFixed(1)}`).join(', ')}`);
+    if (all) line(`[cpu] ${phase} ${(all / HZ).toFixed(1)} s in 5 s: ${[...by].sort((a, b) => b[1][0] - a[1][0]).slice(0, 8).map(([k, e]) => `${k}${e[1] > 1 ? `x${e[1]}` : ''} ${(e[0] / HZ).toFixed(1)}`).join(', ')}; busiest threads ${tops.sort((a, b) => b[0] - a[0]).slice(0, 3).map(([d, k]) => `${k} ${(d / HZ).toFixed(1)}`).join(', ')}`);
   };
   tick();
   setInterval(tick, 5000).unref();
