@@ -745,7 +745,7 @@
       // The installer from this site when it has it (a browser fetch, at the same time as the desktop's
       // boot, then the drop path into the guest's Downloads folder, where the agent finds it); else the
       // agent downloads it from `url`.
-      const got = needsInstall ? fetchInstaller(t) : Promise.resolve(null);
+      let got = needsInstall ? fetchInstaller(t) : Promise.resolve(null);
       await Promise.race([ready, new Promise((_, no) => { const w = setInterval(() => { if (failed) { clearInterval(w); no(new Error(`the desktop did not start (${failed})`)); } }, 300); ready.then(() => clearInterval(w)); })]);
       if (failed) throw new Error(`the desktop did not start (${failed})`);
       // a dropped program: its files into Windows first (the loading screen's copy row)
@@ -754,12 +754,15 @@
         await t.copy((done, total) => row.set(`Copying ${t.name} into Windows`, total >= 1e5 ? `${mb(done)} of ${mb(total)} MB` : `${Math.round(done / 1e3)} KB`, total ? done / total : 1));
         row.done(t.copied);
       }
-      const file = await got;
+      let file = await got;
+      got = null;
       if (file) {
         const row = loader.row('installer');
         await app.drop([file], { dir: '/pfx/drive_c/users/gex/Downloads',
           onProgress: (p) => row.set(`Copying the ${t.name} installer into Windows`, `${p.total ? Math.round((100 * p.done) / p.total) : 100}%`, p.total ? p.done / p.total : 1) });
         row.done(`${mb(file.size)} MB`);
+        // in Windows now: the page's copy goes (a 179 MB installer's bytes, for the rest of the install)
+        file = null;
       }
       const id = `${t.id}-${Date.now().toString(36)}`;
       // a tile whose installer the visitor brought: the installed program's icon, from the agent, for its tile
