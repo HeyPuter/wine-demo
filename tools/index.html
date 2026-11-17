@@ -1058,6 +1058,8 @@
     // from this page's URL.
     if (q.get('systime') === '1') opts.debug = { ...opts.debug, systime: '1' };
     if (q.get('log')) opts.debug = { ...opts.debug, log: q.get('log') };
+    // ?cpus=N, the processor count programs see (the runtime's cpus switch, GEX_CPUS): fewer pool threads.
+    if (/^\d+$/.test(q.get('cpus') ?? '')) opts.debug = { ...opts.debug, cpus: q.get('cpus') };
     try { app = await start(opts); } catch (e) {
       if (!/onNotice \}\): no such option/.test(String(e?.message ?? e))) throw e;
       delete opts.onNotice; opts.onLog = said;
