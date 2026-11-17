@@ -616,6 +616,20 @@ const startWins = new Set((await wins()).map((w) => w.id));
 const newWins = async () => { const t = (await wins()).filter((w) => !startWins.has(w.id) && w.title).map((w) => `"${w.title}" ${w.w}x${w.h}`); if (t.length) res.notes.push('windows at the timeout: ' + t.join(', ')); };
 if (!plan.tile && (!cmdWin || !(await waitWin('^Desktop$', 60)))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 res.times.desktop = Math.round(now());
+// APPSWEEP_OPENED=1: the files the install opens beyond the boot's, in the order they were first opened
+// (the page's __ntOpened), into OUTDIR/opened-install.txt: a site's rest-bundle order (eject-site
+// --rest-order) from the sweep's own runs.
+const opened = async () => { try { const r = await ev('(async () => await globalThis.__ntOpened?.())()'); return Array.isArray(r) ? r.map(String) : null; } catch { return null; } };
+const bootOpened = process.env.APPSWEEP_OPENED ? await opened() : null;
+const saveOpened = async () => {
+  if (!bootOpened) return;
+  const now_ = await opened();
+  if (!now_) return;
+  const boot = new Set(bootOpened);
+  const fresh = now_.filter((p) => !boot.has(p));
+  writeFileSync(`${outDir}/opened-install.txt`, fresh.join('\n') + (fresh.length ? '\n' : ''));
+  log(`opened by the install: ${fresh.length} files`);
+};
 await sleep(3000);
 const deskList = await wins(), desk = await shot('desktop');
 // the file manager opens over cmd: close it (its title bar's close box), so a click on cmd reaches cmd
@@ -669,6 +683,7 @@ if (plan.tile) {
     await sleep((plan.every ?? 6) * 1000);
   }
   res.drop = 'n/a'; res.install = 'ok (tile)'; res.times.install = Math.round(now() - t2);
+  await saveOpened();
 }
 
 // 2. the installer dragged in from the host
