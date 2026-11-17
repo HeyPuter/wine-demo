@@ -129,10 +129,28 @@ async function stackOf(sid) {
   await lim(cdp.send('Debugger.pause', {}, sid), 'Debugger.pause', 5000);
   const e = await got;
   pausedAt.delete(sid);
+  // While paused: which process and thread this Worker runs (worker.mjs `__gexWho`), and the source around the
+  // top frame when it is JS (a Worker's bundled script has no name worth giving)
+  let who = '', near = '';
+  if (e) {
+    const f = e.callFrames[0];
+    const ev = (x) => lim(cdp.send('Debugger.evaluateOnCallFrame', { callFrameId: f.callFrameId, expression: x, returnByValue: true, silent: true }, sid), 'evaluate', 3000).then((r) => r?.result?.value).catch(() => undefined);
+    const w = await ev('JSON.stringify(globalThis.__gexWho?.() ?? null)');
+    if (w && w !== 'null') who = ` ${w}`;
+    if (!/^\$/.test(f.functionName || '')) {
+      const src = await lim(cdp.send('Debugger.getScriptSource', { scriptId: f.location.scriptId }, sid), 'source', 5000).catch(() => null);
+      const lines = String(src?.scriptSource ?? '').split('\n');
+      const ln = lines[f.location.lineNumber] ?? '';
+      const c = f.location.columnNumber ?? 0;
+      if (ln) near = ` near: ${JSON.stringify(ln.slice(Math.max(0, c - 120), c + 80))}`;
+    }
+    e.who = who;
+    e.near = near;
+  }
   if (e) await cdp.send('Debugger.resume', {}, sid).catch(() => {});
   // (a pause that never landed is cancelled with the domain)
   await cdp.send('Debugger.disable', {}, sid).catch(() => {});
-  return e ? e.callFrames.slice(0, 14).map(frameName) : null;
+  return e ? [`${e.who ?? ''}${e.near ?? ''}`.trim() || '-', ...e.callFrames.slice(0, 14).map(frameName)] : null;
 }
 async function stuckProbe(last) {
   log(`stuck probe ${probes}: no [gex] line for 15 s since "${last.slice(0, 120)}": pausing each of ${workers.size} Workers`);
