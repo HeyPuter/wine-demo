@@ -214,6 +214,44 @@ setInterval(async () => {
   for (const p of r) by[p.type] = (by[p.type] ?? 0) + p.mb;
   line(`[mem] page heap ${heap} MiB (used/total/limit); rss MiB ${Object.entries(by).map(([k, v]) => `${k} ${v}`).join(', ')}; renderer max ${Math.max(0, ...r.filter((p) => p.type === 'renderer').map((p) => p.mb))}`);
 }, 10000).unref();
+// APPSWEEP_CPU=1: every 5 s, the CPU this browser's threads (its own profile's processes) used since the last line,
+// by process type and thread name, from /proc (not a sampled profile): what a slow stage spends its time on.
+if (process.env.APPSWEEP_CPU === '1') {
+  const HZ = 100;
+  let last = new Map();
+  const tick = () => {
+    const now = new Map(), by = new Map();
+    for (const pid of readdirSync('/proc')) {
+      if (!/^\d+$/.test(pid)) continue;
+      let type;
+      try {
+        const cmd = readFileSync(`/proc/${pid}/cmdline`, 'utf8');
+        if (!cmd.includes(prof)) continue;
+        type = /--type=([a-z-]+)/.exec(cmd)?.[1] ?? 'browser';
+        if (type === 'utility') type = /--utility-sub-type=([\w.]+)/.exec(cmd)?.[1]?.split('.').pop() ?? type;
+      } catch { continue; }
+      let tids = [];
+      try { tids = readdirSync(`/proc/${pid}/task`); } catch { continue; }
+      for (const tid of tids) {
+        try {
+          const st = readFileSync(`/proc/${pid}/task/${tid}/stat`, 'utf8');
+          const r = st.lastIndexOf(')');
+          const comm = st.slice(st.indexOf('(') + 1, r).replace(/[0-9]+$/, '#');
+          const f = st.slice(r + 2).split(' ');
+          const t = +f[11] + +f[12];
+          now.set(tid, t);
+          const d = t - (last.get(tid) ?? t);
+          if (d > 0) { const k = `${type}/${comm}`; const e = by.get(k) ?? [0, 0]; e[0] += d; e[1]++; by.set(k, e); }
+        } catch {}
+      }
+    }
+    last = now;
+    const all = [...by.values()].reduce((a, e) => a + e[0], 0);
+    if (all) line(`[cpu] ${phase} ${(all / HZ).toFixed(1)} s in 5 s: ${[...by].sort((a, b) => b[1][0] - a[1][0]).slice(0, 8).map(([k, e]) => `${k}${e[1] > 1 ? `x${e[1]}` : ''} ${(e[0] / HZ).toFixed(1)}`).join(', ')}`);
+  };
+  tick();
+  setInterval(tick, 5000).unref();
+}
 await s('Runtime.enable'); await s('Page.enable'); await s('Inspector.enable').catch(() => {});
 await s('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
 await s('Page.navigate', { url });
