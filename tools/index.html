@@ -1051,8 +1051,11 @@
       filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy, onCrash: crashed, ...glSave,
     };
     // Debug: ?systime=1, every process's syscall time by call on its exit (the runtime's systime switch; a
-    // runtime without it ignores it): an install's file writes against its own work.
+    // runtime without it ignores it): an install's file writes against its own work. ?log=NAMES, the runtime's
+    // debug output (its log switch): the library's Workers take their switches from start({ debug }), never
+    // from this page's URL.
     if (q.get('systime') === '1') opts.debug = { ...opts.debug, systime: '1' };
+    if (q.get('log')) opts.debug = { ...opts.debug, log: q.get('log') };
     try { app = await start(opts); } catch (e) {
       if (!/onNotice \}\): no such option/.test(String(e?.message ?? e))) throw e;
       delete opts.onNotice; opts.onLog = said;
