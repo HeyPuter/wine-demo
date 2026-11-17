@@ -103,6 +103,18 @@ open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+# NO_UNITS: the eject still adds the NT trampoline page's units (it fails without them); they go too, and the page
+# runs that page on the JIT like every other x86 page.
+if [ -n "${NO_UNITS:-}" ]; then
+  python3 -I - $out/project/build/web/nt.json <<'PY'
+import json, os, sys
+p = sys.argv[1]; s = json.load(open(p)); n = len(s.get('units', []))
+s['units'] = []; os.remove(p); json.dump(s, open(p, 'w'), indent=2)
+print(f"site: NO_UNITS: the eject's {n} trampoline units dropped")
+PY
+  rm -rf $out/project/build/web/units
+  sed -i '$ s/; [0-9]* units;/; 0 units (NO_UNITS: the trampoline units dropped);/' logs/site-$out.log
+fi
 # The tiles' icons (tools/icons.py, at icons/ID.png): the desktop's, each launcher app's from its installer
 # (or the program inside it the launcher.tsv row names), and the drop picker's generic program icon; the
 # page's ICONS lists the ones made.
