@@ -83,13 +83,21 @@ const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' 
 const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
 const lim = (pr, what, ms = 20000) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + what)), ms))]);
 const s = (m, p) => lim(cdp.send(m, p, sessionId), m, m === 'Page.navigate' ? 300000 : 30000);
-const ev = async (x) => (await s('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true })).result?.value;
+// An evaluate the page does not answer in 10 s, or one that throws, is said in console.txt with what it was: a
+// renderer that has gone quiet shows here first.
+const ev = async (x) => {
+  let r;
+  try { r = await lim(cdp.send('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true }, sessionId), 'Runtime.evaluate (10 s)', 10000); }
+  catch (e) { line(`[sweep] evaluate failed: ${e?.message ?? e} (${x.replace(/\s+/g, ' ').slice(0, 100)})`); throw e; }
+  if (r?.exceptionDetails) line(`[sweep] evaluate threw: ${(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text ?? '').split('\n')[0].slice(0, 200)} (${x.replace(/\s+/g, ' ').slice(0, 100)})`);
+  return r?.result?.value;
+};
 
 // the page's and its Workers' consoles; the error lines a row's first_error comes from
 const errs = [];
 let phase = 'boot';
 const ERR = /threw|RuntimeError|unreachable|trap|gex-console-error|\berr:|wine: |Unhandled exception|page fault|abort|assert|not implemented|unimplemented function|Bad format|failed/i;
-const QUIET = /memory reaches \d+ MiB for |\[sig\] pid \d+ takes a signal|\[wins\]|\[sweep\]|\[drop\]|native wasm32 module for|fixme:|\[sig\] pid \d+ sends signal|no function-tier unit/;
+const QUIET = /memory reaches \d+ MiB for |\[sig\] pid \d+ takes a signal|\[wins\]|\[mem\]|\[sweep\]|\[drop\]|native wasm32 module for|fixme:|\[sig\] pid \d+ sends signal|no function-tier unit/;
 const line = (t) => {
   appendFileSync(`${outDir}/console.txt`, stamp() + ' ' + t + '\n');
   if (!QUIET.test(t) && ERR.test(t)) errs.push({ t: now(), phase, text: t.slice(0, 300) });
@@ -115,6 +123,37 @@ cdp.on('Network.requestWillBeSent', (e) => {
 });
 cdp.on('Runtime.exceptionThrown', (e) => line('threw ' + (e.exceptionDetails?.exception?.description ?? e.exceptionDetails?.text)));
 cdp.on('Inspector.targetCrashed', () => { line('[sweep] RENDERER CRASHED'); res.notes.push('renderer crashed'); done(); });
+// Any target's crash (a Worker's or the page's renderer), with Chromium's status and code: OOM shows as such
+cdp.on('Target.targetCrashed', (e) => {
+  line(`[sweep] TARGET CRASHED ${e.targetId}${e.targetId === targetId ? ' (the page)' : ''} status ${e.status} code ${e.errorCode}`);
+  if (e.targetId === targetId) { res.notes.push(`renderer crashed (${e.status} ${e.errorCode})`); done(); }
+});
+cdp.on('Target.detachedFromTarget', (e) => { if (e.sessionId === sessionId) line('[sweep] the page detached'); });
+await cdp.send('Target.setDiscoverTargets', { discover: true }).catch(() => {});
+// Every 10 s: the page's JS heap (performance.memory) and the resident memory of this browser's processes (its own
+// profile's): the renderer's growth before a crash is in the log.
+const rss = () => {
+  const out = [];
+  for (const pid of readdirSync('/proc')) {
+    if (!/^\d+$/.test(pid)) continue;
+    try {
+      const cmd = readFileSync(`/proc/${pid}/cmdline`, 'utf8');
+      if (!cmd.includes(prof)) continue;
+      const type = /--type=([a-z-]+)/.exec(cmd)?.[1] ?? 'browser';
+      const kb = +(/VmRSS:\s+(\d+)/.exec(readFileSync(`/proc/${pid}/status`, 'utf8'))?.[1] ?? 0);
+      out.push({ type, mb: Math.round(kb / 1024) });
+    } catch {}
+  }
+  return out;
+};
+setInterval(async () => {
+  let heap = '?';
+  try { const m = await ev('(()=>{const m=performance.memory;return m?[m.usedJSHeapSize,m.totalJSHeapSize,m.jsHeapSizeLimit].map(v=>Math.round(v/1048576)).join("/"):null})()'); if (m) heap = m; } catch {}
+  const r = rss();
+  const by = {};
+  for (const p of r) by[p.type] = (by[p.type] ?? 0) + p.mb;
+  line(`[mem] page heap ${heap} MiB (used/total/limit); rss MiB ${Object.entries(by).map(([k, v]) => `${k} ${v}`).join(', ')}; renderer max ${Math.max(0, ...r.filter((p) => p.type === 'renderer').map((p) => p.mb))}`);
+}, 10000).unref();
 await s('Runtime.enable'); await s('Page.enable'); await s('Inspector.enable').catch(() => {});
 await s('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
 await s('Page.navigate', { url });
@@ -131,7 +170,7 @@ await s('Page.navigate', { url });
 
 // the compositor's windows: [{id, w, h, x, y, title}]
 const wins = async () => {
-  const d = await ev('(async()=>{const c=globalThis.__gexCompositor;return c?await c.describe({pixels:false}):null})()').catch(() => null);
+  const d = await ev('(async()=>{const c=globalThis.__gexCompositor;return c?await c.describe({pixels:false}):null})()').catch((e) => { line(`[wins] probe failed: ${e?.message ?? e}`); return null; });
   return (d?.list ?? []).map((l) => {
     const m = /^(\S+) .*? (\d+)x(\d+)@(-?\d+),(-?\d+) .*?"(.*)"$/.exec(l);
     return m ? { id: m[1], w: +m[2], h: +m[3], x: +m[4], y: +m[5], title: m[6] } : { id: l, title: '' };
