@@ -4,6 +4,8 @@
 Every regular file is accounted for by content (SHA-256), in this order:
   wine source   byte-identical to a file in the Wine tree's nls/ or fonts/, its sRGB
                 profile or winspool's generic PPD (the printer's, mkapps.sh) ($WINE_SRC)
+  wine icu      ICU's data cut to the dist's locales (share/wine/nls/icudtl.dat): GEX's wine/icudat.py over
+                the Wine tree's nls/icudtl.dat, WINE_ICU_LOCALES (default en en_US, as wine/dist.sh), redone here
   wine build    widl's .winmd in the W64 build dir (w64/b64/include), or, outside
                 w64/dist, byte-identical to a w64/dist file (a prefix's copies of the builtins)
   wine native   byte-identical to wine64-dist.sh's native PE side (NATIVE_DIR: its pen64-K-N/native, the
@@ -166,6 +168,14 @@ def main():
     for f in ('dlls/mscms/srgb2014.icc', 'dlls/winspool.drv/generic.ppd'):
         f = os.path.join(WINE_SRC, f)
         src[sha(open(f, 'rb').read())] = f
+    # ICU's data as wine/dist.sh cuts it, redone from the Wine tree's
+    icu = os.path.join(WINE_SRC, 'nls/icudtl.dat'); cut = os.path.join(os.environ.get('GEX', ''), 'wine/icudat.py')
+    if os.path.isfile(icu) and os.path.isfile(cut):
+        with tempfile.TemporaryDirectory(dir=os.environ.get('WD_HOT') or None) as td:
+            o = os.path.join(td, 'icudtl.dat')
+            if subprocess.run([sys.executable, '-I', cut, icu, o, *os.environ.get('WINE_ICU_LOCALES', 'en en_US').split()],
+                              stdout=subprocess.DEVNULL).returncode == 0:
+                src[sha(open(o, 'rb').read())] = 'wine icu: ' + icu
     dist = tree_hashes('w64/dist-s')
     winmd = {}
     winmd.update({sha(open(os.path.join(WINMD_DIR, n), 'rb').read()): n
