@@ -750,6 +750,9 @@
     return new File(parts, t.file);
   }
   let busy = null;
+  // The program a tile last started (its installer, then the program), for a notice whose process gex names only
+  // by its loader (wine): {name, at}
+  let lastLaunch = null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const secsSince = (t0) => `${Math.round((Date.now() - t0) / 1000)} s`;
   async function open(t, b) {
@@ -840,6 +843,7 @@
           installer ||= Date.now();
           // its first window: the screen goes, and the user takes the installer from there
           if (!shown && fresh.length) {
+            lastLaunch = { name: `the ${t.name} installer`, at: Date.now() };
             R('setup').done('open'); loader.hide(); shown = true;
             // the installer is the user's now: other tiles can go meanwhile, and this job is followed quietly
             busy = null;
@@ -857,6 +861,7 @@
           // (its status window stays while the program or any process its launch started lives, then says
           // exited, and goes 15 s later: the program is waited for as long as it lives, however slow its start)
           R('installer').done();
+          if (!started) lastLaunch = { name: t.name, at: Date.now() };
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
@@ -989,8 +994,19 @@
     // files are kept in this browser's origin private file system (OPFS).
     const keep = q.get('persist') !== '0';
     if (!keep) kept = {};
-    // Wine's own line for a program that wants more address space than the page has (a 64-bit Chromium or
-    // Electron app's reservation): shown, not left to look like any other crash.
+    // Why a running program cannot work as it should (the System's notice, start()'s onNotice), such as more
+    // address space than the page has (a 64-bit Chromium or Electron app's reservation): shown, not left to look
+    // like any other crash. gex names the process by its loader (wine): the program is the one a tile last
+    // started, within 10 minutes, else the process.
+    const noticed = ({ pid, name, text }) => {
+      const base = String(name ?? '').replace(/^.*[\\/]/, '');
+      const prog = base && !/^wine(64)?(-preloader)?$/.test(base) ? base
+        : lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch.name : `Process ${pid}`;
+      const t = String(text ?? '').replace(/^wine: /, '');
+      show(/needs more than 16 GiB/.test(t) ? `${prog}: ${t}: this program is not supported here (its 32-bit build may be)` : `${prog}: ${t}`);
+      console.log('[notice]', JSON.stringify({ pid, name, program: prog, text }));
+    };
+    // A runtime without onNotice (before round AF): Wine's own line, from the log.
     const said = (text) => {
       for (const l of String(text).split('\n')) {
         if (/needs more than 16 GiB of address space/.test(l)) show(`${l.replace(/^wine: /, '')}: this program is not supported here (its 32-bit build may be)`);
@@ -1018,14 +1034,19 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 60000);
       console.log(`[windemo] GL capture saved: ${bytes.length} bytes`);
     } } : {};
-    app = await start({
-      container: $('desk'), size: 'fit', onProgress: progress, onLog: said, ...(wisp ? { wisp } : {}),
+    const opts = {
+      container: $('desk'), size: 'fit', onProgress: progress, onNotice: noticed, ...(wisp ? { wisp } : {}),
       // the desktop and the launcher's agent; ?desktop=1, the recorded desktop
       ...(bare ? {} : { args: ['C:\\windows\\explorer.exe', '/desktop=shell', 'C:\\windemo\\agent.exe'] }),
       // A plain desktop in the scheme's colour.
       background: { color: DESKTOP_COLOUR ?? '#2e686c' },
       filesystem: keep ? { kind: 'opfs', name: 'windemo' } : 'memory', onStoreBusy, onCrash: crashed, ...glSave,
-    });
+    };
+    try { app = await start(opts); } catch (e) {
+      if (!/onNotice \}\): no such option/.test(String(e?.message ?? e))) throw e;
+      delete opts.onNotice; opts.onLog = said;
+      app = await start(opts);
+    }
     if (unsaved) console.log('[windemo] open in another tab: this one keeps no files');
     globalThis.__app = app;
     dropFiles(app);
