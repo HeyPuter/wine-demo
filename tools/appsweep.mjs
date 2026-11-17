@@ -772,7 +772,15 @@ if (!plan.use && changed === 0) {
   await sleep(2500); b = await shot('used2'); changed = diff(a, b, full);
 }
 await watch();
-const still = (await wins()).some((w) => w.id === app.id);
+// (a program that destroys and re-creates its top-level window, as SuperTux on a GL renderer fallback, is still
+// there: a new top-level of the same process and title is the same app, as the settle's handover takes it)
+const pidOf = (id) => String(id).split(':')[0];
+const nowWins = await wins();
+let still = nowWins.some((w) => w.id === app.id);
+if (!still) {
+  const again = nowWins.filter((w) => pidOf(w.id) === pidOf(app.id) && w.title === app.title).sort((x, y) => y.w * y.h - x.w * x.h)[0];
+  if (again) { still = true; res.notes.push(`its window was re-created (${again.w}x${again.h} "${again.title}", same process)`); }
+}
 // Drawn: the share of the program's window (on screen) whose pixels differ from the desktop as it was before
 // anything ran, at its first picture; a window more than half undrawn, or one colour over 97% of it (a GL
 // window still black or white), is not used, whatever changed after
