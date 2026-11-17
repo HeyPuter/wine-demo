@@ -1058,8 +1058,13 @@
     // from this page's URL.
     if (q.get('systime') === '1') opts.debug = { ...opts.debug, systime: '1' };
     if (q.get('log')) opts.debug = { ...opts.debug, log: q.get('log') };
-    // ?cpus=N, the processor count programs see (the runtime's cpus switch, GEX_CPUS): fewer pool threads.
-    if (/^\d+$/.test(q.get('cpus') ?? '')) opts.debug = { ...opts.debug, cpus: q.get('cpus') };
+    // The processor count programs see (the runtime's cpus switch, GEX_CPUS): at most CPUS_DEFAULT, as
+    // programs size their thread pools by it and a page's Workers share V8's one 4 GB heap cage (Firefox's
+    // pools outgrew it); ?cpus=N instead.
+    const CPUS_DEFAULT = 2;
+    const cpus = /^\d+$/.test(q.get('cpus') ?? '') ? q.get('cpus')
+      : String(Math.max(1, Math.min(navigator.hardwareConcurrency || CPUS_DEFAULT, CPUS_DEFAULT)));
+    opts.debug = { ...opts.debug, cpus };
     try { app = await start(opts); } catch (e) {
       if (!/onNotice \}\): no such option/.test(String(e?.message ?? e))) throw e;
       delete opts.onNotice; opts.onLog = said;
