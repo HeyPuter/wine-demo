@@ -4,6 +4,8 @@
 # nt.json keeps `identities` (a compact process takes only its own flavour's); DROP_IDS=1 drops them.
 # REST_ORDER=FILE (default tools/rest-order-all.txt): guest paths read together, first in the rest bundle (eject-site --rest-order).
 # Units of images not in tools/boot-units.txt go in the background fill (BOOT_UNITS= : all at boot).
+# NO_UNITS=1: no translated unit ships at all (not the recording's, the launcher apps' or a coverage split); every
+# x86 program runs on the JIT.
 # LAUNCHER=FILE: the launcher's list from FILE instead of tools/launcher.tsv (a local site's own tiles); credits.html
 # still lists only tools/launcher.tsv's.
 # Outputs: WD_OUT/proj-OUT, WD_OUT/OUT.
@@ -48,6 +50,9 @@ if cold not in ('none', 'instrument'):
         if os.path.exists(e): cov[u['key']] = f"0-{os.path.getsize(e) // 8 - 1}"; whole += 1
     print(f"site: cold {cold}: {split} launcher app units split by their coverage, {whole} other units whole")
 s['coverage'] = cov
+if os.environ.get('NO_UNITS'):
+    print(f"site: NO_UNITS: none of the {len(s['units'])} translated units ships; every x86 program runs on the JIT")
+    s['units'] = []; s['coverage'] = {}; s.pop('unit_misses', None)
 json.dump(s, open(p, 'w'), indent=2)
 PY
 nice -n 10 $GEXC eject runs/$rec --out $P --web-src $W/page --unit-cache units > logs/eject-$out.log 2>&1
