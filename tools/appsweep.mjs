@@ -122,6 +122,11 @@ const gexLine = (t) => {
   gexQuiet = null;
   if (stuckProbeOn && /^\[gex\] loaded /.test(t) && probes < 3) gexQuiet = setTimeout(() => { probes++; stuckProbe(t).catch((e) => log(`stuck probe failed: ${e?.message ?? e}`)); }, 15000);
 };
+// APPSWEEP_PROBE_AT=S,S,...: the same probe at those seconds of the run, whatever the log says (where each Worker's
+// process and thread is in a long busy stretch)
+for (const at of (process.env.APPSWEEP_PROBE_AT ?? '').split(',').filter(Boolean)) {
+  setTimeout(() => { probes++; stuckProbe(`timed probe at ${at} s`).catch((e) => log(`timed probe failed: ${e?.message ?? e}`)); }, Number(at) * 1000).unref();
+}
 const pausedAt = new Map();
 cdp.on('Debugger.paused', (e, sid) => pausedAt.get(sid)?.(e));
 const frameName = (f) => `${f.functionName || '(anonymous)'} ${String(f.url || '').replace(/^.*\//, '') || `script ${f.location?.scriptId}`}:${(f.location?.lineNumber ?? 0) + 1}:${(f.location?.columnNumber ?? 0) + 1}`;
