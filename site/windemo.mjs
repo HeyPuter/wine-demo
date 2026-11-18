@@ -268,6 +268,24 @@ export async function start(opts = {}) {
   pump(proc.stdout);
   pump(proc.stderr);
 
+  // A kept prefix's registry on disk before the tab may go: the wineserver
+  // saves it at SIGUSR1 (at most 100 ms waited for), then the root is synced.
+  // Each time the page is hidden, and as it is let go.
+  if (keep && typeof sys.signal === 'function') {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    let flushing = null;
+    const flush = () => {
+      if (flushing || sys.state.phase !== 'running') return;
+      flushing = (async () => {
+        await Promise.race([sys.signal('wineserver', 'SIGUSR1').catch(() => 0), wait(100)]);
+        await wait(100);
+        await sys.sync();
+      })().catch(() => {}).finally(() => { flushing = null; });
+    };
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+    addEventListener('pagehide', flush);
+  }
+
   // Ready: the desktop's first window drawn.
   const ready = setInterval(async () => {
     const d = await windows.describe({ pixels: false }).catch(() => null);
