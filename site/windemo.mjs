@@ -19,9 +19,9 @@
 //                   (run without keeping files) or 'wait' (until it lets go; `signal`
 //                   aborts once it has)
 //   wisp            a Wisp proxy's URL for the guest's network
-//   restAhead       true: the rest bundle downloaded whole in the background once
-//                   the system is up (paused while the page is hidden); default
-//                   false, each frame at its first read
+//   restAhead       the rest bundle downloaded whole in the background once the
+//                   system is up (paused while the page is hidden); default true,
+//                   false: each frame at its first read
 //   debug           the runtime's debugging switches ({ cpus, log, systime, glcapture })
 //   onProgress(p)   the start-up: { phase: 'download' | 'boot' | 'ready' | 'failed' | 'exited',
 //                   download: { done, total, files, filesDone }, fetch, rest: { done,
@@ -247,7 +247,7 @@ export async function start(opts = {}) {
   fs.lazyPort?.start();
   // The rest bundle whole in the background (lazy-source.mjs `ahead`), the title files being in.
   const restBundles = [...new Set(lazy.map(([, , key]) => String(key)).filter((k) => k.includes('#')).map((k) => k.slice(0, k.lastIndexOf('#'))))];
-  if (opts.restAhead === true && fs.lazyPort && restBundles.length) {
+  if (opts.restAhead !== false && fs.lazyPort && restBundles.length) {
     const paused = () => fs.lazyPort.postMessage({ paused: document.visibilityState === 'hidden' });
     paused();
     fs.lazyPort.postMessage({ ahead: { bundles: restBundles } });
