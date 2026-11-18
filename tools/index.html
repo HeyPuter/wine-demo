@@ -398,10 +398,14 @@
     note("Windows session ended: Wine's server failed");
     console.log('[crash]', JSON.stringify({ server: true }));
   };
-  const crashed = ({ pid, name, reason, code }) => {
+  // The processes a "not supported" notice was given for: their end that follows is that, not a second card.
+  const unsupported = new Set();
+  const crashed = ({ pid, name, reason, code, cmdline }) => {
     if (/(^|[\\/])wineserver$/.test(name ?? '')) return serverFailure();
-    note(`${launchedBy(name) || `Process ${pid}`} crashed`, reason || (code ? `exception ${code}` : 'it ended unexpectedly'), 30000);
-    console.log('[crash]', JSON.stringify({ pid, name, reason, code }));
+    const who = whoIs(pid, name, cmdline);
+    console.log('[crash]', JSON.stringify({ pid, name, reason, code, cmdline, program: who.label }));
+    if (unsupported.has(pid)) return;
+    note(`${who.label} crashed`, `${who.context ? `${who.context}. ` : ''}${reason || (code ? `exception ${code}` : 'it ended unexpectedly')}`, 30000);
   };
 
   // Files and folders dropped on the page: copied into the guest with their
@@ -763,6 +767,21 @@
     const by = tile && own ? `${tile} (${own})` : tile || own;
     return by.charAt(0).toUpperCase() + by.slice(1);
   };
+  // Who a crash or notice is from, by the process's command line (start()'s cmdline: a Windows program's is Wine's
+  // loader, then its .exe's path): { label, context, helper }. `label` the program's .exe (else gex's name for it,
+  // else the tile's, else the pid); `context` which tile's run it came in, when that is a different program, so a
+  // helper an installer starts (a bundled runtime's setup.exe) is not taken for the installer; `helper` when that
+  // tile's installer is what was running.
+  const whoIs = (pid, name, cmdline) => {
+    const exe = /^\S*?wine(64)?(-preloader)?(\.m64)?\s+(.*?\.(exe|com|msi))(\s|$)/i.exec(String(cmdline ?? ''))?.[4] ?? '';
+    const base = exe.replace(/^.*[\\/]/, '');
+    const nm = String(name ?? '').replace(/^.*[\\/]/, '');
+    const own = base || (nm && !/^wine(64)?(-preloader)?(\.m64)?$/.test(nm) ? nm : '');
+    const tile = lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch : null;
+    if (!own) { const by = tile?.name || `Process ${pid}`; return { label: by.charAt(0).toUpperCase() + by.slice(1), context: '', helper: false }; }
+    const context = tile ? `Started while ${tile.name} was running${exe ? ` (${exe})` : ''}` : (exe && exe !== own ? exe : '');
+    return { label: own, context, helper: !!tile && /^the .* installer$/.test(tile.name) };
+  };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const secsSince = (t0) => `${Math.round((Date.now() - t0) / 1000)} s`;
   async function open(t, b) {
@@ -1008,13 +1027,17 @@
     // address space than the page has (a 64-bit Chromium or Electron app's reservation): shown, not left to look
     // like any other crash. gex names the process by its loader (wine): the program is the one a tile last
     // started, within 10 minutes, else the process.
-    const noticed = ({ pid, name, text }) => {
-      const prog = launchedBy(name) || `Process ${pid}`;
+    const noticed = ({ pid, name, text, cmdline }) => {
+      const who = whoIs(pid, name, cmdline);
       const t = String(text ?? '').replace(/^wine: /, '');
-      // a card, as a crash's (the error line under the desktop is the page's own failures')
-      if (/needs more than 16 GiB/.test(t)) note(`${prog} is not supported here`, `It ${t}; its 32-bit build may run.`, 60000);
-      else note(prog, t, 30000);
-      console.log('[notice]', JSON.stringify({ pid, name, program: prog, text }));
+      const ctx = who.context ? `${who.context}. ` : '';
+      // a card, as a crash's (the error line under the desktop is the page's own failures'). A program an
+      // installer started (a runtime it bundles) is the installer's helper: the install may go on without it.
+      if (/needs more than 16 GiB/.test(t)) {
+        unsupported.add(pid);
+        note(`${who.label} is not supported here`, `${ctx}It ${t}; ${who.helper ? 'the install may go on without it' : 'its 32-bit build may run'}.`, 60000);
+      } else note(who.label, `${ctx}${t}`, 30000);
+      console.log('[notice]', JSON.stringify({ pid, name, cmdline, program: who.label, text }));
     };
     // A runtime without onNotice (before round AF): Wine's own line, from the log.
     const said = (text) => {
