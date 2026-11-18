@@ -187,7 +187,10 @@ cdp.on('Target.attachedToTarget', (e) => {
 cdp.on('Runtime.consoleAPICalled', (e) => line(e.args.map((a) => a.value ?? a.description).join(' ')));
 // A split unit's cold code fetched (a Worker's ranged read of a unit's cold.bin): each one is code the program waited
 // for, logged with its range so a run can count them
+// Every request's URL and Range, for tile_reload.cached's audit of the reload's fetches
+const requests = [];
 cdp.on('Network.requestWillBeSent', (e) => {
+  if (requests.length < 200000) requests.push({ url: e.request?.url ?? '', range: e.request?.headers?.Range ?? e.request?.headers?.range ?? null });
   if (/\/cold\.bin/.test(e.request?.url ?? '')) line(`[sweep] cold fetch ${e.request.url.replace(/^.*\/units\//, '')} ${e.request.headers?.Range ?? e.request.headers?.range ?? 'whole'}`);
 });
 cdp.on('Runtime.exceptionThrown', (e) => line('threw ' + (e.exceptionDetails?.exception?.description ?? e.exceptionDetails?.text)));
@@ -944,8 +947,40 @@ if (plan.after) await run(plan.after);
 // a tile's second start after a page reload (plan.tile_reload: {secs, after: [steps], settle: s}): the page reloaded, the tile clicked again
 // (installed now: straight to the program), and the window list followed each second for that long, its changes
 // logged ([wins]) with pictures every 30 s, to read the program's real window off (a splash has its title too)
+// plan.tile_reload.cached: the reload must fetch nothing the page's Cache Storage held before it: no request for a URL
+// it keeps, and no range of a bundle frame it keeps (site/lazy-source.mjs: frame K of BUNDLE under BUNDLE?h=H&f=K,
+// BUNDLE.json's frames[K] its [offset, length]). res.cached: {held, refetched: [...]}; any refetch is the run's error.
+const HELD = `(async () => { const out = []; for (const n of await caches.keys()) { const c = await caches.open(n); for (const r of await c.keys()) out.push(r.url); } return out; })()`;
+async function cachedAudit(held, from) {
+  const urls = new Set(), frames = new Map(); // bundle URL -> { h, ks: Set }
+  for (const k of held) {
+    const u = new URL(k), h = u.searchParams.get('h'), f = u.searchParams.get('f');
+    if (h && f !== null && u.searchParams.size === 2) {
+      u.search = '';
+      const b = frames.get(u.href) ?? { h, ks: new Set() };
+      if (b.h === h) b.ks.add(Number(f));
+      frames.set(u.href, b);
+    } else urls.add(k);
+  }
+  const offsets = new Map();
+  for (const [b, { h }] of frames) {
+    const ix = await ev(`fetch(${JSON.stringify(`${b}.json`)}).then((r) => r.json())`).catch(() => null);
+    if (ix?.h === h) offsets.set(b, new Map(ix.frames.map(([o], k) => [o, k])));
+  }
+  const refetched = [];
+  for (const r of requests.slice(from)) {
+    const bare = r.url.replace(/#.*$/, '');
+    if (urls.has(bare)) { refetched.push(bare); continue; }
+    const b = frames.get(bare.replace(/\?.*$/, '')), lo = /^bytes=(\d+)-/.exec(r.range ?? '')?.[1];
+    const k = b && lo !== undefined ? offsets.get(bare.replace(/\?.*$/, ''))?.get(Number(lo)) : undefined;
+    if (k !== undefined && b.ks.has(k)) refetched.push(`${bare} frame ${k}`);
+  }
+  return { held: held.length, refetched };
+}
 if (plan.tile && plan.tile_reload) {
   phase = 'reload';
+  const held = plan.tile_reload.cached ? ((await ev(HELD).catch(() => null)) ?? []) : null;
+  const from = requests.length;
   await s('Page.reload', { ignoreCache: false }).catch((e) => log('reload: ' + e.message));
   const tr = now();
   if (!(await waitWin(' - Wine Desktop$', 300))) res.notes.push('after the reload: no desktop in 300 s');
@@ -970,6 +1005,12 @@ if (plan.tile && plan.tile_reload) {
       if (now() - lastShot >= 30) { lastShot = now(); await shot(`reload-${Math.round(now() - tc)}s`); }
       await sleep(1000);
     }
+    if (!first) res.notes.push(`after the reload: no ${plan.title} window in ${plan.tile_reload.secs ?? 600} s`);
+  }
+  if (held) {
+    res.cached = await cachedAudit(held, from);
+    log(`reload: Cache Storage held ${res.cached.held} entries; ${res.cached.refetched.length} fetched again`);
+    if (res.cached.refetched.length) res.first_error ??= `the reload fetched ${res.cached.refetched.length} things Cache Storage held: ${res.cached.refetched.slice(0, 5).join(', ')}`;
   }
 }
 done();

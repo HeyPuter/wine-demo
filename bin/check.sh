@@ -11,10 +11,13 @@
 #            took the rest bundle whole (a host that ignores Range gives nothing less)
 #   desk     the desktop's shortcuts: one icon each, and a shortcut to a program with no icon shows too
 #            (tools/desktop-check.mjs, headless Chromium here, not on the bench box)
+#   revisit  a second visit (tools/appsweep.mjs, tools/checks/revisit.json, headless Chromium here): the small
+#            foobar2000 tile installed on the first, the page reloaded, the desktop and the tile's program up again,
+#            and nothing fetched that the page's Cache Storage held (the bundles' frames, any file it keeps)
 #   win32    the Win32 drops under WoW64 (DROPS: make drops): putty-x86.exe; the 7-Zip x86 installer, Install,
 #            then the installed 7zFM.exe opening test.zip; Notepad++ x86 portable (notepad++.exe)
 set -uo pipefail; . "$(dirname "$0")/../env.sh"; B=$WDR/bin; cd "$WD_OUT"
-t=${1:?TAG}; shift; STEPS=${*:-start launch banner prefs c2 win32 desk}
+t=${1:?TAG}; shift; STEPS=${*:-start launch banner prefs c2 win32 desk revisit}
 C=(SMOKE_SPKI=$SPKI SMOKE_PRELOAD_FILE=./start-preload.js SMOKE_OUT_W=1300 SMOKE_OUT_H=713)
 wins() { grep -a '\[wins\]' runs/out-$1/console.txt | tail -n1 | tr '|' '\n' | grep -o '"[^"]*"' | grep -v '""' | sort -u | tr '\n' ' '; }
 # at TAG KEY TITLE: seconds from the last KEY press (an Enter or a click) to the first window titled TITLE
@@ -43,6 +46,12 @@ prefs)
   echo "prefs: Preferences $(at sw-$t-pref 'click:290:61' '"Preferences"')";;
 c2) bash $B/redo-c2.sh $URL $t 2>&1 | grep -v REDO-DONE;;
 desk) SMOKE_SPKI=$SPKI $NODE_BIN/node $WDR/tools/desktop-check.mjs $URL runs/out-$t-desk 2>&1 | grep -a '^ok\|^FAIL\|^desktop-check';;
+revisit)
+  SMOKE_SPKI=$SPKI $NODE_BIN/node $WDR/tools/appsweep.mjs $URL runs/out-$t-revisit $WDR/tools/checks/revisit.json > logs/$t-revisit.txt 2>&1
+  r=runs/out-$t-revisit/result.json
+  if [ -f $r ] && python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); c=d.get("cached") or {}; t=d.get("times",{}); sys.exit(not (d.get("install","").startswith("ok") and "reload_window" in t and c.get("held",0) > 0 and not c.get("refetched")))' $r
+  then echo "revisit: ok, $(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); t=d["times"]; print(f"desktop {t["reload_desktop"]} s, the tile window {t["reload_window"]} s after its click; Cache Storage held {d["cached"]["held"]}, fetched again 0")' $r)"
+  else echo "FAIL revisit: $(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("first_error"), (d.get("cached") or {}), d.get("times"))' $r 2>/dev/null || echo "no result ($r; logs/$t-revisit.txt)")"; fi;;
 win32)
   K="105:click:100:703,108:click:300:200,109:type:cd+desktop,110:Enter"
   bash $B/sweep.sh $t-putty 165 "$K,113:type:putty-x86,114:Enter" "SMOKE_DROP=100:900:400:@/putty-x86.exe" | head -1

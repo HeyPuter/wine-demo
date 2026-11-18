@@ -1,0 +1,2 @@
+{"id": "revisit", "tile": "foobar2000", "title": "foobar", "timeout": {"install": 900, "launch": 600},
+ "tile_reload": {"secs": 120, "cached": true}}
