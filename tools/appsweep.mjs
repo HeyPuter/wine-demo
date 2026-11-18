@@ -522,6 +522,17 @@ const run = async (steps) => {
     else if (st.click && st.in) { const r = new RegExp(st.in); const w = (await wins()).find((x) => r.test(x.title)); if (!w) return `no window /${st.in}/ to click in`; await click(w.x + st.click[0], w.y + st.click[1]); }
     else if (st.click) await click(...st.click);
     else if (st.dbl) await dblclick(...st.dbl);
+    // the driver's console minimised (out of a desktop icon's way)
+    else if (st.mincmd) await minCmd();
+    // the page reloaded as a visitor reloads it, then its desktop and launcher back
+    else if (st.reload) {
+      await s('Page.reload', { ignoreCache: false }).catch((e) => log('reload: ' + e.message));
+      cmdWin = null;
+      const t0 = now();
+      if (!(await waitWin(' - Wine Desktop$', 300))) return 'no desktop in 300 s after the reload';
+      for (let i = 0; i < 120; i++) { if (await ev("!!document.querySelector('#launcher .tile')").catch(() => false)) break; await sleep(1000); }
+      log(`reloaded: desktop in ${(now() - t0).toFixed(1)} s`);
+    }
     // a launcher tile by its name (the Desktop tile: the desktop as a visitor opens it after a reload)
     else if (st.tile) { const ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(st.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false); log(`tile ${st.tile}: ${ok}`); if (!ok) return `no tile ${st.tile}`; }
     else if (st.sleep) await sleep(st.sleep * 1000);

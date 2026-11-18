@@ -120,6 +120,17 @@ PY
   rm -rf $out/project/build/web/units
   sed -i '$ s/; [0-9]* units;/; 0 units (NO_UNITS: the trampoline units dropped);/' logs/site-$out.log
 fi
+# The registry-save knob a recording on a memory filesystem left in the build's env (gex df47de9f stops recording
+# it): with it the visitor's wineserver never saved the registry, so every registry change of a visit was lost at a
+# reload while its files stayed in the store. Without it the page decides by its own filesystem.
+python3 -I - $out/project/build/web/nt.json <<'PY'
+import json, os, sys
+p = sys.argv[1]; s = json.load(open(p)); env = s.get('env', [])
+if 'WINEGEX_NO_REGSAVE=1' in env:
+    s['env'] = [e for e in env if e != 'WINEGEX_NO_REGSAVE=1']
+    os.remove(p); json.dump(s, open(p, 'w'), indent=2)
+    print("site: the recording's WINEGEX_NO_REGSAVE=1 left out of the build's env")
+PY
 # The tiles' icons (tools/icons.py, at icons/ID.png): the desktop's, each launcher app's from its installer
 # (or the program inside it the launcher.tsv row names), and the drop picker's generic program icon; the
 # page's ICONS lists the ones made.

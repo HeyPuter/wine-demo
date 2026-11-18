@@ -28,7 +28,7 @@ sublimetext	Sublime Text	Development	0				start "" "C:\Program Files\Sublime Tex
 winrar	WinRAR	Tools	0				start "" "C:\Program Files*\WinRAR\WinRAR.exe"	\(evaluation copy\)$| - WinRAR$	C:\Program Files*\WinRAR\WinRAR.exe	proprietary (trial)				https://www.win-rar.com/download.html	
 # firefox: Firefox 153.7.0esr (tag FIREFOX_153_7_0esr_RELEASE), built with gexcc from
 # https://archive.mozilla.org/pub/firefox/releases/153.7.0esr/source/firefox-153.7.0esr.source.tar.xz (sha256
-# 7f8715ee7de2cf36a156216a9b1c7f26d1653010e65793bb2fce66e12edb6ea0) plus FX's 50 patches, branch fx/win-wasm64-mg
-# @ 9866d56116 (on the imported tarball, fae40fd3df). Its source stays empty (credits.html: "not published") until
+# 7f8715ee7de2cf36a156216a9b1c7f26d1653010e65793bb2fce66e12edb6ea0) plus FX's 51 patches, branch fx/win-wasm64-mg
+# @ 4c1e2ccad5 (on the imported tarball, fae40fd3df), packed by Mozilla's own NSIS installer (Nightly branding). Its source stays empty (credits.html: "not published") until
 # that patched tree is published: the MPL wants the modified source available beside the binary before a public build.
-firefox	Firefox	Internet	97068670		firefox-gex.zip	"C:\Program Files\7-Zip\7zz.exe" x -y "-oC:\Program Files\Firefox" firefox-gex.zip	set MOZ_FORCE_DISABLE_E10S=1&& set MOZ_CRASHREPORTER_DISABLE=1&& set MOZ_DISABLE_CONTENT_SANDBOX=1&& start "" "C:\Program Files\Firefox\firefox.exe" -no-remote -profile "C:\Program Files\Firefox\profile" https://example.com/	Firefox|Nightly|^fx	C:\Program Files\Firefox\firefox.exe	MPL-2.0		f0b4d85972782f183246cccdd7d7073bd276e0d9443dd1018b76be6468e8a808	firefox.exe		
+firefox	Firefox	Internet	62127232		firefox-gex-setup.exe	firefox-gex-setup.exe /S	start "" "C:\Program Files\Mozilla Developer Preview\firefox.exe" https://example.com/	Firefox|Nightly|^fx	C:\Program Files\Mozilla Developer Preview\firefox.exe	MPL-2.0		fcb654e3145d10267f451243231845236ccd32bb4ab3b5bd27fb18719752a432	firefox.exe		
