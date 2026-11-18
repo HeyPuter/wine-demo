@@ -8,7 +8,7 @@
 # x86 program runs on the JIT.
 # LAUNCHER=FILE: the launcher's list from FILE instead of tools/launcher.tsv (a local site's own tiles); credits.html
 # still lists only tools/launcher.tsv's.
-# Outputs: WD_OUT/proj-OUT, WD_OUT/OUT.
+# Outputs: WD_OUT/proj-OUT, WD_OUT/OUT (its loader site/ and the runtime package rt/ beside the page).
 set -euo pipefail
 . "$(dirname "$0")/../env.sh"; need_gex; S=$WD_OUT; W=$GEX; cd $S
 [ -z "${KEEP_NAMES:-}" ] || export GEX_KEEP_NAMES=1
@@ -153,6 +153,11 @@ if [ -n "${INSTALLERS:-}" ]; then
     cp --reflink=auto "$INSTALLERS/$f" $out/installers/
   done
 fi
+# The loader (site/windemo.mjs, site/lazy-source.mjs) and the runtime package it starts the desktop on
+# (bin/runtime.sh's WD_OUT/rt), beside the page.
+[ -f $S/rt/index.mjs ] || { echo "site: no runtime package at $S/rt (bin/runtime.sh)"; exit 1; }
+rm -rf $out/rt $out/site; cp -al $S/rt $out/rt 2>/dev/null || cp -a $S/rt $out/rt
+mkdir -p $out/site; cp $WDR/site/*.mjs $out/site/
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
 p = sys.argv[1]; d = json.load(open(p))

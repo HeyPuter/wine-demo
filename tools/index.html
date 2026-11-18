@@ -307,11 +307,9 @@
   </div>
 </div>
 <script type="module">
-  // Your page: gexc eject wrote it once (user/index.html) and never rewrites
-  // it. The program is app.mjs's: start() takes an element to fill and,
-  // optionally, args, env, size ('fit' or {w, h}), onLog, onExit, onProgress
-  // and more (crates/gex-eject/README.md, "The web build"); it gives back { exited, kill(),
-  // resize(), state }.
+  // The program is windemo's loader's (site/windemo.mjs, on the gex runtime package at rt/): start() takes
+  // an element to fill and args, size ('fit' or {w, h}), onLog, onProgress and more (see its head); it
+  // gives back { exited, kill(), resize(), drop(), state }.
   //
   // The desktop starts as the page loads, behind the launcher, with no progress shown. Its programs come
   // from the launcher's tiles: a tile's job (NAME.job, key=value lines) is dropped into C:\windemo\queue,
@@ -319,7 +317,7 @@
   // is not installed yet (its own windows, up to the user: nothing scripted), then starts it, and says how
   // far it is in its status window's title, which the page reads from the desktop's window list.
   // `?desktop=1`: no launcher; the desktop as recorded (cmd and the file manager on the Desktop folder).
-  import { start } from './app.mjs';
+  import { start } from './site/windemo.mjs';
   // The desktop's colour (site.sh: the scheme's Background), or null.
   const DESKTOP_COLOUR = null;
   // The launcher's installers (site.sh: tools/launcher.tsv), or null.

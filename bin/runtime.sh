@@ -1,6 +1,6 @@
 #!/bin/bash
-# runtime.sh: the runtime from GEX: x86 gexc, the kernel, the browser shim (shared and memory64), Mesa, then the
-# eject page library into WD_OUT/page (a release page: GEX's build-eject-page.sh strips the shims' names and
+# runtime.sh: the runtime from GEX: x86 gexc, the kernel, the browser shim (shared and memory64), Mesa, the
+# runtime package into WD_OUT/rt (the site's loader runs on it), then the eject page library into WD_OUT/page (a release page: GEX's build-eject-page.sh strips the shims' names and
 # DWARF; KEEP_NAMES=1 keeps them, as GEX_KEEP_NAMES=1).
 # Waits while two cargo builds run (any agent's); niced.
 set -e; . "$(dirname "$0")/../env.sh"; need_gex; . "$TOOLCHAIN_ENV"
@@ -20,4 +20,7 @@ slot; run sh page/build.sh --mp --gl-only >> $L/mesa.log 2>&1 ||
   { tail -5 $L/mesa.log; echo "runtime: Mesa failed (GEX's page/build.sh --mp --gl-only): $L/mesa.log"; exit 1; }
 [ -z "${KEEP_NAMES:-}" ] || export GEX_KEEP_NAMES=1
 rm -rf "$WD_OUT/page"; run sh site/build-eject-page.sh "$WD_OUT/page" > $L/page.log 2>&1
+# The gex runtime package (@gexemu/runtime) the site's loader (site/windemo.mjs) starts the desktop on.
+rm -rf "$WD_OUT/rt"; run sh page/runtime/build.sh "$WD_OUT/rt" > $L/rt.log 2>&1 ||
+  { tail -5 $L/rt.log; echo "runtime: the runtime package failed (GEX's page/runtime/build.sh): $L/rt.log"; exit 1; }
 echo "runtime: $WD_OUT/page from $(git -C "$GEX" log --oneline -1 | cut -c1-80)"
