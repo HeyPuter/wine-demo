@@ -16,9 +16,13 @@
 //                   (run without keeping files) or 'wait' (until it lets go; `signal`
 //                   aborts once it has)
 //   wisp            a Wisp proxy's URL for the guest's network
+//   restAhead       true: the rest bundle downloaded whole in the background once
+//                   the system is up (paused while the page is hidden); default
+//                   false, each frame at its first read
 //   debug           the runtime's debugging switches ({ cpus, log, systime, glcapture })
 //   onProgress(p)   the start-up: { phase: 'download' | 'boot' | 'ready' | 'failed' | 'exited',
-//                   download: { done, total, files, filesDone }, fetch, error }
+//                   download: { done, total, files, filesDone }, fetch, rest: { done,
+//                   total, complete } (restAhead's), error }
 //   onCrash(c), onNotice(n), onLog(text), onGlCapture(bytes)
 // handle: { exited, state, resize(size), drop(data, opts), dragLeave(), describe(opts) }
 
@@ -183,6 +187,9 @@ export async function start(opts = {}) {
   const lazy = lazyList ? (await lazyList).files : [];
   const names = new Map(lazy.map(([path, size, key]) => [key, path.split('/').pop()]));
   if (lazy.length) fs.addTar(null, { lazy: lazy.map(([path, size, key, mtime, mode]) => [path, size, key, mode ?? undefined, mtime ?? undefined]) });
+  // The prefix's DOS attributes (user.DOSATTRIB), on the tar's files and the
+  // lazy ones alike: last, over every layer.
+  if (nt.xattrs && Object.keys(nt.xattrs).length) fs.addTar(null, { xattrs: nt.xattrs });
 
   // The desktop: one canvas, the scene compositor's.
   const container = opts.container ?? document.body;
@@ -227,11 +234,21 @@ export async function start(opts = {}) {
   }
   // What the lazy source is fetching, for the progress line, by the file's name.
   fs.lazyPort?.addEventListener('message', ({ data: m }) => {
+    if (m.rest) { p.rest = { ...m.rest, complete: false }; emit(); }
+    if (m.ahead?.done) { p.rest = { ...(p.rest ?? { done: 0, total: 0 }), complete: true }; emit(); }
     if (!('fetch' in m)) return;
     p.fetch = m.fetch && { kind: 'file', name: names.get(m.fetch.key) ?? m.fetch.key, done: m.fetch.done, total: m.fetch.total, inflight: m.fetch.inflight };
     if (p.phase === 'ready') emit();
   });
   fs.lazyPort?.start();
+  // The rest bundle whole in the background (lazy-source.mjs `ahead`), the title files being in.
+  const restBundles = [...new Set(lazy.map(([, , key]) => String(key)).filter((k) => k.includes('#')).map((k) => k.slice(0, k.lastIndexOf('#'))))];
+  if (opts.restAhead === true && fs.lazyPort && restBundles.length) {
+    const paused = () => fs.lazyPort.postMessage({ paused: document.visibilityState === 'hidden' });
+    paused();
+    fs.lazyPort.postMessage({ ahead: { bundles: restBundles } });
+    document.addEventListener('visibilitychange', paused);
+  }
 
   // Wine's environment: the launch file's, the windows', the viewer's time zone, and the site's defaults.
   const env = { ...envObject(nt.env), ...windows.env, ...hostTimeZone() };
