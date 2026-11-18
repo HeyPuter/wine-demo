@@ -102,7 +102,7 @@ page = page.replace('const APPS = null;', 'const APPS = ' + json.dumps(apps, ens
 open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
-nice -n 10 node $W/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+nice -n 10 node $WDR/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
 # NO_UNITS: the eject still adds the NT trampoline page's units (it fails without them); they go too, and the page
 # runs that page on the JIT like every other x86 page, with no unit looked up.
 if [ -n "${NO_UNITS:-}" ]; then
@@ -157,7 +157,7 @@ fi
 # (bin/runtime.sh's WD_OUT/rt), beside the page.
 [ -f $S/rt/index.mjs ] || { echo "site: no runtime package at $S/rt (bin/runtime.sh)"; exit 1; }
 rm -rf $out/rt $out/site; cp -al $S/rt $out/rt 2>/dev/null || cp -a $S/rt $out/rt
-mkdir -p $out/site; cp $WDR/site/*.mjs $out/site/
+mkdir -p $out/site; cp $WDR/site/windemo.mjs $WDR/site/lazy-source.mjs $out/site/
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys
 p = sys.argv[1]; d = json.load(open(p))
