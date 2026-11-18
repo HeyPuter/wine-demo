@@ -336,6 +336,61 @@ out:
     return ok;
 }
 
+/* While an installer runs: the shallowest of its descendants that has run 3 s or more with no visible window of
+   its own (a runtime it bundles installing, an updater reporting), said as the job's detail "waiting for EXE", so
+   the page's status line can say what the installer is waiting for; nothing once there is none. */
+struct seen_pid { DWORD pid, since; };
+static struct seen_pid seen_pids[64];
+static BOOL CALLBACK has_window_one(HWND w, LPARAM lp)
+{
+    DWORD pid = 0;
+    if (!IsWindowVisible(w)) return TRUE;
+    GetWindowThreadProcessId(w, &pid);
+    if (pid == ((DWORD *)lp)[0]) { ((DWORD *)lp)[1] = 1; return FALSE; }
+    return TRUE;
+}
+static void say_waiting(DWORD root, WCHAR *said, size_t said_n)
+{
+    PROCESSENTRY32W e = { sizeof e };
+    static PROCESSENTRY32W all[512];
+    int n = 0, depth[512], best = -1;
+    WCHAR now[MAX_PATH + 16] = L"";
+    DWORD tick = GetTickCount();
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE) return;
+    for (BOOL ok = Process32FirstW(snap, &e); ok && n < 512; ok = Process32NextW(snap, &e)) all[n++] = e;
+    CloseHandle(snap);
+    /* each process's depth below the installer (0: not below it), a few passes for any order */
+    for (int i = 0; i < n; i++) depth[i] = all[i].th32ProcessID == root ? 1 : 0;
+    for (int pass = 0; pass < 8; pass++)
+        for (int i = 0; i < n; i++)
+            if (!depth[i])
+                for (int j = 0; j < n; j++)
+                    if (depth[j] && all[j].th32ProcessID == all[i].th32ParentProcessID && all[i].th32ProcessID != all[j].th32ProcessID) { depth[i] = depth[j] + 1; break; }
+    for (int i = 0; i < n; i++)
+    {
+        DWORD q[2] = { all[i].th32ProcessID, 0 };
+        int k, free_at = -1;
+        if (depth[i] < 2) continue;
+        EnumWindows(has_window_one, (LPARAM)q);
+        for (k = 0; k < 64 && seen_pids[k].pid != q[0]; k++) if (!seen_pids[k].pid && free_at < 0) free_at = k;
+        if (q[1]) { if (k < 64) seen_pids[k].pid = 0; continue; }
+        if (k == 64) { if (free_at >= 0) { seen_pids[free_at].pid = q[0]; seen_pids[free_at].since = tick; } continue; }
+        if (tick - seen_pids[k].since >= 3000 && (best < 0 || depth[i] < depth[best])) best = i;
+    }
+    /* forget the ones that are gone */
+    for (int k = 0; k < 64; k++)
+    {
+        BOOL alive = FALSE;
+        for (int i = 0; i < n && !alive; i++) alive = seen_pids[k].pid && all[i].th32ProcessID == seen_pids[k].pid;
+        if (!alive) seen_pids[k].pid = 0;
+    }
+    if (best >= 0) _snwprintf(now, MAX_PATH + 15, L"waiting for %s", all[best].szExeFile);
+    if (!wcscmp(now, said)) return;
+    wcsncpy(said, now, said_n - 1);
+    say(L"installer", now[0] ? L"%s" : NULL, now);
+}
+
 /* the installer at PATH as a visitor would run it (an .msi through msiexec /i; a .zip unpacked by 7-Zip's
    extraction window into C:\Program Files\NAME, as a visitor with 7-Zip would), shown, with ARGS after it (an
    installer's or msiexec's; not a .zip's); its exit code, -1: it did not start */
@@ -354,12 +409,16 @@ static int run_installer(const WCHAR *path, const WCHAR *name, const WCHAR *args
     if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, DOWNLOADS, &si, &pi)) return -1;
     CloseHandle(pi.hThread);
     /* while it runs (as long as the user takes), the agent's messages and other jobs go on */
+    WCHAR waiting[MAX_PATH + 16] = L"";
+    DWORD looked = GetTickCount();
     for (;;)
     {
         DWORD r = MsgWaitForMultipleObjects(1, &pi.hProcess, FALSE, 300, QS_ALLINPUT);
         if (r == WAIT_OBJECT_0 || r == WAIT_FAILED) break;
         poll_queue();
+        if (GetTickCount() - looked >= 1000) { looked = GetTickCount(); say_waiting(pi.dwProcessId, waiting, MAX_PATH + 16); }
     }
+    if (waiting[0]) say(L"installer", NULL);
     GetExitCodeProcess(pi.hProcess, &code); CloseHandle(pi.hProcess);
     return code;
 }

@@ -839,7 +839,7 @@
       await app.drop([new File([job], `${id}.job`)], { dir: '/pfx/drive_c/windemo/queue' });
       if (!screen) status(`Starting ${t.name}…`);
       const title = t.title ? new RegExp(t.title) : null;
-      let started = 0, installer = 0;
+      let started = 0, installer = 0, waitingFor = '';
       const t0 = Date.now();
       // the loading screen's rows while it is this job's; nothing once the installer has taken over
       const NOROW = { set: () => NOROW, done: () => NOROW, fail: () => NOROW, again: () => NOROW };
@@ -879,6 +879,12 @@
             console.log('[launcher]', JSON.stringify({ id: t.id, installer: fresh[0], s: Math.round((Date.now() - t0) / 100) / 10 }));
           }
           if (!shown && Date.now() - installer > 4 * 60e3) throw new Error(`the ${t.name} installer did not open a window`);
+          // a helper of the installer's with no window of its own, 3 s or more (the agent's "waiting for EXE"):
+          // the status line says so while it runs, so a long silent step is not taken for a hang
+          if (shown) {
+            const w = /^waiting for (.+)$/.exec(detail)?.[1] ?? '';
+            if (w !== waitingFor) { waitingFor = w; status(w ? `${t.name} setup is waiting for ${w}…` : null); }
+          }
           seen = new Set(all.map((w) => w.id));
         } else if (state === 'cancelled') {
           // the installer ended and the app is not there: the desktop as it is
