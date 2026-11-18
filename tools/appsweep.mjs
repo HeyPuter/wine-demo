@@ -56,11 +56,13 @@ function png(w, h, rgba) {
 }
 
 const prof = `${outDir}/profile`;
+// APPSWEEP_SCREEN=W,H: the browser window's size (default 1300,800); the guest's screen is then read from the page's canvas
+const SCREEN = /^\d+,\d+$/.test(process.env.APPSWEEP_SCREEN ?? '') ? process.env.APPSWEEP_SCREEN : '1300,800';
 rmSync(prof, { recursive: true, force: true });
 const chrome = spawn(process.env.CHROME || '/usr/bin/chromium', [
   '--headless', '--no-sandbox', '--disable-gpu-sandbox', '--enable-unsafe-swiftshader', '--enable-unsafe-webgpu',
   ...(process.env.APPSWEEP_GPU ? ['--use-angle=vulkan', '--enable-features=Vulkan'] : ['--use-angle=swiftshader-webgl', '--use-webgpu-adapter=swiftshader']),
-  '--ozone-platform=headless', '--ozone-override-screen-size=1300,800', '--window-size=1300,800',
+  '--ozone-platform=headless', `--ozone-override-screen-size=${SCREEN}`, `--window-size=${SCREEN}`,
   process.env.SMOKE_SPKI ? `--ignore-certificate-errors-spki-list=${process.env.SMOKE_SPKI}` : '--ignore-certificate-errors',
   '--disable-hang-monitor', '--no-first-run', '--no-default-browser-check', '--remote-allow-origins=*',
   '--remote-debugging-port=0', `--user-data-dir=${prof}`, 'about:blank',
@@ -258,6 +260,9 @@ if (process.env.APPSWEEP_CPU === '1') {
   tick();
   setInterval(tick, 5000).unref();
 }
+// APPSWEEP_DPR=R (with APPSWEEP_SCREEN's CSS size): the page at device pixel ratio R (a fractional one, as a
+// laptop's 150%), by Emulation.setDeviceMetricsOverride
+if (+process.env.APPSWEEP_DPR > 0) { const [w, h] = SCREEN.split(',').map(Number); await s('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: +process.env.APPSWEEP_DPR, mobile: false }); log(`device metrics ${w}x${h} CSS px at ${process.env.APPSWEEP_DPR}`); }
 await s('Runtime.enable'); await s('Page.enable'); await s('Inspector.enable').catch(() => {});
 await s('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
 await s('Page.navigate', { url });
@@ -321,7 +326,8 @@ const waitWin = async (re, secs, not = null, big = false) => {
   }
   return null;
 };
-const W = 1300, H = 713;
+// the guest's screen (canvas pixels): 1300 x 713 in the default window, the canvas's own size once the desktop is up
+let W = 1300, H = 713;
 const canvasAt = async (cx, cy) => {
   const r = await ev("(() => { let b = null; for (const c of document.querySelectorAll('canvas')) { const q = c.getBoundingClientRect(); if (!b || q.width * q.height > b.w * b.h) b = { x: q.x, y: q.y, w: q.width, h: q.height }; } return b; })()");
   return r ? [r.x + cx * r.w / W, r.y + cy * r.h / H] : [cx, cy];
@@ -618,6 +624,7 @@ const startWins = new Set((await wins()).map((w) => w.id));
 const newWins = async () => { const t = (await wins()).filter((w) => !startWins.has(w.id) && w.title).map((w) => `"${w.title}" ${w.w}x${w.h}`); if (t.length) res.notes.push('windows at the timeout: ' + t.join(', ')); };
 if (!plan.tile && (!cmdWin || !(await waitWin('^Desktop$', 60)))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 res.times.desktop = Math.round(now());
+{ const c = await ev("(() => { let b = null; for (const c of document.querySelectorAll('canvas')) if (!b || c.width * c.height > b[0] * b[1]) b = [c.width, c.height]; return b; })()").catch(() => null); if (c?.[0] > 0) { [W, H] = c; log(`screen ${W}x${H}`); } }
 // APPSWEEP_OPENED=1: the files the install opens beyond the boot's, in the order they were first opened
 // (the page's __ntOpened), into OUTDIR/opened-install.txt: a site's rest-bundle order (eject-site
 // --rest-order) from the sweep's own runs.
