@@ -353,6 +353,43 @@
 /w64/lib/wine/x86_64-windows/msacm32.drv
 /pfx/drive_c/windows/system32/midimap.dll
 /w64/lib/wine/x86_64-windows/midimap.dll
+/w64/lib/wine/x86_64-windows/netprofm.dll
+/w64/lib/wine/x86_64-windows/netprofm.dll.wasm
+/w64/lib/wine/x86_64-windows/dataexchange.dll
+/w64/lib/wine/x86_64-windows/dataexchange.dll.wasm
+/w64/lib/wine/x86_64-windows/twinapi.appcore.dll
+/w64/lib/wine/x86_64-windows/twinapi.appcore.dll.wasm
+/w64/lib/wine/x86_64-windows/wintypes.dll
+/w64/lib/wine/x86_64-windows/wintypes.dll.wasm
+/w64/lib/wine/x86_64-windows/wtsapi32.dll
+/w64/lib/wine/x86_64-windows/wtsapi32.dll.wasm
+/pfx/drive_c/windows/system32/spool/drivers/color/srgb color space profile.icm
+/w64/lib/wine/x86_64-windows/windows.globalization.dll
+/w64/lib/wine/x86_64-windows/windows.globalization.dll.wasm
+/w64/lib/wine/x86_64-windows/directmanipulation.dll
+/w64/lib/wine/x86_64-windows/directmanipulation.dll.wasm
+/w64/lib/wine/x86_64-windows/msmpeg2vdec.dll
+/w64/lib/wine/x86_64-windows/msmpeg2vdec.dll.wasm
+/w64/lib/wine/x86_64-windows/mfplat.dll.wasm
+/w64/lib/wine/x86_64-windows/rtworkq.dll.wasm
+/w64/lib/wine/x86_64-windows/mfplat.dll
+/w64/lib/wine/x86_64-windows/rtworkq.dll
+/w64/lib/wine/x86_64-windows/winegstreamer.dll
+/w64/lib/wine/x86_64-windows/winegstreamer.dll.wasm
+/w64/lib/wine/x86_64-windows/msdmo.dll.wasm
+/w64/lib/wine/x86_64-windows/msdmo.dll
+/w64/lib/wine/x86_64-unix/winegstreamer.so
+/w64/lib/wine/x86_64-windows/mf.dll
+/w64/lib/wine/x86_64-windows/mf.dll.wasm
+/w64/lib/wine/x86_64-windows/mp3dmod.dll
+/w64/lib/wine/x86_64-windows/mp3dmod.dll.wasm
+/w64/lib/wine/x86_64-windows/msauddecmft.dll
+/w64/lib/wine/x86_64-windows/msauddecmft.dll.wasm
+/w64/lib/wine/x86_64-windows/dxva2.dll
+/w64/lib/wine/x86_64-windows/dxva2.dll.wasm
+/w64/lib/wine/x86_64-windows/evr.dll
+/w64/lib/wine/x86_64-windows/evr.dll.wasm
+/w64/lib/wine/x86_64-windows/d3d9.dll.wasm
 /pfx/drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/7-Zip (console).lnk
 /pfx/drive_c/Program Files/7-Zip/7zz.exe
 /pfx/drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs/7-Zip File Manager.lnk
@@ -515,12 +552,9 @@
 /w64/share/wine/nls/c_1258.nls
 /w64/lib/wine/x86_64-windows/xinput1_4.dll.wasm
 /pfx/drive_c/windows/system32/wtsapi32.dll
-/w64/lib/wine/x86_64-windows/wtsapi32.dll
-/w64/lib/wine/x86_64-windows/wtsapi32.dll.wasm
 /w64/lib/wine/x86_64-windows/dsound.dll.wasm
 /w64/lib/wine/x86_64-windows/msacm32.drv.wasm
 /w64/lib/wine/x86_64-windows/midimap.dll.wasm
-/w64/lib/wine/x86_64-windows/d3d9.dll.wasm
 /pfx/drive_c/Program Files/7-Zip/7zG.exe
 /pfx/drive_c/Program Files/7-Zip/7zG.exe.wasm
 /pfx/drive_c/Program Files/7-Zip/7z.dll
@@ -642,7 +676,6 @@
 /pfx/drive_c/windows/system32/vccorlib140.dll
 /pfx/drive_c/windows/system32/dxva2.dll
 /pfx/drive_c/windows/system32/vcomp140.dll
-/w64/lib/wine/x86_64-windows/dxva2.dll
 /w64/lib/wine/x86_64-windows/vcomp140.dll
 /w64/lib/wine/x86_64-windows/vcomp140.dll.wasm
 /w64/lib/wine/x86_64-windows/dxva2.dll.wasm.m64
@@ -655,12 +688,8 @@
 /w64/lib/wine/x86_64-windows/wbemprox.dll
 /w64/lib/wine/x86_64-windows/wbemprox.dll.wasm
 /pfx/drive_c/windows/system32/mfplat.dll
-/w64/lib/wine/x86_64-windows/mfplat.dll
-/w64/lib/wine/x86_64-windows/mfplat.dll.wasm
-/w64/lib/wine/x86_64-windows/rtworkq.dll.wasm
 /pfx/drive_c/windows/system32/rtworkq.dll
 /pfx/drive_c/windows/system32/dcomp.dll
-/w64/lib/wine/x86_64-windows/rtworkq.dll
 /w64/lib/wine/i386-windows/psapi.dll.wasm
 /w64/lib/wine/x86_64-windows/dcomp.dll
 /pfx/drive_c/windows/system32/atlthunk.dll
@@ -687,11 +716,9 @@
 /pfx/drive_c/windows/system32/directmanipulation.dll
 /w64/lib/wine/x86_64-windows/windows.gaming.input.dll
 /w64/lib/wine/x86_64-windows/windows.media.playback.backgroundmediaplayer.dll
-/w64/lib/wine/x86_64-windows/directmanipulation.dll
 /w64/lib/wine/x86_64-windows/windows.gaming.input.dll.wasm
 /w64/lib/wine/x86_64-windows/mmdevapi.dll.wasm.m64
 /w64/lib/wine/x86_64-windows/windows.media.playback.backgroundmediaplayer.dll.wasm
-/w64/lib/wine/x86_64-windows/directmanipulation.dll.wasm
 /pfx/drive_c/windows/system32/windows.media.playback.mediaplayer.dll
 /pfx/drive_c/windows/syswow64/olepro32.dll
 /w64/lib/wine/x86_64-windows/windows.media.playback.mediaplayer.dll
