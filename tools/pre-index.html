@@ -37,8 +37,9 @@ try {
   });
   const { w, h } = app.resize('fit');
   const l = app.launch;
-  // The environment as the launch file keeps it: the viewer's own (time zone, display) is each visit's.
-  const visit = new Set(['TZ', 'WINEGEX_TZNAME', 'DISPLAY']);
+  // The environment as the launch file keeps it: the viewer's own (time zone, display) is each visit's, and the
+  // registry-save knob the loader's (by where the visit keeps its files).
+  const visit = new Set(['TZ', 'WINEGEX_TZNAME', 'DISPLAY', 'WINEGEX_NO_REGSAVE']);
   rec.session = { exe: l.exe, argv: l.argv, env: l.env.filter((e) => !visit.has(e.slice(0, e.indexOf('=')))), cwd: l.cwd, mtimes: true, size: `${w}x${h}`, tar: [`/${l.tar}`], d3d: !!l.d3d, params: {} };
   rec.opened = () => app.filesystem.usedFiles().then((ps) => ps.map((p) => `/${p.replace(/^\/+/, '')}`));
   globalThis.__app = app;

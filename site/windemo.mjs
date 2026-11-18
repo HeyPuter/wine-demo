@@ -298,7 +298,9 @@ export async function start(opts = {}) {
     state,
     system: sys,
     filesystem: fs,
-    launch: { ...nt, argv: argv.slice(1), env: Object.entries(env).map(([k, v]) => `${k}=${v}`) },
+    // (without the registry-save knob: this loader decides it each visit, by where the files are kept, and a
+    // recording made on a memory filesystem must not hand it to a visit that keeps them)
+    launch: { ...nt, argv: argv.slice(1), env: Object.entries(env).filter(([k]) => k !== 'WINEGEX_NO_REGSAVE').map(([k, v]) => `${k}=${v}`) },
     resize(size = 'fit') {
       [w, h] = sizeOf(size);
       canvas.style.width = `${w}px`;
