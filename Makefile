@@ -3,14 +3,15 @@
 #   make site GEX=<gex checkout> DIST=<GATE_W64/dist64-K-...-wow64-...-nN64-N32-sS> SITE=sW7
 #   make check SITE=sW7          (the site served at env.sh's URL)
 # Each step is its own target too: runtime, dist, test-apps, installers, prefix, bundle, pipeline, drops, check, serve,
-# and apps (WN's recipe; long, only when the apps change).
+# and apps (WN's recipe; long, only when the apps change). site-checks: the site builders' own checks
+# (tools/checks: site/site-bundle.mjs's pack order, rest heads and rest-only files), no site needed.
 SHELL := /bin/bash
 B := $(CURDIR)/bin
 SITE ?= sW7
 TAG ?= $(shell echo $(SITE) | tr A-Z a-z)
 export GEX DIST
 
-.PHONY: site runtime dist test-apps installers prefix bundle pipeline drops check serve apps
+.PHONY: site runtime dist test-apps installers prefix bundle pipeline drops check site-checks serve apps
 site: runtime dist test-apps installers prefix bundle pipeline
 
 runtime:
@@ -32,6 +33,8 @@ drops: test-apps
 	$(B)/drops.sh
 check: drops
 	$(B)/check.sh $(TAG) $(STEPS)
+site-checks:
+	@for t in tools/checks/*.mjs; do node $$t || exit 1; done
 serve:
 	$(B)/serve.sh $(SITE)
 apps:
