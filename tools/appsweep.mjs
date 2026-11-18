@@ -341,6 +341,19 @@ const click = async (cx, cy) => {
   await s('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 }).catch(() => {});
   log(`click ${cx},${cy}`);
 };
+// a double click (a desktop icon's open), as a mouse gives one: two presses, the second with clickCount 2
+const dblclick = async (cx, cy) => {
+  const [x, y] = await canvasAt(cx, cy);
+  await s('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }).catch(() => {});
+  await sleep(100);
+  for (const n of [1, 2]) {
+    await s('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: n }).catch(() => {});
+    await sleep(60);
+    await s('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: n }).catch(() => {});
+    await sleep(60);
+  }
+  log(`double click ${cx},${cy}`);
+};
 // US layout: every printable ASCII character, Shift pressed as a key (the guest tracks it from its own events)
 const SH = { '!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0', '_': '-', '+': '=', '{': '[', '}': ']', '|': '\\', ':': ';', '"': "'", '<': ',', '>': '.', '?': '/', '~': '`' };
 const PK = { '-': ['Minus', 189], '=': ['Equal', 187], '[': ['BracketLeft', 219], ']': ['BracketRight', 221], '\\': ['Backslash', 220], ';': ['Semicolon', 186], "'": ['Quote', 222], ',': ['Comma', 188], '.': ['Period', 190], '/': ['Slash', 191], '`': ['Backquote', 192], ' ': ['Space', 32] };
@@ -508,6 +521,9 @@ const run = async (steps) => {
     else if (st.type) await type(st.type);
     else if (st.click && st.in) { const r = new RegExp(st.in); const w = (await wins()).find((x) => r.test(x.title)); if (!w) return `no window /${st.in}/ to click in`; await click(w.x + st.click[0], w.y + st.click[1]); }
     else if (st.click) await click(...st.click);
+    else if (st.dbl) await dblclick(...st.dbl);
+    // a launcher tile by its name (the Desktop tile: the desktop as a visitor opens it after a reload)
+    else if (st.tile) { const ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(st.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false); log(`tile ${st.tile}: ${ok}`); if (!ok) return `no tile ${st.tile}`; }
     else if (st.sleep) await sleep(st.sleep * 1000);
     else if (st.shot) await shot(st.shot, st.page);
     await sleep(st.pause ?? 400);
@@ -904,8 +920,12 @@ if (plan.tile && plan.tile_reload) {
     res.times.reload_desktop = +(now() - tr).toFixed(1);
     let have = false;
     for (let i = 0; i < 120 && !have; i++) { have = await ev("!!document.querySelector('#launcher .tile')").catch(() => false); if (!have) await sleep(1000); }
-    const ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(plan.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false);
-    const tc = now(); log(`reload: tile clicked again: ${ok}`); res.times.reload_click = +(tc - tr).toFixed(1);
+    // plan.tile_reload.open: the program's start as steps of its own instead of the tile's click (a desktop
+    // icon's double click: {dbl: [x, y]}), the launcher out of the way first (Escape, as a visitor closes it)
+    let ok;
+    if (plan.tile_reload.open) { ok = (await run(plan.tile_reload.open)) ?? true; }
+    else ok = await ev(`(() => { const b = [...document.querySelectorAll('#launcher .tile')].find((b) => b.querySelector('.name')?.textContent === ${JSON.stringify(plan.tile)}); if (!b) return false; b.click(); return true; })()`).catch(() => false);
+    const tc = now(); log(`reload: ${plan.tile_reload.open ? 'opened by its steps' : 'tile clicked again'}: ${ok}`); res.times.reload_click = +(tc - tr).toFixed(1);
     const r = new RegExp(plan.title ?? '.'); let first = null, lastShot = tc;
     for (const end = tc + (plan.tile_reload.secs ?? 600); now() < end;) {
       await watch();
