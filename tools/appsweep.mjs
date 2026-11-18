@@ -282,6 +282,8 @@ const wins = async () => {
 };
 let lastList = '';
 const watch = async () => { const l = (await wins()).map((w) => `${w.id} ${w.w}x${w.h}@${w.x},${w.y} "${w.title}"`).join('|'); if (l !== lastList) { lastList = l; line('[wins] ' + l); } };
+// APPSWEEP_WATCH_MS: also watch the window list every so many ms (a window's appearance timed finer than the plan's steps)
+if (+process.env.APPSWEEP_WATCH_MS > 0) { let busy = false; setInterval(async () => { if (busy) return; busy = true; try { await watch(); } catch {} busy = false; }, +process.env.APPSWEEP_WATCH_MS).unref(); }
 const CRASH = /crash|error|exception|problem|fatal|not responding/i;
 const DIALOG = /crash|error|warning|exception|fail|problem|cannot|unable|fatal|crash|not found|invalid|unsupported|not supported|requires/i;
 const dialogs = new Map();
