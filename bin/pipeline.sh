@@ -5,7 +5,11 @@
 # for the bench box's lock, and BENCH_TIMEOUT bounds the run itself.
 set -u; . "$(dirname "$0")/../env.sh"; need_gex; B=$WDR/bin; cd "$WD_OUT"
 t=${1:?TAG} out=${2:?SITE}
-rm -rf pre/assets pre/gex pre/vendor; cp -a page/app.mjs page/assets page/gex page/vendor pre/; cp $WDR/tools/pre-index.html pre/index.html; mkdir -p units; [ -e pre/cgen ] || ln -s ../units pre/cgen
+# pre/: the plain bundle (bundle.tar) on the site's loader and the runtime package (bin/runtime.sh's rt/), the
+# zstd decoder beside them, and tools/pre-index.html, which record.mjs reads.
+[ -f rt/index.mjs ] || { echo "pipeline: no runtime package at $WD_OUT/rt (bin/runtime.sh)"; exit 1; }
+rm -rf pre/app.mjs pre/assets pre/gex pre/vendor pre/rt pre/site pre/cgen; cp -a page/vendor pre/; cp -al rt pre/rt 2>/dev/null || cp -a rt pre/rt
+mkdir -p pre/site; cp $WDR/site/windemo.mjs $WDR/site/lazy-source.mjs pre/site/; cp $WDR/tools/pre-index.html pre/index.html
 $B/serve.sh pre
 TITLE=^Desktop$ $B/q-record.sh ${t}a $URL 20; grep -a 'wine32-session.json\|rc=' logs/rec-${t}a.txt | cut -c1-250
 $B/units.sh rec-${t}a 2>&1 | tail -2

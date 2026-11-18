@@ -3,33 +3,51 @@
 <style>html,body{margin:0;height:100%;background:#3a6ea5;color:#ccc;font:12px monospace}#stage{position:fixed;inset:0}#say{position:fixed;right:4px;top:2px}</style></head>
 <body><div id="stage"></div><div id="say"></div>
 <script type="module">
-import { start } from './app.mjs';
+// The recording page (bin/pipeline.sh's pre/): the plain bundle (bundle.tar) started by the site's loader,
+// read by tools/record.mjs through globalThis.__windemo: { phase, error, out, session (how it was started,
+// for gexc eject), opened() (the files the programs read, in the order of their first reads) }.
+import { start } from './site/windemo.mjs';
 const say = (t) => { document.getElementById('say').textContent = t; };
-const q = new URLSearchParams(location.search);
-const switches = { cgen: '1', cgenurl: '/cgen', ...Object.fromEntries(q) };
+const rec = (globalThis.__windemo = { phase: 'starting', error: null, out: '', session: null, opened: null });
 try {
   const app = await start({
     container: document.getElementById('stage'),
     size: 'fit',
     filesystem: 'memory',
-    baseUrl: new URL('./', location.href),
+    // The lines record.mjs reads: each process's [gex-record] lines and each image's "[gex] loaded".
+    debug: { log: 'record' },
     wisp: 'wss://anura.pro/',
-    // The program's [gex-record] lines (wineboot's volatile keys) to the console, for record-wine32.mjs.
-    onLog: (() => { let part = ''; return (t) => { const ls = (part + t).split('\n'); part = ls.pop(); for (const l of ls) if (l.startsWith('[gex-record]')) console.log(l); }; })(),
-    build: {
-      tar: ['/bundle.tar'], exe: '/w64/lib/wine/x86_64-unix/wine',
+    launch: {
+      tar: 'bundle.tar', exe: '/w64/lib/wine/x86_64-unix/wine',
       argv: ['C:\\windows\\explorer.exe', '/desktop=shell', 'cmd.exe', '/k', 'start', 'C:\\windemo\\agent.exe', '&', 'start', 'explorer.exe', 'C:\\users\\gex\\Desktop'],
       env: ['WINEPREFIX=/pfx', 'WINEDEBUG=err+all,fixme-all', 'XDG_RUNTIME_DIR=/tmp', 'WAYLAND_DISPLAY=wayland-0',
             'USER=gex', 'HOME=/home/gex', 'WINEGEX_DOOR=1', 'WINEGEX_WOW64=1', 'WINEGEX_FIT_DESKTOP=1', 'WINEGEX_RECORD_HARDWARE=1', 'WINEDLLOVERRIDES=mscoree=;mshtml='],
-      cwd: '/pfx/drive_c/users/gex', size: 'fit',
-      mtimes: true, featuresOff: [], compositor: true, aot: null, jitFallback: true,
-      gl: false, glBackend: 'wgpu', d3d: false, hostx: false, mem64: false,
-      pack: null, zstd: './vendor/zstddec-stream.mjs', preload: null, lazy: null, switches,
+      cwd: '/pfx/drive_c/users/gex', d3d: false, features_off: [],
+    },
+    // The program's [gex-record] lines (wineboot's volatile keys) to the console, for record.mjs.
+    onLog: (() => { let part = ''; return (t) => {
+      rec.out = (rec.out + t).slice(-200000);
+      const ls = (part + t).split('\n'); part = ls.pop();
+      for (const l of ls) if (l.startsWith('[gex-record]')) console.log(l);
+    }; })(),
+    onProgress: (p) => {
+      rec.phase = p.phase;
+      if (p.error) rec.error = p.error;
     },
   });
+  const { w, h } = app.resize('fit');
+  const l = app.launch;
+  // The environment as the launch file keeps it: the viewer's own (time zone, display) is each visit's.
+  const visit = new Set(['TZ', 'WINEGEX_TZNAME', 'DISPLAY']);
+  rec.session = { exe: l.exe, argv: l.argv, env: l.env.filter((e) => !visit.has(e.slice(0, e.indexOf('=')))), cwd: l.cwd, mtimes: true, size: `${w}x${h}`, tar: [`/${l.tar}`], d3d: !!l.d3d, params: {} };
+  rec.opened = () => app.filesystem.usedFiles().then((ps) => ps.map((p) => `/${p.replace(/^\/+/, '')}`));
   globalThis.__app = app;
   addEventListener('resize', () => app.resize('fit'));
   say('running');
   say(`exited (${await app.exited})`);
-} catch (e) { say('failed: ' + (e?.stack ?? e)); }
+} catch (e) {
+  rec.phase = 'failed';
+  rec.error = String(e?.stack ?? e);
+  say('failed: ' + rec.error);
+}
 </script></body></html>

@@ -10,6 +10,9 @@
 //   container       the element the desktop fills
 //   size            'fit', 'WxH' or { w, h }
 //   args            the program's arguments (default the launch file's)
+//   launch          in place of the site's launch file (nt.json) and pack: { exe, argv,
+//                   env: ['K=V', ...], cwd, size, tar: the archive's path (plain), d3d,
+//                   features_off } (the recording page, tools/pre-index.html)
 //   background      the desktop behind the windows: '#rrggbb' or { color, image, anchor }
 //   filesystem      'memory' or { kind: 'opfs', name }
 //   onStoreBusy({ name, signal })  another tab holds the store: resolves 'memory'
@@ -24,7 +27,8 @@
 //                   download: { done, total, files, filesDone }, fetch, rest: { done,
 //                   total, complete } (restAhead's), error }
 //   onCrash(c), onNotice(n), onLog(text), onGlCapture(bytes)
-// handle: { exited, state, resize(size), drop(data, opts), dragLeave(), describe(opts) }
+// handle: { exited, state, system, filesystem, launch (what ran: the launch with the
+//   environment Wine got), resize(size), drop(data, opts), dragLeave(), describe(opts), kill() }
 
 import { System, hostTimeZone } from '../rt/index.mjs';
 import { MemoryFilesystem, OPFSFilesystem } from '../rt/fs.mjs';
@@ -91,7 +95,7 @@ export async function start(opts = {}) {
   if (!globalThis.crossOriginIsolated) throw new Error('This page needs cross-origin isolation for its threads: serve it with the headers Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy: require-corp (the site\'s _headers do).');
   if (!navigator.gpu) throw new Error('This browser has no WebGPU, which the desktop draws with. Use a recent desktop Chrome or Edge with hardware acceleration on.');
 
-  const [nt, pack] = await Promise.all([json(at(LAUNCH), 'the launch file'), json(at('pack.json')).catch(() => ({}))]);
+  const [nt, pack] = opts.launch ? [opts.launch, {}] : await Promise.all([json(at(LAUNCH), 'the launch file'), json(at('pack.json')).catch(() => ({}))]);
   const params = nt.params ?? {};
   const packed = (path) => pack.files?.[`/${String(path).replace(/^\/+/, '')}`] ?? null;
   const zstd = (async () => {
@@ -156,7 +160,7 @@ export async function start(opts = {}) {
     });
   }
   // The counts first, so the progress is whole from its first figure.
-  const tarPath = 'project/build/web/rootfs.tar';
+  const tarPath = nt.tar ?? 'project/build/web/rootfs.tar';
   const pieceList = params.pieces ? await json(at(params.pieces), 'the pieces\' list') : null;
   for (const path of [tarPath, ...(pieceList?.pieces ?? []).map(([u]) => u), ...(params.lazy ? [params.lazy] : [])]) {
     p.download.files++;
@@ -294,6 +298,7 @@ export async function start(opts = {}) {
     state,
     system: sys,
     filesystem: fs,
+    launch: { ...nt, argv: argv.slice(1), env: Object.entries(env).map(([k, v]) => `${k}=${v}`) },
     resize(size = 'fit') {
       [w, h] = sizeOf(size);
       canvas.style.width = `${w}px`;
