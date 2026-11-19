@@ -150,7 +150,7 @@ if [ -n "${INSTALLERS:-}" ]; then
   mkdir -p $out/installers
   awk -F'\t' '!/^#/ && $1 != "id" && NF > 5 && $6 != "" { print $6 }' $LAUNCHER | while read -r f; do
     [ -f "$INSTALLERS/$f" ] || { echo "site: no $INSTALLERS/$f (make installers)"; exit 1; }
-    ln -f "$INSTALLERS/$f" $out/installers/ 2>/dev/null || cp "$INSTALLERS/$f" $out/installers/
+    cp --reflink=auto "$INSTALLERS/$f" $out/installers/
   done
 fi
 python3 -I - $out/project/build/web/nt.json <<'PY'
