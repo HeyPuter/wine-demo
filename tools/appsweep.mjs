@@ -430,6 +430,10 @@ const freshCmd = async () => {
   const id = `sweepcmd-${Date.now().toString(36)}`;
   const job = [`id=${id}`, 'name=cmd', 'check=C:\\windows\\system32\\cmd.exe',
     'launch=start "sweep-cmd" cmd.exe /v:on /k cd /d %USERPROFILE%\\Desktop'].join('\r\n') + '\r\n';
+  // A diagnostics site's panel (fixed, bottom right, above everything) would take the clicks meant for the
+  // desktop under it: hidden for the sweep (its Dump stays reachable from script)
+  const hid = await ev("(() => { let n = 0; for (const b of document.querySelectorAll('b')) if (/^gex diagnostics/.test(b.textContent)) { const box = b.closest('div[style*=\"position:fixed\"]') ?? b.parentElement?.parentElement; if (box) { box.style.display = 'none'; n++; } } return n; })()").catch(() => 0);
+  if (hid) line(`[sweep] the page's diagnostics panel hidden (${hid})`);
   const agent = (await wins()).some((x) => /^windemo-job /.test(x.title)) || await ev('!!globalThis.__windemoAgent').catch(() => false);
   const before = new Set((await wins()).map((x) => x.id));
   const ok = await ev(`(async () => { const a = globalThis.__app; if (!a?.drop) return false;
