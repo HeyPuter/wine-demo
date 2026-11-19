@@ -269,16 +269,31 @@ export async function start(opts = {}) {
   pump(proc.stderr);
 
   // A kept prefix's registry on disk before the tab may go: the wineserver
-  // saves it at SIGUSR1 (at most 100 ms waited for), then the root is synced.
-  // Each time the page is hidden, and as it is let go.
+  // saves it at SIGUSR1, writing each changed hive (a new file, or in place
+  // when it has other links), then the root is synced. The save is over once
+  // a hive changed and none has for a moment, or after a while with none
+  // changed (nothing to save). Watched through the filesystem, not timers: a
+  // hidden page's timers are slowed to a second or more. Each time the page
+  // is hidden, and as it is let go.
   if (keep && typeof sys.signal === 'function') {
-    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const SAVE_MS = 1500, SETTLE_MS = 40;
+    const hives = env.WINEPREFIX ? ['system.reg', 'user.reg', 'userdef.reg'].map((f) => `${env.WINEPREFIX}/${f}`) : [];
+    const marks = () => Promise.all(hives.map((h) => fs.stat(h).then((st) => `${st.ino} ${st.size} ${+st.mtime}`, () => null)));
+    const saved = async (before) => {
+      const t0 = performance.now();
+      let last = 0;
+      for (let prev = before; performance.now() - t0 < SAVE_MS;) {
+        const now = await marks();
+        if (now.some((v, i) => v !== prev[i])) [prev, last] = [now, performance.now()];
+        else if (last && performance.now() - last > SETTLE_MS) return;
+      }
+    };
     let flushing = null;
     const flush = () => {
       if (flushing || sys.state.phase !== 'running') return;
       flushing = (async () => {
-        await Promise.race([sys.signal('wineserver', 'SIGUSR1').catch(() => 0), wait(100)]);
-        await wait(100);
+        const before = await marks();
+        if (await sys.signal('wineserver', 'SIGUSR1').then(() => true, () => false)) await saved(before);
         await sys.sync();
       })().catch(() => {}).finally(() => { flushing = null; });
     };
