@@ -21,7 +21,7 @@
 // (the Chromium profile is not deleted at the end).
 import { spawn, execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync, appendFileSync, openSync, readFileSync, statSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, basename } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { Cdp } from './cdp.mjs';
 
@@ -513,6 +513,16 @@ const run = async (steps) => {
       }
       log(`${st.press}: /${st.until}/ gone after ${n} presses`);
     }
+    // st.put (a host file, relative to where appsweep runs: runT.sh runs it in the plan folder) into the guest folder st.dir, through the page's drop
+    else if (st.put) {
+      const b64 = readFileSync(st.put).toString('base64'), name = basename(st.put);
+      const ok = await ev(`(async () => { const a = globalThis.__app; if (!a?.drop) return 'no __app.drop';
+        const b = Uint8Array.from(atob(${JSON.stringify(b64)}), (c) => c.charCodeAt(0));
+        await a.drop([new File([b], ${JSON.stringify(name)})], { dir: ${JSON.stringify(st.dir)} }); return 'ok'; })()`).catch((e) => String(e));
+      log(`put ${name} into ${st.dir}: ${ok}`); await sleep(2000);
+    }
+    // st.js: an expression evaluated in the page, its value logged (the page's own state: its crash cards)
+    else if (st.js) { const v = await ev(st.js).catch((e) => 'error ' + e.message); log(`js ${st.js.slice(0, 60)}: ${JSON.stringify(v)}`); }
     else if (st.cmd) await cmd(st.cmd);
     else if (st.key) await key(st.key);
     else if (st.alt) await alt(st.alt);

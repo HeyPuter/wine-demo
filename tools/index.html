@@ -772,12 +772,24 @@
   // else the tile's, else the pid); `context` which tile's run it came in, when that is a different program, so a
   // helper an installer starts (a bundled runtime's setup.exe) is not taken for the installer; `helper` when that
   // tile's installer is what was running.
+  // The folder a tile's program is installed in (its check's, * and ? as in the agent's patterns), as a
+  // case-blind regex over a Windows path: what is in it is the tile's.
+  const installDir = (check) => {
+    const at = String(check ?? '').lastIndexOf('\\');
+    if (at <= 2) return null;
+    const pat = check.slice(0, at + 1).toLowerCase().replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^\\\\]*').replace(/\?/g, '[^\\\\]');
+    return new RegExp(`^${pat}`, 'i');
+  };
   const whoIs = (pid, name, cmdline) => {
     const exe = /^\S*?wine(64)?(-preloader)?(\.m64)?\s+(.*?\.(exe|com|msi))(\s|$)/i.exec(String(cmdline ?? ''))?.[4] ?? '';
     const base = exe.replace(/^.*[\\/]/, '');
     const nm = String(name ?? '').replace(/^.*[\\/]/, '');
     const own = base || (nm && !/^wine(64)?(-preloader)?(\.m64)?$/.test(nm) ? nm : '');
-    const tile = lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch : null;
+    const recent = lastLaunch && Date.now() - lastLaunch.at < 10 * 60e3 ? lastLaunch : null;
+    // the tile's run, only for its own processes: while its installer runs, anything (the installer's helpers);
+    // after, a program in the tile's install folder (its check's, so the program and the helpers it starts from
+    // there, Firefox's child processes). A program started from cmd or elsewhere meanwhile is not the tile's.
+    const tile = recent && (recent.installer || (exe && recent.dir && recent.dir.test(exe))) ? recent : null;
     if (!own) { const by = tile?.name || `Process ${pid}`; return { label: by.charAt(0).toUpperCase() + by.slice(1), context: '', helper: false }; }
     const context = tile ? `Started while ${tile.name} was running${exe ? ` (${exe})` : ''}` : (exe && exe !== own ? exe : '');
     return { label: own, context, helper: !!tile && /^the .* installer$/.test(tile.name) };
@@ -872,7 +884,7 @@
           installer ||= Date.now();
           // its first window: the screen goes, and the user takes the installer from there
           if (!shown && fresh.length) {
-            lastLaunch = { name: `the ${t.name} installer`, at: Date.now() };
+            lastLaunch = { name: `the ${t.name} installer`, at: Date.now(), installer: true };
             R('setup').done('open'); loader.hide(); shown = true;
             // the installer is the user's now: other tiles can go meanwhile, and this job is followed quietly
             busy = null;
@@ -896,7 +908,7 @@
           // (its status window stays while the program or any process its launch started lives, then says
           // exited, and goes 15 s later: the program is waited for as long as it lives, however slow its start)
           R('installer').done();
-          if (!started) lastLaunch = { name: t.name, at: Date.now() };
+          if (!started) lastLaunch = { name: t.name, at: Date.now(), dir: installDir(t.check || t.home) };
           if (t.file && !kept[t.id]) { keepInstalled(t.id); b.querySelector('.badge').textContent = 'Installed'; }
           started ||= Date.now();
           // its window: a new one with its title, or any new one when the tile names none
@@ -966,6 +978,7 @@
     const total = files.reduce((n, f) => n + f.file.size, 0);
     const t = {
       id: `own-${Date.now().toString(36)}`, name: chosen.file.name.replace(/\.(exe|msi)$/i, ''), iconId: 'exe',
+      home: exe, // (its folder is the program's: what runs from there is this tile's)
       launch: /\.msi$/i.test(exe) ? `msiexec /i "${exe}"` : `start "${chosen.file.name}" /d "${exe.slice(0, exe.lastIndexOf('\\'))}" "${exe}"`,
       copied: `${files.length} file${files.length === 1 ? '' : 's'}, ${kb(total)}`,
       copy: async (onRow) => {
