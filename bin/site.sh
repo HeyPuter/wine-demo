@@ -55,7 +55,7 @@ if os.environ.get('NO_UNITS'):
     s['units'] = []; s['coverage'] = {}; s.pop('unit_misses', None)
 json.dump(s, open(p, 'w'), indent=2)
 PY
-nice -n 10 $GEXC eject runs/$rec --out $P --web-src $W/page --unit-cache units > logs/eject-$out.log 2>&1
+nice -n 10 $GEXC eject runs/$rec --out $P --unit-cache units > logs/eject-$out.log 2>&1
 python3 -I - $P/user/eject.json "$@" <<'PY'
 import json, sys
 p = sys.argv[1]; d = json.load(open(p))
@@ -153,10 +153,11 @@ if [ -n "${INSTALLERS:-}" ]; then
     cp --reflink=auto "$INSTALLERS/$f" $out/installers/
   done
 fi
-# The loader (site/windemo.mjs, site/lazy-source.mjs) and the runtime package it starts the desktop on
-# (bin/runtime.sh's WD_OUT/rt), beside the page.
+# The loader (site/windemo.mjs, site/lazy-source.mjs), the runtime package it starts the desktop on
+# (bin/runtime.sh's WD_OUT/rt) and its zstd decoder (WD_OUT/vendor), beside the page.
 [ -f $S/rt/index.mjs ] || { echo "site: no runtime package at $S/rt (bin/runtime.sh)"; exit 1; }
-rm -rf $out/rt $out/site; cp -al $S/rt $out/rt 2>/dev/null || cp -a $S/rt $out/rt
+[ -f $S/vendor/zstddec-stream.mjs ] || { echo "site: no zstd decoder at $S/vendor (bin/runtime.sh)"; exit 1; }
+rm -rf $out/rt $out/site $out/vendor; cp -al $S/rt $out/rt 2>/dev/null || cp -a $S/rt $out/rt; cp -a $S/vendor $out/vendor
 mkdir -p $out/site; cp $WDR/site/windemo.mjs $WDR/site/lazy-source.mjs $out/site/
 python3 -I - $out/project/build/web/nt.json <<'PY'
 import json, os, sys

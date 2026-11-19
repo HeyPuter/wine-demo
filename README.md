@@ -53,7 +53,7 @@ make site GEX=<gex checkout> DIST=<gate dist> SITE=sW7
 
 This runs the following steps in order. Each step is also a target of its own.
 
-1. `runtime` (`bin/runtime.sh`) builds GEX's x86 gexc, the kernel and the browser shims, then the eject page library into `WD_OUT/page`. It waits while two cargo builds are already running.
+1. `runtime` (`bin/runtime.sh`) builds GEX's x86 gexc, the kernel and the browser shims, Mesa, then the runtime package (`page/runtime/build.sh`) into `WD_OUT/rt` and the zstd decoder into `WD_OUT/vendor`. GEX has no page of its own. It waits while two cargo builds are already running.
 2. `dist` (`bin/dist.sh DIST`) copies DIST into `w64/dist`, restages its x86-64 core with `PELINK_EXPORT_ALL=1`, and writes `w64/dist.env`. The previous dist becomes `w64/dist-prev`.
 3. `test-apps` (`bin/test-apps.sh`) fetches the upstream downloads above.
 4. `prefix` (`bin/mkapps.sh`) makes `work/pfx-apps`: the gate's WoW64 prefix plus the apps, PuTTY, the Start menu shortcuts and the "Print to file" printer. It builds `tools/prt/addprinter.c` with mingw for this step only.

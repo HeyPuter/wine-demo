@@ -5,12 +5,10 @@
 //                           [--pieces] [--stable-from DIR]... [--late FILE] [--boot-units FILE]
 //
 // PROJECT is a built 32-bit Wine project (`gexc eject` of a
-// site/record-wine32.mjs recording, then ./build.sh). OUT gets:
+// tools/record.mjs recording, then ./build.sh). OUT gets (and site.sh adds the
+// runtime package at rt/, its zstd decoder at vendor/ and windemo's loader at site/):
 //   index.html     the project's page (user/index.html; windemo's site.sh puts
 //                  tools/index.html there), which imports site/windemo.mjs
-//   vendor/        the zstd decoder, from the build's page library (its app.mjs,
-//                  assets/ and gex/ stay out: site.sh lays the runtime package
-//                  at rt/ and windemo's loader at site/)
 //   project/build/web/nt.json (the launch), the bundle, and the units the
 //                  browser loads
 //   pack.json      every packed file: size, compressed size; the build id
@@ -372,15 +370,6 @@ function wine32Site() {
   mkdirSync(work, { recursive: true });
   const strip = flag('--strip');
   const stripped = stripper(work, strip);
-  // Of the build's page library, the zstd decoder (vendor/) only, as plain
-  // files: the runtime (its wasm and Mesa) is the package site.sh lays at rt/,
-  // and the loader is site/windemo.mjs, so the eject's app.mjs, assets/ and
-  // gex/ never reach the site.
-  walk(join(web, 'page', 'vendor'), (p, rel) => {
-    const dst = join(out, 'vendor', rel);
-    mkdirSync(dirname(dst), { recursive: true });
-    copyFileSync(stripped(p), dst);
-  });
   // The bundle.
   let tar = join(web, 'rootfs.tar');
   // `"bundle": "split"` (user/eject.json): the files the recorded run opened
