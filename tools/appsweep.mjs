@@ -430,10 +430,6 @@ const freshCmd = async () => {
   const id = `sweepcmd-${Date.now().toString(36)}`;
   const job = [`id=${id}`, 'name=cmd', 'check=C:\\windows\\system32\\cmd.exe',
     'launch=start "sweep-cmd" cmd.exe /v:on /k cd /d %USERPROFILE%\\Desktop'].join('\r\n') + '\r\n';
-  // A diagnostics site's panel (fixed, bottom right, above everything) would take the clicks meant for the
-  // desktop under it: hidden for the sweep (its Dump stays reachable from script)
-  const hid = await ev("(() => { let n = 0; for (const b of document.querySelectorAll('b')) if (/^gex diagnostics/.test(b.textContent)) { const box = b.closest('div[style*=\"position:fixed\"]') ?? b.parentElement?.parentElement; if (box) { box.style.display = 'none'; n++; } } return n; })()").catch(() => 0);
-  if (hid) line(`[sweep] the page's diagnostics panel hidden (${hid})`);
   const agent = (await wins()).some((x) => /^windemo-job /.test(x.title)) || await ev('!!globalThis.__windemoAgent').catch(() => false);
   const before = new Set((await wins()).map((x) => x.id));
   const ok = await ev(`(async () => { const a = globalThis.__app; if (!a?.drop) return false;
@@ -672,6 +668,12 @@ const startWins = new Set((await wins()).map((w) => w.id));
 const newWins = async () => { const t = (await wins()).filter((w) => !startWins.has(w.id) && w.title).map((w) => `"${w.title}" ${w.w}x${w.h}`); if (t.length) res.notes.push('windows at the timeout: ' + t.join(', ')); };
 if (!plan.tile && (!cmdWin || !(await waitWin('^Desktop$', 60)))) { res.first_error = firstErr(0) ?? 'the desktop did not come up in 300 s'; await shot('boot'); done('boot failed'); }
 res.times.desktop = Math.round(now());
+{
+// A diagnostics site's panel (fixed, bottom right, above everything) would take the clicks meant for the
+// desktop under it: hidden for the sweep (its Dump stays reachable from script)
+const hid = await ev("(() => { let n = 0; for (const b of document.querySelectorAll('b')) if (/^gex diagnostics/.test(b.textContent)) { const box = b.closest('div[style*=\"position:fixed\"]') ?? b.parentElement?.parentElement; if (box) { box.style.display = 'none'; n++; } } return n; })()").catch(() => 0);
+if (hid) line(`[sweep] the page's diagnostics panel hidden (${hid})`);
+}
 { const c = await ev("(() => { let b = null; for (const c of document.querySelectorAll('canvas')) if (!b || c.width * c.height > b[0] * b[1]) b = [c.width, c.height]; return b; })()").catch(() => null); if (c?.[0] > 0) { [W, H] = c; log(`screen ${W}x${H}`); } }
 // APPSWEEP_OPENED=1: the files the install opens beyond the boot's, in the order they were first opened
 // (the page's __ntOpened), into OUTDIR/opened-install.txt: a site's rest-bundle order (eject-site
