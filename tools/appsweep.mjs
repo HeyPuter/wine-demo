@@ -107,6 +107,8 @@ const line = (t) => {
   if (t.startsWith('[drop] ')) drops.push(t);
   if (/needs 64-bit memory/.test(t)) notices.push({ t: now(), text: t.slice(0, 300) });
   if (/\bexec \S*wine\.m64 /.test(t)) m64Execs.push(now());
+  // the page's crash cards (windemo logs each one it shows, [crash] with its program): every one goes in the result
+  if (t.startsWith('[crash] ')) (res.crash_cards ??= []).push(`${now().toFixed(0)} s ${t.slice(8, 300)}`);
 };
 const notices = [], m64Execs = [];
 const drops = [];
@@ -859,6 +861,16 @@ const live = now4.find((w) => w.id === app.id) ?? app;
 const others = now4.filter((w) => w.id !== app.id && !startWins.has(w.id) && w.title && w.w > 32 && w.h > 32
   && !(plan.title && new RegExp(plan.title).test(w.title)));
 if (others.length) res.notes.push('other windows, left alone: ' + others.map((w) => `"${w.title}" ${w.w}x${w.h}`).join(', '));
+// The window against the work area (the screen above the taskbar, an untitled full-width window at the bottom):
+// inside it (8 px of frame may stand out, as a maximised window's does), its caption on screen (its top within it and
+// 40 px of its width over the screen)
+{
+  const bar = now4.filter((w) => !w.title && w.w >= W - 8 && w.h < 80 && w.y + w.h >= H - 2).sort((p, q) => q.w - p.w)[0];
+  const wa = { w: W, h: bar ? bar.y : H }, e = 8;
+  const inside = live.x >= -e && live.y >= -e && live.x + live.w <= wa.w + e && live.y + live.h <= wa.h + e;
+  const caption = live.y >= -e && live.y + 20 <= wa.h && live.x + live.w >= 40 && live.x <= wa.w - 40;
+  res.fit = { window: `${live.w}x${live.h}@${live.x},${live.y}`, work_area: `${wa.w}x${wa.h}`, fits: inside, caption_on_screen: caption };
+}
 const covered = (x, y) => others.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
 const at = [[1, 2], [1, 4], [3, 4]].flatMap(([fy, dy]) => [[1, 2], [1, 4], [3, 4]].map(([fx, dx]) =>
   [live.x + Math.floor(live.w * fx / dx), live.y + Math.floor(live.h * fy / dy)]))
