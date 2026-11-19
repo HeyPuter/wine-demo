@@ -285,9 +285,11 @@ await s('Page.navigate', { url });
 // the compositor's windows: [{id, w, h, x, y, title}]
 const wins = async () => {
   const d = await ev('(async()=>{const c=globalThis.__gexCompositor;return c?await c.describe({pixels:false}):null})()').catch((e) => { line(`[wins] probe failed: ${e?.message ?? e}`); return null; });
+  // A HiDPI output lists device pixels (describe().scale per CSS pixel): the sweep works in CSS pixels.
+  const k = d?.scale > 0 ? d.scale : 1, c = (v) => Math.round(+v / k);
   return (d?.list ?? []).map((l) => {
     const m = /^(\S+) .*? (\d+)x(\d+)@(-?\d+),(-?\d+) .*?"(.*)"$/.exec(l);
-    return m ? { id: m[1], w: +m[2], h: +m[3], x: +m[4], y: +m[5], title: m[6] } : { id: l, title: '' };
+    return m ? { id: m[1], w: c(m[2]), h: c(m[3]), x: c(m[4]), y: c(m[5]), title: m[6] } : { id: l, title: '' };
   });
 };
 let lastList = '';
