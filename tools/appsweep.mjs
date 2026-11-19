@@ -696,12 +696,23 @@ if (plan.tile) {
   t2 = now(); const r = new RegExp(plan.title ?? '.');
   let presses = 0, up = false, quiet = 0, asked = 0, again = false, instRan = false;
   const CONFIRM = /^exit setup$|cancel|abort|^confirm/i;
+  // Whose a window is, by process (its id is pid:client:surface), not by title: the processes with windows
+  // while the agent's job is downloading or in its installer are the installer's; once the job has started
+  // the program, a window of any other process is the program's (its first-start dialogs), answered only by
+  // the plan's answers, never pressed through as an installer page.
+  const instPids = new Set();
+  const pidOf = (w) => String(w.id).split(':')[0];
   for (const end = now() + (plan.timeout?.install ?? 1500); !up;) {
     await watch();
     const l = await wins();
+    const job = l.map((w) => /^windemo-job \S+ (\S+)/.exec(w.title)?.[1]).find(Boolean) ?? null;
+    if (job === 'downloading' || job === 'installer') for (const w of l) if (!isBase(w) && !/^windemo-/.test(w.title)) instPids.add(pidOf(w));
+    const programs = job === 'started' || job === 'exited';
     up = l.some((w) => !isBase(w) && !isSetup(w) && r.test(w.title) && w.w > 8 && w.h > 8);
     if (up) break;
-    if (now() >= end) { await shot('install-timeout'); await newWins(); res.install = 'timeout'; res.first_error = firstErr(t2) ?? `no ${plan.title} window in ${plan.timeout?.install ?? 1500} s (${presses} presses)`; done(); }
+    if (now() >= end) { await shot('install-timeout'); await newWins();
+      // plan.timeout_js: expressions read out at the timeout (a debug dump of what every thread waits in)
+      for (const x of plan.timeout_js ?? []) log(`timeout js ${x}: ${JSON.stringify(await ev(x).catch((e) => String(e?.message ?? e)))}`); res.install = 'timeout'; res.first_error = firstErr(t2) ?? `no ${plan.title} window in ${plan.timeout?.install ?? 1500} s (${presses} presses)`; done(); }
     // the loading screen's failure box (the desktop exited, the job failed): the row ends on its words
     const box = await ev("(() => { const b = document.querySelector('#loading .why.on'); return b ? b.innerText.replace(/\\s+/g, ' ') : null; })()").catch(() => null);
     if (box) { await shot('page-failed'); res.install = 'page: ' + box; res.first_error = firstErr(t2) ?? box; done(); }
@@ -712,7 +723,13 @@ if (plan.tile) {
       log(`tile clicked again: ${ok}`); res.times.again = +(now() - t2).toFixed(1);
     }
     // (a progress window, titled with its percentage, is left alone: Enter there is its Cancel, as in 7-Zip's extraction)
-    const inst = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100 && !/^\d+% /.test(w.title));
+    const big = l.filter((w) => !isBase(w) && w.w >= 200 && w.h >= 100 && !/^\d+% /.test(w.title));
+    const inst = programs ? big.filter((w) => instPids.has(pidOf(w))) : big;
+    // the program's own dialogs before its main window: the plan's answer, if it has one, and nothing else
+    for (const w of programs ? big.filter((x) => !instPids.has(pidOf(x))) : []) {
+      const ans = (plan.answers ?? []).find((a) => new RegExp(a.in).test(w.title));
+      if (ans) { await click(w.x + ans.click[0], w.y + ans.click[1]); log(`program dialog "${w.title}" (pid ${pidOf(w)}): answered at ${ans.click}`); }
+    }
     // plan.inst_steps: the installer's first window answered by these steps instead (a page whose default is
     // not the Enter key's: Python's "Install Now" link), once
     if (inst.length && plan.inst_steps && !instRan) { instRan = true; await shot('inst-steps'); const why = await run(plan.inst_steps); log(`installer steps${why ? ': ' + why : ''}`); }
