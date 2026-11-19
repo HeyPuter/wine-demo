@@ -398,13 +398,15 @@
     note("Windows session ended: Wine's server failed");
     console.log('[crash]', JSON.stringify({ server: true }));
   };
-  // The processes a "not supported" notice was given for: their end that follows is that, not a second card.
-  const unsupported = new Set();
+  // The processes a "not supported" notice was given for, and when: their end that follows straight after (within
+  // a minute) is that, not a second card. A program that ran on after its notice (a reservation that did not fit
+  // but was not needed) and crashed later gets its card as any other.
+  const unsupported = new Map();
   const crashed = ({ pid, name, reason, code, cmdline }) => {
     if (/(^|[\\/])wineserver$/.test(name ?? '')) return serverFailure();
     const who = whoIs(pid, name, cmdline);
     console.log('[crash]', JSON.stringify({ pid, name, reason, code, cmdline, program: who.label }));
-    if (unsupported.has(pid)) return;
+    if (Date.now() - (unsupported.get(pid) ?? -Infinity) < 60e3) return;
     note(`${who.label} crashed`, `${who.context ? `${who.context}. ` : ''}${reason || (code ? `exception ${code}` : 'it ended unexpectedly')}`, 30000);
   };
 
@@ -1053,7 +1055,7 @@
       // a card, as a crash's (the error line under the desktop is the page's own failures'). A program an
       // installer started (a runtime it bundles) is the installer's helper: the install may go on without it.
       if (/needs more than 16 GiB/.test(t)) {
-        unsupported.add(pid);
+        unsupported.set(pid, Date.now());
         note(`${who.label} is not supported here`, `${ctx}It ${t}; ${who.helper ? 'the install may go on without it' : 'its 32-bit build may run'}.`, 60000);
       } else note(who.label, `${ctx}${t}`, 30000);
       console.log('[notice]', JSON.stringify({ pid, name, cmdline, program: who.label, text }));
