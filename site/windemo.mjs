@@ -13,6 +13,9 @@
 //   launch          in place of the site's launch file (nt.json) and pack: { exe, argv,
 //                   env: ['K=V', ...], cwd, size, tar: the archive's path (plain), d3d,
 //                   features_off } (the recording page, tools/pre-index.html)
+//   scale           device pixels per CSS pixel the desktop draws at: 1 (the default, CSS
+//                   pixels), a number, or 'auto' (the page's devicePixelRatio at the start)
+//   env             ['K=V', ...] over the launch's environment
 //   background      the desktop behind the windows: '#rrggbb' or { color, image, anchor }
 //   filesystem      'memory' or { kind: 'opfs', name }
 //   onStoreBusy({ name, signal })  another tab holds the store: resolves 'memory'
@@ -206,12 +209,15 @@ export async function start(opts = {}) {
   let [w, h] = sizeOf(opts.size ?? nt.size);
   const canvas = document.createElement('canvas');
   canvas.style.display = 'block';
-  canvas.width = w;
-  canvas.height = h;
+  // The backing store in device pixels, the page's CSS size times the scale.
+  const scale = opts.scale === 'auto' ? Math.max(1, Number(globalThis.devicePixelRatio) || 1) : Math.max(1, Number(opts.scale ?? 1) || 1);
+  const dev = (n) => Math.max(1, Math.round(n * scale));
+  canvas.width = dev(w);
+  canvas.height = dev(h);
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   container.append(canvas);
-  const windows = new CompositorWindows(sys, { canvas, scale: 1, ...(opts.background ? { background: opts.background } : {}) });
+  const windows = new CompositorWindows(sys, { canvas, scale, ...(opts.background ? { background: opts.background } : {}) });
   // index.html reads the scene's windows (the agent's status windows) here.
   globalThis.__gexCompositor = { describe: (o) => windows.describe(o) };
   if (!(nt.features_off ?? []).includes('gl')) new MesaGl(sys, { d3d: !!nt.d3d });
@@ -255,7 +261,7 @@ export async function start(opts = {}) {
   }
 
   // Wine's environment: the launch file's, the windows', the viewer's time zone, and the site's defaults.
-  const env = { ...envObject(nt.env), ...windows.env, ...hostTimeZone() };
+  const env = { ...envObject(nt.env), ...windows.env, ...hostTimeZone(), ...envObject(opts.env ?? []) };
   env.GEX_WINE_PREFIX ??= '/wine';
   env.GEX_WIN_STRICT ??= '1';
   // The wineserver's periodic registry saves only for a prefix the visit keeps.
@@ -338,7 +344,7 @@ export async function start(opts = {}) {
       [w, h] = sizeOf(size);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      windows.resize(w, h);
+      windows.resize(dev(w), dev(h));
       return { w, h };
     },
     describe: (o) => windows.describe(o),
