@@ -22,7 +22,7 @@ This repo holds only the pipeline. Its outputs go to `WD_OUT`, never into the re
 
 ## Inputs
 
-1. **A gex checkout** (`GEX`). Its `page/node_modules` must be in place, either from `npm ci` in `page/` or as a link to another tree's.
+1. **A gex checkout** (`GEX`). Its `runtime/node_modules` (`page/node_modules` on an older checkout) must be in place, either from `npm ci` in `runtime/` or as a link to another tree's.
 2. **A gate Wine dist** (`DIST`): a native-i386 WoW64 dist, `GATE_W64/dist64-K-...-wow64-...-nN64-N32-sS`. The gate also builds what `bin/dist.sh` derives from its name: the wasm64 tree `b64-K-*-wow64`, the native dirs `pen64-K-N64` and `pen32-K-N32`, the sysroot, and the WoW64 prefix stamped for its `wine.inf`.
 3. **The apps** (`APPS`): WN's drop-in of 7-Zip, Notepad++ and Dillo built with gexcc's Windows target. It contains `files/`, `programs.list`, `licenses/` and `SHA256SUMS`.
    - The recipe is the sandbox's `apps/` (`APPS_RECIPE`): `build-all.sh` fetches and builds the apps, and `package.sh` lays out the drop-in.
@@ -53,7 +53,7 @@ make site GEX=<gex checkout> DIST=<gate dist> SITE=sW7
 
 This runs the following steps in order. Each step is also a target of its own.
 
-1. `runtime` (`bin/runtime.sh`) builds GEX's x86 gexc, the kernel and the browser shims, Mesa, then the runtime package (`page/runtime/build.sh`) into `WD_OUT/rt` and the zstd decoder into `WD_OUT/vendor`. GEX has no page of its own. It waits while two cargo builds are already running.
+1. `runtime` (`bin/runtime.sh`) builds GEX's x86 gexc, the kernel and the browser shims, Mesa, then the runtime package (`runtime/build.sh`) into `WD_OUT/rt` and the zstd decoder into `WD_OUT/vendor`. GEX has no page of its own. It waits while two cargo builds are already running.
 2. `dist` (`bin/dist.sh DIST`) copies DIST into `w64/dist`, restages its x86-64 core with `PELINK_EXPORT_ALL=1`, and writes `w64/dist.env`. The previous dist becomes `w64/dist-prev`.
 3. `test-apps` (`bin/test-apps.sh`) fetches the upstream downloads above.
 4. `prefix` (`bin/mkapps.sh`) makes `work/pfx-apps`: the gate's WoW64 prefix plus the apps, PuTTY, the Start menu shortcuts and the "Print to file" printer. It builds `tools/prt/addprinter.c` with mingw for this step only.
