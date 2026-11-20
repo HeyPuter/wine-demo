@@ -14,7 +14,9 @@
 //                   env: ['K=V', ...], cwd, size, tar: the archive's path (plain), d3d,
 //                   features_off } (the recording page, tools/pre-index.html)
 //   scale           device pixels per CSS pixel the desktop draws at: 1 (the default, CSS
-//                   pixels), a number, or 'auto' (the page's devicePixelRatio at the start)
+//                   pixels), a number, or 'auto': the page's devicePixelRatio at the start,
+//                   rounded (the runtime tells programs a whole scale), with Windows' DPI
+//                   to match (WINDEMO_DPI, 96 x the scale, over env's)
 //   env             ['K=V', ...] over the launch's environment
 //   background      the desktop behind the windows: '#rrggbb' or { color, image, anchor }
 //   filesystem      'memory' or { kind: 'opfs', name }
@@ -31,7 +33,7 @@
 //                   total, complete } (restAhead's), error }
 //   onCrash(c), onNotice(n), onLog(text), onGlCapture(bytes)
 // handle: { exited, state, system, filesystem, launch (what ran: the launch with the
-//   environment Wine got), resize(size), drop(data, opts), dragLeave(), describe(opts), kill() }
+//   environment Wine got), scale (the one drawn at), resize(size), drop(data, opts), dragLeave(), describe(opts), kill() }
 
 import { System, hostTimeZone } from '../rt/index.mjs';
 import { MemoryFilesystem, OPFSFilesystem } from '../rt/fs.mjs';
@@ -210,7 +212,8 @@ export async function start(opts = {}) {
   const canvas = document.createElement('canvas');
   canvas.style.display = 'block';
   // The backing store in device pixels, the page's CSS size times the scale.
-  const scale = opts.scale === 'auto' ? Math.max(1, Number(globalThis.devicePixelRatio) || 1) : Math.max(1, Number(opts.scale ?? 1) || 1);
+  const auto = opts.scale === 'auto';
+  const scale = auto ? Math.max(1, Math.round(Number(globalThis.devicePixelRatio) || 1)) : Math.max(1, Number(opts.scale ?? 1) || 1);
   const dev = (n) => Math.max(1, Math.round(n * scale));
   canvas.width = dev(w);
   canvas.height = dev(h);
@@ -262,6 +265,7 @@ export async function start(opts = {}) {
 
   // Wine's environment: the launch file's, the windows', the viewer's time zone, and the site's defaults.
   const env = { ...envObject(nt.env), ...windows.env, ...hostTimeZone(), ...envObject(opts.env ?? []) };
+  if (auto) env.WINDEMO_DPI = String(96 * scale);
   env.GEX_WINE_PREFIX ??= '/wine';
   env.GEX_WIN_STRICT ??= '1';
   // The wineserver's periodic registry saves only for a prefix the visit keeps.
@@ -340,6 +344,7 @@ export async function start(opts = {}) {
     // (without the registry-save knob: this loader decides it each visit, by where the files are kept, and a
     // recording made on a memory filesystem must not hand it to a visit that keeps them)
     launch: { ...nt, argv: argv.slice(1), env: Object.entries(env).filter(([k]) => k !== 'WINEGEX_NO_REGSAVE').map(([k, v]) => `${k}=${v}`) },
+    scale,
     resize(size = 'fit') {
       [w, h] = sizeOf(size);
       canvas.style.width = `${w}px`;
