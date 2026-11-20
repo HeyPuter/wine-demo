@@ -3,165 +3,257 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Windows apps in the browser</title>
+<title>Try windows apps in your browser</title>
+<meta name="description" content="Windows programs on gex: Wine compiled to WebAssembly, the programs' x86 code translated in the tab, on a Linux kernel written in Rust. Nothing runs on a server.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Puter Labs">
+<meta property="og:title" content="Try windows apps in your browser">
+<meta property="og:description" content="Windows programs on gex: Wine compiled to WebAssembly, the programs' x86 code translated in the tab, on a Linux kernel written in Rust. Nothing runs on a server.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Try windows apps in your browser">
+<meta name="twitter:description" content="Windows programs on gex: Wine compiled to WebAssembly, the programs' x86 code translated in the tab, on a Linux kernel written in Rust. Nothing runs on a server.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3Csvg%20x%3D%220px%22%20y%3D%220px%22%20width%3D%2248px%22%20height%3D%2248px%22%20viewBox%3D%220%200%2048%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20stroke-width%3D%222%22%20transform%3D%22matrix(0%2C%201%2C%20-1%2C%200%2C%2047.999504%2C%200.000014)%22%3E%3Cpolyline%20points%3D%2239%2024%2025%2024%2025%2028%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2235.879%2010.121%2032%2014%2025%2014%2025%2018%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M13%2C26a10.29%2C10.29%2C0%2C0%2C1-7.2-3%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M17%2C31.6A5.826%2C5.826%2C0%2C0%2C1%2C13%2C26a5.731%2C5.731%2C0%2C0%2C1%2C2-4.4%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M35.879%2C37.879%2C32%2C34H25v2A9.9%2C9.9%2C0%2C0%2C1%2C15%2C46%2C9.9%2C9.9%2C0%2C0%2C1%2C5%2C36a9.058%2C9.058%2C0%2C0%2C1%2C.6-3.2A5.627%2C5.627%2C0%2C0%2C1%2C3%2C28a5.888%2C5.888%2C0%2C0%2C1%2C2.8-5A9.994%2C9.994%2C0%2C0%2C1%2C3%2C16%2C9.9%2C9.9%2C0%2C0%2C1%2C13%2C6h.4A5.826%2C5.826%2C0%2C0%2C1%2C19%2C2a5.893%2C5.893%2C0%2C0%2C1%2C6%2C6%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%228%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2224%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2240%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
 <style>
-  :root { --bg: #f4f5f7; --ink: #1b1f24; --muted: #59616b; --faint: #8a919b; --line: #e2e5e9; --err: #c0392b;
-          --accent: #1d49e7; --tile-shadow: 0 1px 2px rgba(17,24,39,.12); --bar: #1d49e7;
-          font-family: "Noto Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  :root { --sans: "Inter", "Noto Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+          --ink: #16191d; --muted: #5b636e; --faint: #8b929c; --line: #e3e6ea; --bg: #f6f7f9; --card: #fff;
+          --accent: #1d49e7; --accent-soft: rgba(29,73,231,.08); --bar: #1d49e7; --err: #c0392b; --ok: #0f7b6c;
+          --r: 10px; --shadow: 0 1px 2px rgba(17,24,39,.06), 0 1px 1px rgba(17,24,39,.04);
+          --lift: 0 10px 24px -12px rgba(17,24,39,.28), 0 2px 6px -2px rgba(17,24,39,.12);
+          font-family: var(--sans); color-scheme: light; }
+  * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #2e686c; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
   #desk { position: fixed; inset: 0; }
   #error { position: fixed; left: 1em; right: 1em; bottom: 1em; margin: 0; color: #f88; white-space: pre-wrap; z-index: 2147483647; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* The launcher: over the desktop (which starts behind it) until a tile is chosen. */
-  #launcher { position: fixed; inset: 0; z-index: 2147483640; display: flex; flex-direction: column; background: var(--bg);
-              overflow-y: auto; transition: opacity .35s ease, transform .35s ease; }
-  #launcher.gone { opacity: 0; transform: scale(1.02); pointer-events: none; }
-  .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px;
-         background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 1; }
+  /* the launcher: over the desktop (which starts behind it) until a tile is chosen */
+  #launcher { position: fixed; inset: 0; z-index: 2147483640; overflow-y: auto; overscroll-behavior: contain;
+              transition: opacity .3s ease, visibility 0s linear 0s; }
+  #launcher.gone { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease, visibility 0s linear .3s; }
+
+  /* Puter Labs: the mark and its badge */
   .puter { display: flex; align-items: center; gap: 10px; }
-  .puter img { display: block; height: 30px; width: auto; }
+  .puter img { display: block; height: 28px; width: auto; }
   .puter a { display: inline-flex; align-items: center; gap: 7px; color: #333; font-size: 16px; font-weight: 600;
              letter-spacing: -.01em; text-decoration: none; transition: opacity .15s ease; }
   .puter a:hover { opacity: .7; }
   .labs { padding: 2px 8px; border-radius: 999px; background: rgba(29,73,231,.09); color: #1d49e7;
           font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-  .gh { display: inline-flex; align-items: center; gap: 6px; color: #333; font-size: 14px; font-weight: 500; text-decoration: none; opacity: .8; }
+  .gh { display: inline-flex; align-items: center; gap: 6px; color: #333; font-size: 14px; font-weight: 500;
+        text-decoration: none; opacity: .75; transition: opacity .15s ease; }
   .gh:hover { opacity: 1; }
-  main { width: min(1180px, 100%); box-sizing: border-box; margin: 0 auto; padding: 28px 28px 48px; }
-  h1 { margin: 0 0 4px; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
-  .lede { margin: 0 0 24px; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 60ch; }
-  h2 { margin: 26px 0 10px; color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-  .tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1 / 1;
-          min-height: 120px; padding: 12px; box-sizing: border-box; border: 0; border-radius: 2px; color: #fff;
-          background: var(--c); box-shadow: var(--tile-shadow); cursor: pointer; text-align: left; font: inherit;
-          transition: transform .12s ease, filter .12s ease; }
-  .tile.wide { grid-column: span 2; aspect-ratio: auto; }
-  .tile:hover { filter: brightness(1.08); }
-  .tile:active { transform: scale(.97); }
-  .tile:focus-visible { outline: 3px solid #111; outline-offset: 2px; }
-  .tile .glyph { width: 44px; height: 44px; }
-  .tile .glyph.mono { width: 64px; height: 44px; }
-  .tile .glyph.icon { width: 48px; height: 48px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
-  #loading .mark .glyph.icon { width: 44px; height: 44px; object-fit: contain; }
-  .tile .name { font-size: 15px; font-weight: 600; line-height: 1.2; }
-  .tile .meta { margin-top: 2px; font-size: 12px; opacity: .85; }
-  .tile .badge { position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 600; opacity: .9; }
-  /* Your own program: dropped (a file or a folder) or chosen, copied into Windows and run. */
-  .dropapp { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border: 2px dashed #b9c0ca; border-radius: 4px;
-             background: #fff; transition: border-color .15s ease, background .15s ease; }
-  .dropapp.over { border-color: var(--accent); background: rgba(29,73,231,.06); }
-  .dropapp img { flex: 0 0 auto; width: 44px; height: 44px; }
-  .dropapp .txt { flex: 1 1 auto; min-width: 0; }
-  .dropapp .t1 { font-size: 15px; font-weight: 600; }
-  .dropapp .t2 { margin-top: 2px; color: var(--muted); font-size: 13px; }
-  .dropapp .btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  .dropapp button, #picker button.row, #picker .cancel { padding: 7px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg);
-             color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
-  .dropapp button:hover { border-color: var(--accent); }
+
+  /* a tile: a button; its glyph (the program's icon, or its initials on its colour), name, meta, badge */
+  .tile { position: relative; cursor: pointer; text-align: left; font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+  .glyph { display: block; flex: 0 0 auto; }
+  img.glyph { object-fit: contain; }
+  .glyph.mono { display: grid; place-items: center; border-radius: 22%; background: var(--c); color: #fff;
+                font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .tile .badge:empty { display: none; }
+
+  /* the drop: your own program */
   .dropapp input { display: none; }
   .dropapp .tap { display: none; }
-  /* a phone: no dragging there, so only the buttons */
-  @media (max-width: 640px), (pointer: coarse) {
-    .dropapp { flex-wrap: wrap; } .dropapp .drag { display: none; } .dropapp .tap { display: inline; }
-  }
-  /* The drop's programs, when it holds more than one: the user picks the one to run. */
-  #picker { position: fixed; inset: 0; z-index: 2147483643; display: none; align-items: center; justify-content: center;
-            padding: 16px; box-sizing: border-box; background: rgba(17,24,39,.45); }
-  #picker.on { display: flex; }
-  #picker .box { width: min(520px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column;
-                 padding: 20px; box-sizing: border-box; border-radius: 4px; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
-  #picker h2 { margin: 0 0 4px; color: var(--ink); font-size: 18px; letter-spacing: 0; text-transform: none; }
-  #picker p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
-  #picker ul { list-style: none; margin: 0 0 14px; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-  #picker button.row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #fff; }
-  #picker button.row:hover { border-color: var(--accent); background: rgba(29,73,231,.05); }
-  #picker button.row img { width: 32px; height: 32px; flex: 0 0 auto; }
-  #picker button.row .p { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-  #picker button.row .s { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
-  #picker .cancel { align-self: flex-end; }
-  /* A tile whose installer the visitor brings (launcher.tsv's homepage, no file): where to get it, and a box to
-     drop it on. */
-  #byo { position: fixed; inset: 0; z-index: 2147483643; display: none; align-items: center; justify-content: center;
-         padding: 16px; box-sizing: border-box; background: rgba(17,24,39,.45); }
-  #byo.on { display: flex; }
-  #byo .box { width: min(520px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 20px; box-sizing: border-box;
-              border-radius: 4px; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
-  #byo h2 { margin: 0; color: var(--ink); font-size: 18px; letter-spacing: 0; text-transform: none; }
-  #byo p { margin: 0; color: var(--muted); font-size: 13px; }
-  #byo a.home { align-self: flex-start; color: var(--accent); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-  #byo .drop { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 16px; border: 2px dashed #b9c0ca;
-               border-radius: 4px; text-align: center; color: var(--muted); font-size: 13px; }
-  #byo .drop.over { border-color: var(--accent); background: rgba(29,73,231,.06); }
-  #byo button { padding: 7px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--ink);
-                font: inherit; font-size: 13px; cursor: pointer; }
-  #byo button:hover { border-color: var(--accent); }
-  #byo .cancel { align-self: flex-end; }
-  #byo input { display: none; }
-  footer { padding: 8px 28px 32px; color: var(--faint); font-size: 12px; text-align: center; }
-  footer a { color: inherit; }
-  @media (max-width: 640px) {
-    .bar { padding: 10px 16px; }
-    main { padding: 20px 16px 40px; }
-    h1 { font-size: 23px; }
-    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .tile { aspect-ratio: 4 / 3; min-height: 0; }
-    .tile.wide { grid-column: span 2; aspect-ratio: auto; min-height: 110px; }
-    .tile .glyph { width: 34px; height: 34px; }
-    .tile .glyph.mono { width: 50px; height: 34px; }
-    .tile .glyph.icon { width: 38px; height: 38px; }
-  }
+  @media (max-width: 640px), (pointer: coarse) { .dropapp .drag { display: none; } .dropapp .tap { display: inline; } }
 
-  /* Over the desktop: what the chosen app is doing, and the way back to the apps. */
+  /* dialogs: the drop's programs (#picker) and a bring-your-own tile's (#byo) */
+  #picker, #byo { position: fixed; inset: 0; z-index: 2147483643; display: none; align-items: center; justify-content: center;
+                  padding: 16px; background: rgba(15,18,24,.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  #picker.on, #byo.on { display: flex; animation: fade .16s ease; }
+  #picker .box, #byo .box { width: min(480px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; gap: 12px;
+              padding: 22px; border-radius: 14px; background: var(--card); box-shadow: 0 24px 60px -20px rgba(0,0,0,.4);
+              animation: rise .2s cubic-bezier(.2,.8,.3,1); }
+  #picker h2, #byo h2 { margin: 0; color: var(--ink); font-size: 18px; font-weight: 600; letter-spacing: -.01em; text-transform: none; }
+  #picker p, #byo p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  #byo p.fine { font-size: 12.5px; color: var(--faint); }
+  #picker ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  #picker button.row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; text-align: left;
+                       border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer; font-size: 13px; }
+  #picker button.row:hover { border-color: var(--accent); background: var(--accent-soft); }
+  #picker button.row img { width: 32px; height: 32px; flex: 0 0 auto; }
+  #picker button.row .p { overflow-wrap: anywhere; }
+  #picker button.row .s { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #byo a.home { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px;
+                background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+  #byo a.home::after { content: "\2197"; font-weight: 400; }
+  #byo a.home:hover { filter: brightness(1.08); }
+  #byo .drop { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 16px; border: 1.5px dashed #c3c9d2;
+               border-radius: 10px; text-align: center; color: var(--muted); font-size: 13px; transition: border-color .15s, background .15s; }
+  #byo .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  #byo input { display: none; }
+  .btn, #byo button, #picker .cancel, #loading .back { padding: 7px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+         color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer; transition: border-color .15s, background .15s; }
+  .btn:hover, #byo button:hover, #picker .cancel:hover, #loading .back:hover { border-color: #b8c0cc; background: #fafbfc; }
+  #byo .cancel, #picker .cancel { align-self: flex-end; }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px) scale(.985); } }
+
+  /* over the desktop: what the chosen app is doing, and the way back to the apps */
   #status { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2147483641; display: none;
-            align-items: center; gap: 10px; max-width: calc(100vw - 32px); box-sizing: border-box; padding: 8px 14px;
-            border-radius: 4px; background: rgba(17,24,39,.88); color: #fff; font-size: 13px; }
+            align-items: center; gap: 10px; max-width: calc(100vw - 32px); padding: 8px 14px;
+            border-radius: 999px; background: rgba(17,24,39,.88); color: #fff; font-size: 13px; }
   #status.on { display: flex; }
   #status .spin { flex: 0 0 auto; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
                   border-radius: 50%; animation: spin .8s linear infinite; }
   #status .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #apps { position: fixed; right: 8px; top: 8px; z-index: 2147483641; display: none; padding: 5px 10px; border: 0; border-radius: 3px;
-          background: rgba(17,24,39,.6); color: #fff; font: 600 12px system-ui, sans-serif; cursor: pointer; }
-  #apps.on { display: block; }
+  #apps { position: fixed; right: 8px; top: 8px; z-index: 2147483641; display: none; align-items: center; gap: 6px; padding: 5px 11px 5px 9px;
+          border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: rgba(17,24,39,.62); color: #fff;
+          font: 600 12px var(--sans); cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  #apps::before { content: ""; width: 10px; height: 10px; background:
+    linear-gradient(#fff,#fff) 0 0/4px 4px no-repeat, linear-gradient(#fff,#fff) 6px 0/4px 4px no-repeat,
+    linear-gradient(#fff,#fff) 0 6px/4px 4px no-repeat, linear-gradient(#fff,#fff) 6px 6px/4px 4px no-repeat; opacity: .9; }
+  #apps.on { display: inline-flex; }
   #apps:hover { background: rgba(17,24,39,.85); }
-  @media (prefers-reduced-motion: reduce) { #launcher, .tile { transition: none; } #status .spin { animation: none; } }
 
-  /* After a tile's click, while anything its app needs is not ready: one bar per item, side by side in time. */
+  /* after a tile's click, while anything its app needs is not ready: one bar per item, side by side in time */
   #loading { position: fixed; inset: 0; z-index: 2147483642; display: none; align-items: center; justify-content: center;
-             padding: 16px; box-sizing: border-box; background: var(--bg); overflow-y: auto; }
-  #loading.on { display: flex; }
-  #loading .card { width: min(520px, 100%); }
-  #loading .head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-  #loading .mark { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px;
-                   border-radius: 2px; background: var(--c); box-shadow: var(--tile-shadow); }
+             padding: 16px; background: var(--bg); overflow-y: auto; }
+  #loading.on { display: flex; animation: fade .2s ease; }
+  #loading .card { width: min(460px, 100%); }
+  #loading .head { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  #loading .mark { flex: 0 0 auto; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 14px;
+                   background: var(--card); box-shadow: var(--shadow), 0 0 0 1px var(--line); }
   #loading .mark .glyph { width: 40px; height: 40px; }
-  #loading .mark .glyph.mono { width: 54px; height: 38px; }
-  #loading h1 { margin: 0; font-size: 22px; }
-  #loading .sub { margin-top: 2px; color: var(--muted); font-size: 13px; }
-  #loading ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-  #loading li .top { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
-  #loading li .what { font-weight: 600; }
+  #loading .mark .glyph.mono { width: 44px; height: 44px; font-size: 18px; }
+  #loading h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  #loading .sub { margin-top: 3px; color: var(--muted); font-size: 13px; }
+  #loading ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+  #loading li { animation: fade .25s ease; }
+  #loading li .top { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+  #loading li .what { font-weight: 500; }
   #loading li .num { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
-  #loading li .track { height: 6px; margin-top: 6px; border-radius: 3px; background: var(--line); overflow: hidden; position: relative; }
-  #loading li .fill { height: 100%; width: 0; background: var(--bar); transition: width .25s ease; }
+  #loading li .track { height: 4px; margin-top: 7px; border-radius: 2px; background: var(--line); overflow: hidden; position: relative; }
+  #loading li .fill { height: 100%; width: 0; border-radius: 2px; background: var(--bar); transition: width .25s ease; }
   #loading li .track.busy .fill { position: absolute; width: 30%; animation: slide 1.3s ease-in-out infinite; }
-  #loading li.done .what::before { content: "\2713  "; color: #0f7b6c; }
-  #loading li.done .fill { width: 100%; background: #0f7b6c; }
+  #loading li.done .what::before { content: "\2713\00a0\00a0"; color: var(--ok); }
+  #loading li.done .what { color: var(--muted); }
+  #loading li.done .fill { width: 100%; background: var(--ok); }
   #loading li.done .track.busy .fill { position: static; animation: none; }
   #loading li.fail .what, #loading li.fail .num { color: var(--err); }
   #loading li.fail .fill { width: 100%; background: var(--err); }
   #loading li.fail .track.busy .fill { position: static; animation: none; }
-  #loading .why { display: none; margin-top: 20px; padding: 10px 12px; border-left: 3px solid var(--err); background: #fff;
-                  font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+  #loading .why { display: none; margin-top: 22px; padding: 10px 12px; border-left: 3px solid var(--err); border-radius: 0 8px 8px 0;
+                  background: #fff5f3; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
   #loading .why.on { display: block; }
   #loading .why b { display: block; }
-  #loading .back { display: none; margin-top: 18px; padding: 7px 16px; border: 1px solid var(--line); border-radius: 3px;
-                   background: #fff; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+  #loading .back { display: none; margin-top: 18px; }
   #loading .back.on { display: inline-block; }
   @keyframes slide { from { left: -30%; } to { left: 100%; } }
-  @media (prefers-reduced-motion: reduce) { #loading li .track.busy .fill { animation: none; left: 0; width: 100%; opacity: .4; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    #loading li .track.busy .fill { animation: none; left: 0; width: 100%; opacity: .4; }
+  }
+  #loading li.done .fill, #loading li.fail .fill { width: 100% !important; }
+  .meta .cat:not(:empty) + .sz:not(:empty)::before { content: "\00a0\00b7\00a0"; }
+  #loading li .what { flex: 1 1 60%; min-width: 0; }
+  #loading li .num { flex: 0 1 auto; }
+  :root { --teal: #2e686c; }
+  #launcher { background: var(--teal); display: flex; flex-direction: column; }
+  #launcher::before { content: ""; position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(1100px 520px at 50% -8%, rgba(255,255,255,.16), rgba(255,255,255,0) 70%); }
+  .bar { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+         padding: 12px 24px; background: rgba(255,255,255,.9); border-bottom: 1px solid rgba(0,0,0,.06);
+         backdrop-filter: blur(16px) saturate(170%); -webkit-backdrop-filter: blur(16px) saturate(170%); }
+  .right { display: flex; align-items: center; gap: 18px; }
+  .about-btn { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #333;
+               font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s, background .15s; }
+  .about-btn:hover { border-color: #c4cad3; background: #fafbfc; }
+  main { position: relative; flex: 1 0 auto; width: min(1040px, 100%); margin: 0 auto; padding: 20px 24px 24px; }
+  .sheet { padding: 24px 24px 22px; border-radius: 16px; background: #fff;
+           box-shadow: 0 30px 70px -30px rgba(0,20,25,.55), 0 2px 8px rgba(0,20,25,.12); animation: rise .35s cubic-bezier(.2,.8,.3,1); }
+  h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+  .lede { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; max-width: 76ch; }
+  .more { padding: 0; border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
+  .more:hover { text-decoration: underline; }
+  .dropapp { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; padding: 8px 8px 8px 12px; border-radius: 10px;
+             background: var(--bg); border: 1.5px dashed transparent; font-size: 13.5px; color: var(--muted);
+             transition: border-color .15s, background .15s; }
+  .dropapp .plus { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px var(--line);
+    background-image: linear-gradient(var(--muted), var(--muted)), linear-gradient(var(--muted), var(--muted));
+    background-size: 12px 1.5px, 1.5px 12px; background-position: center; background-repeat: no-repeat; }
+  .dropapp b { color: var(--ink); font-weight: 600; }
+  .dropapp .txt { flex: 1; min-width: 0; }
+  .dropapp .btns { display: flex; gap: 6px; }
+  .dropapp.over { border-color: var(--accent); background: var(--accent-soft); }
+  .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 10px; }
+  .tile { display: flex; align-items: center; gap: 12px; padding: 7px 10px; border: 0; border-radius: 10px; background: transparent;
+          transition: background .12s ease; }
+  .tile:hover { background: #f1f3f6; }
+  .tile:active { background: #e8ebf0; }
+  .tile .glyph { width: 36px; height: 36px; }
+  .tile .glyph.mono { font-size: 14px; border-radius: 9px; }
+  .tile > div { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .tile .name { font-size: 14.5px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .meta { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tile .meta { max-width: 50%; overflow: hidden; text-overflow: ellipsis; }
+  .tile .badge { order: 3; padding: 1px 6px; border-radius: 999px; background: #e7f5f1; color: var(--ok); font-size: 10.5px; font-weight: 600; }
+  .tile .badge { position: static; }
+  .byo-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 14px 0 6px; padding: 14px 10px 0;
+              border-top: 1px solid var(--line); }
+  .byo-head h2 { margin: 0; font-size: 12px; font-weight: 650; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .byo-head span { color: var(--faint); font-size: 12.5px; }
+  .foot { margin: 18px 0 0; color: rgba(255,255,255,.62); font-size: 12px; line-height: 1.5; text-align: center; }
+  .foot a { color: inherit; }
 
+  /* the explanation: a panel from the right */
+  .scrim { position: fixed; inset: 0; z-index: 4; background: rgba(10,20,22,.35); animation: fade .2s ease; }
+  .about { position: fixed; top: 0; right: 0; bottom: 0; z-index: 5; width: min(420px, 100%); overflow-y: auto; padding: 22px 24px 70px;
+           background: #fff; box-shadow: -20px 0 50px -20px rgba(0,0,0,.35); transform: translateX(105%); visibility: hidden;
+           transition: transform .3s cubic-bezier(.2,.8,.3,1), visibility 0s linear .3s; }
+  .about.on { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2,.8,.3,1), visibility 0s; }
+  .about-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .about h2 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.01em; }
+  .about .x { width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+  .about .x:hover { background: var(--bg); }
+  .how-list { margin: 0; }
+  .how-list > div { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .how-list dt { font-size: 14px; font-weight: 600; }
+  .how-list dd { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+  .how-list a, .about .note a { color: var(--accent); }
+  .about .note { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+
+  /* the loading screen: the same sheet over the same desktop colour */
+  #loading { background: var(--teal); }
+  #loading .card { padding: 26px; border-radius: 16px; background: #fff; box-shadow: 0 30px 70px -30px rgba(0,20,25,.55), 0 2px 8px rgba(0,20,25,.12); }
+
+  @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) {
+    .bar { padding: 10px 14px; }
+    .right { gap: 10px; }
+    .gh span { display: none; }
+    main { padding: 14px 10px 20px; }
+    .sheet { padding: 18px 12px 14px; border-radius: 14px; }
+    .head { padding: 0 4px; }
+    h1 { font-size: 20px; }
+    .dropapp { flex-wrap: wrap; }
+    .dropapp .txt { flex: 1 0 70%; }
+    .tiles { grid-template-columns: 1fr; }
+    .tile { padding: 8px 6px; }
+  }
+  .tile .meta .cat { display: none; }
+  .tile .meta .sz::before { content: none !important; }
+  .lede { max-width: none; }
+  .lede > span { display: block; }
+  .lede a { color: var(--ink); font-weight: 600; text-decoration-color: rgba(0,0,0,.25); text-underline-offset: 2px; }
+  .lede a:hover { color: var(--accent); text-decoration-color: currentColor; }
+  .lede { margin-top: 8px; }
+  @media (max-width: 640px) { .lede > span + span { margin-top: 5px; } }
+
+  /* the launcher scrolls above a band of the desktop's colour that holds Puter's credit and the download line, so
+     neither ever covers the list */
+  :root { --band: 52px; }
+  #launcher { overflow: hidden; }
+  #launcher > .scroll { position: absolute; inset: 0 0 var(--band); overflow-y: auto; overscroll-behavior: contain;
+                        display: flex; flex-direction: column; }
+  body:has(#launcher:not(.gone)) #rest { bottom: 15px; left: 16px; }
+  @media (max-width: 640px) {
+    :root { --band: 82px; }
+    body:has(#launcher:not(.gone)) #rest { bottom: 49px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  }
   /* What the running program is fetching (a lazy file, translated code). */
   #fetching { position: fixed; right: 8px; bottom: 48px; z-index: 2147483645; max-width: calc(100vw - 32px);
               padding: 3px 10px; border-radius: 4px; background: rgba(0, 0, 0, 0.72); color: #eee;
@@ -215,43 +307,80 @@
   #rest.on { display: flex; }
   #rest .track { width: 64px; height: 3px; background: rgba(255, 255, 255, .25); border-radius: 2px; overflow: hidden; }
   #rest .fill { height: 100%; width: 0; background: #7fb2ff; transition: width .3s linear; }
+  /* Puter's credit, as on the other Labs demos: over the launcher and, after it, over the desktop above its
+     taskbar (only its links take clicks) */
+  .credit { position: fixed; z-index: 2147483641; bottom: 14px; left: 50%; transform: translateX(-50%); height: 25px;
+    display: inline-flex; align-items: center; gap: 6px; padding: 0 13px; border: 1px solid rgba(209,213,219,.55);
+    border-radius: 999px; background: rgba(255,255,255,.82); backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%); color: #6b7280; font: 500 11.5px/1 var(--sans);
+    white-space: nowrap; user-select: none; pointer-events: none; transition: bottom .35s ease; }
+  .credit a { color: #111827; font-weight: 600; text-decoration: none; transition: color .15s ease; pointer-events: auto; }
+  .credit a:hover, .credit a:focus-visible { color: #1d49e7; }
+  .credit .sep { color: #9aa1ad; font-weight: 400; }
+  .credit a:focus-visible { outline: 2px solid #1d49e7; outline-offset: 2px; border-radius: 3px; }
+  body:has(#launcher.gone) .credit { bottom: 52px; }
 </style>
 </head>
 <body>
 <div id="desk"></div>
 <section id="launcher" aria-label="Apps">
+  <div class="scroll">
   <header class="bar">
     <div class="puter">
-      <a href="https://puter.com" target="_blank" rel="noreferrer" aria-label="Puter"><img src="data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3Csvg%20x%3D%220px%22%20y%3D%220px%22%20width%3D%2248px%22%20height%3D%2248px%22%20viewBox%3D%220%200%2048%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20stroke-width%3D%222%22%20transform%3D%22matrix(0%2C%201%2C%20-1%2C%200%2C%2047.999504%2C%200.000014)%22%3E%3Cpolyline%20points%3D%2239%2024%2025%2024%2025%2028%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2235.879%2010.121%2032%2014%2025%2014%2025%2018%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M13%2C26a10.29%2C10.29%2C0%2C0%2C1-7.2-3%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M17%2C31.6A5.826%2C5.826%2C0%2C0%2C1%2C13%2C26a5.731%2C5.731%2C0%2C0%2C1%2C2-4.4%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M35.879%2C37.879%2C32%2C34H25v2A9.9%2C9.9%2C0%2C0%2C1%2C15%2C46%2C9.9%2C9.9%2C0%2C0%2C1%2C5%2C36a9.058%2C9.058%2C0%2C0%2C1%2C.6-3.2A5.627%2C5.627%2C0%2C0%2C1%2C3%2C28a5.888%2C5.888%2C0%2C0%2C1%2C2.8-5A9.994%2C9.994%2C0%2C0%2C1%2C3%2C16%2C9.9%2C9.9%2C0%2C0%2C1%2C13%2C6h.4A5.826%2C5.826%2C0%2C0%2C1%2C19%2C2a5.893%2C5.893%2C0%2C0%2C1%2C6%2C6%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%228%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2224%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2240%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E" alt="Puter" height="30"></a>
+      <a href="https://puter.com" target="_blank" rel="noreferrer" aria-label="Puter"><img src="data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3Csvg%20x%3D%220px%22%20y%3D%220px%22%20width%3D%2248px%22%20height%3D%2248px%22%20viewBox%3D%220%200%2048%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20stroke-width%3D%222%22%20transform%3D%22matrix(0%2C%201%2C%20-1%2C%200%2C%2047.999504%2C%200.000014)%22%3E%3Cpolyline%20points%3D%2239%2024%2025%2024%2025%2028%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpolyline%20points%3D%2235.879%2010.121%2032%2014%2025%2014%2025%2018%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M13%2C26a10.29%2C10.29%2C0%2C0%2C1-7.2-3%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M17%2C31.6A5.826%2C5.826%2C0%2C0%2C1%2C13%2C26a5.731%2C5.731%2C0%2C0%2C1%2C2-4.4%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Cpath%20d%3D%22M35.879%2C37.879%2C32%2C34H25v2A9.9%2C9.9%2C0%2C0%2C1%2C15%2C46%2C9.9%2C9.9%2C0%2C0%2C1%2C5%2C36a9.058%2C9.058%2C0%2C0%2C1%2C.6-3.2A5.627%2C5.627%2C0%2C0%2C1%2C3%2C28a5.888%2C5.888%2C0%2C0%2C1%2C2.8-5A9.994%2C9.994%2C0%2C0%2C1%2C3%2C16%2C9.9%2C9.9%2C0%2C0%2C1%2C13%2C6h.4A5.826%2C5.826%2C0%2C0%2C1%2C19%2C2a5.893%2C5.893%2C0%2C0%2C1%2C6%2C6%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%228%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2224%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2240%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23444444%22%20stroke-linecap%3D%22square%22%20stroke-miterlimit%3D%2210%22%20stroke-width%3D%222%22%20data-color%3D%22color-2%22%20stroke-linejoin%3D%22miter%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E" alt="Puter" height="28"></a>
       <a href="https://developer.puter.com/" target="_blank" rel="noreferrer">Puter <span class="labs">Labs</span></a>
     </div>
-    <a class="gh" href="https://github.com/HeyPuter/gex" target="_blank" rel="noreferrer"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"> <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/> </svg>GitHub</a>
+    <div class="right">
+      <button type="button" class="about-btn" id="about-open" aria-controls="about" aria-expanded="false">How this works</button>
+      <a class="gh" href="https://github.com/HeyPuter/gex" target="_blank" rel="noreferrer"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"> <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/> </svg><span>GitHub</span></a>
+    </div>
   </header>
   <main>
-    <h1>Windows apps in your browser</h1>
-    <p class="lede">Wine and gex run these programs in this tab, with nothing to install. Pick one: the desktop is already
-      starting, and the first time, its installer opens on the desktop for you to click through. What you install stays in this browser.</p>
-    <div class="dropapp" id="dropapp">
-      <img src="icons/exe.png" alt="" onerror="this.remove()">
-      <div class="txt">
-        <div class="t1">Run your own Windows program</div>
-        <div class="t2"><span class="drag">Drop an .exe, an .msi or a whole folder here, or choose one.</span><span class="tap">Choose an .exe, an .msi or a folder.</span> It is copied into Windows here and runs in this tab.</div>
+    <div class="sheet">
+      <div class="head">
+        <h1>Try windows apps in your browser</h1>
+        <p class="lede">
+          <span><a href="https://github.com/HeyPuter/gex" target="_blank" rel="noreferrer">gex</a> runs Linux and Windows programs in a browser by translating their machine code to WebAssembly.</span>
+          <span>Windows programs get Wine, built for gex as WebAssembly rather than emulated.</span>
+          <span>Each process has its own address space, and a kernel written in Rust gives it threads, fork, signals and sockets.</span>
+          <span>Programs that use OpenGL get Mesa on WebGPU, up to GL 4.6.</span>
+          <span>No server runs any of it: the site is static files, and the network goes through a WebSocket proxy.</span>
+          <span>16 MB gets you the desktop. Your installs persist in the browser's private storage. <button type="button" class="more" id="about-more">How?</button></span></p>
       </div>
-      <div class="btns">
-        <button type="button" id="pick-file">Choose a program</button>
-        <button type="button" id="pick-dir">Choose a folder</button>
+      <div class="dropapp" id="dropapp">
+        <span class="plus" aria-hidden="true"></span>
+        <div class="txt"><b>Run your own program</b> <span class="drag">drop an .exe, .msi or folder anywhere</span><span class="tap">an .exe, .msi or folder</span></div>
+        <div class="btns">
+          <button type="button" class="btn" id="pick-file">File…</button>
+          <button type="button" class="btn" id="pick-dir">Folder…</button>
+        </div>
+        <input type="file" id="in-file" accept=".exe,.msi,application/x-msdownload,application/x-msi">
+        <input type="file" id="in-dir" webkitdirectory multiple>
       </div>
-      <input type="file" id="in-file" accept=".exe,.msi,application/x-msdownload,application/x-msi">
-      <input type="file" id="in-dir" webkitdirectory multiple>
+      <div class="tiles" id="t-apps"></div>
+      <div class="byo-head"><h2>Bring your own installer</h2><span>Not ours to ship: get it from the vendor, then drop it on the tile.</span></div>
+      <div class="tiles" id="t-byo"></div>
     </div>
-    <h2>Apps</h2>
-    <div class="tiles" id="t-apps"></div>
+    <p class="foot">Each program belongs to its authors; <a href="credits.html">credits and licences</a>. Windows is a trademark of its
+      owner. This demo is not affiliated with it or with any of these projects.</p>
   </main>
-  <footer>Each program belongs to its authors and is their unmodified installer; <a href="credits.html">credits and
-    licences</a> lists each one's licence and source. Windows is a trademark of its owner; this demo is not affiliated
-    with it or with any of these projects.</footer>
+  </div>
+  <div class="scrim" id="about-scrim" hidden></div>
+  <aside class="about" id="about" aria-label="How this works" aria-hidden="true">
+    <div class="about-top"><h2>How this works</h2><button type="button" class="x" id="about-close" aria-label="Close">&#x2715;</button></div>
+    <dl class="how-list">
+  <div><dt>What a tile does</dt><dd>It runs the program's setup on the desktop behind this page, then starts the program. The size shown is the installer's. <a href="credits.html">Licences and sources</a>.</dd></div>
+  <div><dt>Wine, in detail</dt><dd>Its loader, wineserver, drivers and builtin DLLs are WebAssembly modules, the 32-bit (WoW64) ones as well as the 64-bit. 32-bit programs run through WoW64 in the same Wine.</dd></div>
+  <div><dt>How the translation works</dt><dd>Each basic block of x86 code becomes a WebAssembly function when a branch first reaches it, so code a program generates or loads late runs too. A guest address is an offset into WebAssembly memory, so a guest load is one WebAssembly load.</dd></div>
+  <div><dt>What arrives when</dt><dd>The rest of Wine downloads in the background once the desktop is up. A file a program needs before then is fetched on its own, by range.</dd></div>
+  <div><dt>Where your files are</dt><dd>In the browser's origin private file system, which one tab holds at a time. Programs you drop in are copied into the tab, never uploaded.</dd></div>
+  <div><dt>Bring your own</dt><dd>FL Studio, Sublime Text and WinRAR are not ours to ship. Get the installer from the vendor's site and drop it on the tile.</dd></div>
+  <div><dt>What to expect</dt><dd>Slower than native, and not every program works. It needs WebGPU and plenty of memory; a recent desktop Chrome or Edge works best.</dd></div>
+</dl>
+    <p class="note">The source is on <a href="https://github.com/HeyPuter/gex" target="_blank" rel="noreferrer">GitHub</a>.</p>
+  </aside>
 </section>
- <div id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-h">
+<div id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-h">
   <div class="box">
     <h2 id="picker-h">Which program?</h2>
     <p></p>
@@ -269,7 +398,7 @@
       <button type="button" class="choose">Choose the installer</button>
       <input type="file" accept=".exe,.msi,application/x-msdownload,application/x-msi">
     </div>
-    <p>It stays in this tab: it is copied into Windows here and its own setup opens on the desktop for you to click
+    <p class="fine">It is copied into this tab's Windows and its own setup opens on the desktop for you to click
       through. Nothing is uploaded.</p>
     <button type="button" class="cancel">Cancel</button>
   </div>
@@ -282,6 +411,7 @@
     <button class="back" type="button">Back to the apps</button>
   </div>
 </section>
+<div class="credit"><span>Brought to you by</span><a href="https://developer.puter.com" target="_blank" rel="noreferrer">Puter</a><span class="sep" aria-hidden="true">|</span><a href="https://github.com/HeyPuter/gex" target="_blank" rel="noreferrer">GitHub</a></div>
 <div id="status" role="status" aria-live="polite"><span class="spin"></span><span class="text"></span></div>
 <button id="apps" type="button" title="Back to the apps">Apps</button>
 <pre id="error"></pre>
@@ -317,7 +447,6 @@
   // is not installed yet (its own windows, up to the user: nothing scripted), then starts it, and says how
   // far it is in its status window's title, which the page reads from the desktop's window list.
   // `?desktop=1`: no launcher; the desktop as recorded (cmd and the file manager on the Desktop folder).
-  import { start } from './site/windemo.mjs';
   // The desktop's colour (site.sh: the scheme's Background), or null.
   const DESKTOP_COLOUR = null;
   // The launcher's installers (site.sh: tools/launcher.tsv), or null.
@@ -504,11 +633,11 @@
     ? `<img class="glyph icon" fetchpriority="high" src="icons/${encodeURIComponent(t.iconId ?? t.id)}.png" alt="" draggable="false">`
     : SVG[t.icon]
     ? `<svg class="glyph" viewBox="0 0 48 48" aria-hidden="true">${SVG[t.icon]}</svg>`
-    : `<svg class="glyph mono" viewBox="0 0 64 44" aria-hidden="true"><text x="1" y="34" font-size="32" font-weight="700"  fill="#fff" font-family="system-ui, sans-serif">${t.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).replace(/^(.)(.)/, (m, a, b) => a.toUpperCase() + b.toLowerCase())}</text></svg>`;
+    : `<span class="glyph mono" aria-hidden="true">${t.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).replace(/^(.)(.)/, (m, a, b) => a.toUpperCase() + b.toLowerCase())}</span>`;
   const WIN_DESKTOP = 'C:\\users\\gex\\Desktop';
   // The bare desktop's tile, first in the grid: its programs (Command Prompt, the file manager, Notepad++, Dillo,
   // 7-Zip) are shortcuts on it (bin/mkapps.sh, tools/desktop-links.tsv).
-  const DESKTOP_TILE = { id: 'desktop', name: 'Desktop', icon: 'desktop', meta: 'Wine with its shell', wide: true };
+  const DESKTOP_TILE = { id: 'desktop', name: 'Desktop', icon: 'desktop', meta: 'Notepad++, 7-Zip, cmd', wide: true };
   let kept = {};
   try { kept = JSON.parse(localStorage.getItem('windemo-installed') ?? '{}'); } catch { /* none */ }
   const keepInstalled = (id) => { kept[id] = 1; try { localStorage.setItem('windemo-installed', JSON.stringify(kept)); } catch { /* none */ } };
@@ -521,11 +650,13 @@
     b.innerHTML = `${glyph(t)}<div><div class="name"></div><div class="meta"></div></div><span class="badge"></span>`;
     if (byoIcon(t.id)) b.querySelector('.glyph').replaceWith(iconImg(byoIcon(t.id)));
     b.querySelector('.name').textContent = t.name;
-    b.querySelector('.meta').textContent = meta;
+    if (t.meta) b.querySelector('.meta').textContent = meta;
+    else b.querySelector('.meta').innerHTML = `<span class="cat">${t.category ?? ''}</span><span class="sz">${t.bytes ? `${mb(t.bytes)} MB` : t.homepage ? 'your installer' : ''}</span>`;
     if (t.install && kept[t.id]) b.querySelector('.badge').textContent = 'Installed';
     // a tile whose installer the visitor brings: where to get it and a box to drop it on, until it is installed
     b.addEventListener('click', () => (t.homepage && !t.file && !kept[t.id] ? bring(t, b) : open(t, b)));
-    where.append(b);
+    b.dataset.id = t.id;
+    ((t.homepage && !t.file ? $('t-byo') : t.id === 'desktop' ? $('t-desk') : null) ?? where).append(b);
   };
   // --- bring your own installer (launcher.tsv: a homepage and no file) --------------------------------------------
   // The site ships none of the vendor's bytes: the visitor downloads the installer from the vendor's site and drops
@@ -1089,6 +1220,8 @@
     r.classList.add('on');
   };
   try {
+    // the runtime after the tiles: they paint at once, the loader's module graph follows
+    const { start } = await import('./site/windemo.mjs');
     // The guest's network over a Wisp proxy: gex's default (as its desktop
     // page), or ?wisp=wss://…/; an empty ?wisp= leaves the guest offline.
     const wisp = q.has('wisp') ? q.get('wisp') : 'wss://anura.pro/';
@@ -1210,6 +1343,26 @@
     show(e);
     if (keptStore) offerReset(`It failed to start: ${failed}`, String(app?.state?.out ?? '').slice(-4000));
   }
+</script>
+<script>
+// the "How this works" panel: open from the bar or the lede, closed by its button, the scrim or Escape
+{ const $ = (id) => document.getElementById(id);
+  const panel = $('about'), scrim = $('about-scrim'), btn = $('about-open');
+  let back = null;
+  const set = (on) => {
+    panel.classList.toggle('on', on); panel.setAttribute('aria-hidden', String(!on)); scrim.hidden = !on;
+    btn.setAttribute('aria-expanded', String(on));
+    if (on) { back = document.activeElement; $('about-close').focus(); } else back?.focus?.();
+  };
+  btn.onclick = () => set(!panel.classList.contains('on'));
+  $('about-more').onclick = () => set(true);
+  $('about-close').onclick = () => set(false);
+  scrim.onclick = () => set(false);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && panel.classList.contains('on')) set(false); }); }
+// the desktop behind the launcher takes no focus while the launcher is up: Tab walks the launcher, not the guest
+{ const launcher = document.getElementById('launcher'), desk = document.getElementById('desk');
+  const sync = () => { desk.inert = !launcher.classList.contains('gone'); };
+  new MutationObserver(sync).observe(launcher, { attributes: true, attributeFilter: ['class'] }); sync(); }
 </script>
 </body>
 </html>
