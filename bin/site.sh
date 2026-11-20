@@ -103,6 +103,15 @@ open(sys.argv[3], 'w').write(page)
 PY
 (cd $P && nice -n 10 ./build.sh) > logs/build-$out.log 2>&1
 nice -n 10 node $WDR/site/eject-site.mjs $P $out --title "Wine desktop" --strip --prune --dedupe --pieces ${REST_ORDER:+--rest-order $REST_ORDER} ${BOOT_UNITS---boot-units $WDR/tools/boot-units.txt} > logs/site-$out.log 2>&1
+# The site's Wine must have its memory64 twin (a WINE64_TWIN=1 dist: wine.m64 and the .wasm.m64 modules): a
+# 64-bit program that cannot move below 4 GiB (no relocations, based at 0x140000000, as foobar2000's installer)
+# runs only there, and without it CreateProcess fails with 2. NO_TWIN_OK=1 for a test site that does without.
+if [ -z "${NO_TWIN_OK:-}" ]; then
+  W=$out/project/build/web; m64=$(grep -c '"/w64/lib/wine/x86_64-unix/wine\.m64"' $W/lazy.json || true)
+  # (grep -c reads the whole listing: grep -q would end tar early, which pipefail counts as a failure)
+  [ "$m64" != 0 ] || m64=$(zstd -dc $W/rootfs.tar.zst | tar -t | grep -c '^\.\{0,1\}/\{0,1\}w64/lib/wine/x86_64-unix/wine\.m64$' || true)
+  [ "$m64" != 0 ] || { echo "site: $out has no memory64 Wine (/w64/lib/wine/x86_64-unix/wine.m64): build w64/dist from a WINE64_TWIN=1 dist (bin/dist.sh), or NO_TWIN_OK=1"; exit 1; }
+fi
 # NO_UNITS: the eject still adds the NT trampoline page's units (it fails without them); they go too, and the page
 # runs that page on the JIT like every other x86 page, with no unit looked up.
 if [ -n "${NO_UNITS:-}" ]; then
