@@ -581,6 +581,34 @@ static int open_url(const WCHAR *url)
 
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, WCHAR *cmdline, int show)
 {
+    /* --boot COMMAND: the visit's first process. The page's devicePixelRatio as Windows' system DPI
+     * (WINDEMO_DPI, 96 x the ratio), written before anything reads it -- each process reads it once at its
+     * start, explorer's desktop and taskbar too -- then COMMAND (explorer and this agent) started and
+     * waited for (the page's first process: its end is the desktop's). Every visit writes it, so a kept prefix never holds an earlier visit's. */
+    if (!wcsncmp(cmdline, L"--boot ", 7))
+    {
+        WCHAR v[16], *cmd = cmdline + 7;
+        STARTUPINFOW si = { sizeof(si) };
+        PROCESS_INFORMATION pi;
+        DWORD n = GetEnvironmentVariableW(L"WINDEMO_DPI", v, 16);
+        if (n && n < 16)
+        {
+            DWORD dpi = wcstoul(v, NULL, 10);
+            HKEY k;
+            if (dpi >= 48 && dpi <= 480 && !RegCreateKeyExW(HKEY_CURRENT_USER, L"Control Panel\\Desktop", 0, NULL, 0, KEY_SET_VALUE, NULL, &k, NULL))
+            {
+                RegSetValueExW(k, L"LogPixels", 0, REG_DWORD, (const BYTE *)&dpi, sizeof(dpi));
+                RegCloseKey(k);
+            }
+        }
+        while (*cmd == L' ') cmd++;
+        if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) return 1;
+        /* waited for: this is the page's first process, whose end is the desktop's */
+        CloseHandle(pi.hThread);
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        GetExitCodeProcess(pi.hProcess, &n);
+        return n;
+    }
     WNDCLASSW wc = { 0 };
     wc.lpfnWndProc = proc; wc.hInstance = inst; wc.lpszClassName = L"WindemoAgent";
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
