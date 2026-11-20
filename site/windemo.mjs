@@ -14,9 +14,10 @@
 //                   env: ['K=V', ...], cwd, size, tar: the archive's path (plain), d3d,
 //                   features_off } (the recording page, tools/pre-index.html)
 //   scale           device pixels per CSS pixel the desktop draws at: 1 (the default, CSS
-//                   pixels), a number, or 'auto': the page's devicePixelRatio at the start,
-//                   rounded (the runtime tells programs a whole scale), with Windows' DPI
-//                   to match (WINDEMO_DPI, 96 x the scale, over env's)
+//                   pixels), a number (the loader sizes the backing store), or 'auto': the
+//                   runtime's, the page's real devicePixelRatio, the backing store sized and
+//                   followed by the runtime; with Windows' DPI to match it at the start
+//                   (WINDEMO_DPI, 96 x the scale drawn at, over env's)
 //   env             ['K=V', ...] over the launch's environment
 //   background      the desktop behind the windows: '#rrggbb' or { color, image, anchor }
 //   filesystem      'memory' or { kind: 'opfs', name }
@@ -211,16 +212,21 @@ export async function start(opts = {}) {
   let [w, h] = sizeOf(opts.size ?? nt.size);
   const canvas = document.createElement('canvas');
   canvas.style.display = 'block';
-  // The backing store in device pixels, the page's CSS size times the scale.
+  // The backing store in device pixels: with 'auto' the runtime sizes it (and
+  // follows the page's layout and zoom), else the page's CSS size times the scale.
   const auto = opts.scale === 'auto';
-  const scale = auto ? Math.max(1, Math.round(Number(globalThis.devicePixelRatio) || 1)) : Math.max(1, Number(opts.scale ?? 1) || 1);
-  const dev = (n) => Math.max(1, Math.round(n * scale));
-  canvas.width = dev(w);
-  canvas.height = dev(h);
+  const fixed = auto ? null : Math.max(1, Number(opts.scale ?? 1) || 1);
+  const dev = (n) => Math.max(1, Math.round(n * fixed));
+  if (!auto) {
+    canvas.width = dev(w);
+    canvas.height = dev(h);
+  }
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   container.append(canvas);
-  const windows = new CompositorWindows(sys, { canvas, scale, ...(opts.background ? { background: opts.background } : {}) });
+  const windows = new CompositorWindows(sys, { canvas, scale: auto ? 'auto' : fixed, ...(opts.background ? { background: opts.background } : {}) });
+  // The scale drawn at: the backing store the runtime chose over the CSS size.
+  const scale = auto ? canvas.width / w : fixed;
   // index.html reads the scene's windows (the agent's status windows) here.
   globalThis.__gexCompositor = { describe: (o) => windows.describe(o) };
   if (!(nt.features_off ?? []).includes('gl')) new MesaGl(sys, { d3d: !!nt.d3d });
@@ -265,7 +271,7 @@ export async function start(opts = {}) {
 
   // Wine's environment: the launch file's, the windows', the viewer's time zone, and the site's defaults.
   const env = { ...envObject(nt.env), ...windows.env, ...hostTimeZone(), ...envObject(opts.env ?? []) };
-  if (auto) env.WINDEMO_DPI = String(96 * scale);
+  if (auto) env.WINDEMO_DPI = String(Math.round(96 * scale));
   env.GEX_WINE_PREFIX ??= '/wine';
   env.GEX_WIN_STRICT ??= '1';
   // The wineserver's periodic registry saves only for a prefix the visit keeps.
@@ -349,7 +355,7 @@ export async function start(opts = {}) {
       [w, h] = sizeOf(size);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      windows.resize(dev(w), dev(h));
+      if (!auto) windows.resize(dev(w), dev(h));
       return { w, h };
     },
     describe: (o) => windows.describe(o),
