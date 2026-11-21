@@ -333,12 +333,17 @@ const waitWin = async (re, secs, not = null, big = false) => {
   }
   return null;
 };
-// the guest's screen (canvas pixels): 1300 x 713 in the default window, the canvas's own size once the desktop is up
+// the guest's screen in CSS pixels (what wins() lists): 1300 x 713 in the default window, the canvas's CSS size once
+// the desktop is up (a HiDPI output's device pixels are that times describe().scale)
 let W = 1300, H = 713;
 const canvasAt = async (cx, cy) => {
   const r = await ev("(() => { let b = null; for (const c of document.querySelectorAll('canvas')) { const q = c.getBoundingClientRect(); if (!b || q.width * q.height > b.w * b.h) b = { x: q.x, y: q.y, w: q.width, h: q.height }; } return b; })()");
   return r ? [r.x + cx * r.w / W, r.y + cy * r.h / H] : [cx, cy];
 };
+// A point a plan names in a window: `click` [x, y] from its corner in CSS pixels (as at 96 dpi: a HiDPI output's
+// scale is Windows' DPI over 96, so a toolkit that scales by it lands at the same CSS point), or `rel` [fx, fy],
+// fractions of its size, for a toolkit that rounds that scale (Qt 5 draws 144 dpi at 2x)
+const inWin = (w, st) => (st.rel ? [w.x + Math.round(st.rel[0] * w.w), w.y + Math.round(st.rel[1] * w.h)] : [w.x + st.click[0], w.y + st.click[1]]);
 const click = async (cx, cy) => {
   const [x, y] = await canvasAt(cx, cy);
   await s('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }).catch(() => {});
@@ -409,8 +414,10 @@ const shot = async (name, page = false) => {
   log('shot ' + name + ' (page)'); return null;
 };
 // how many pixels in rect w differ between two readouts
-const diff = (a, b, w) => {
+// (w in CSS pixels; a readout is in the output's: a HiDPI one's are W x H times its scale)
+const diff = (a, b, r) => {
   if (!a || !b || a.w !== b.w) return -1;
+  const k = a.w / W, w = { x: Math.floor(r.x * k), y: Math.floor(r.y * k), w: Math.ceil(r.w * k), h: Math.ceil(r.h * k) };
   let n = 0;
   for (let y = Math.max(0, w.y); y < Math.min(a.h, w.y + w.h); y++) for (let x = Math.max(0, w.x); x < Math.min(a.w, w.x + w.w); x++) {
     const i = (y * a.w + x) * 4; if (a.b[i] !== b.b[i] || a.b[i + 1] !== b.b[i + 1] || a.b[i + 2] !== b.b[i + 2]) n++;
@@ -536,7 +543,7 @@ const run = async (steps) => {
     else if (st.ctrl) await ctrl(st.ctrl);
     else if (st.tap) { const vk = { Alt: 18, Control: 17, Shift: 16 }[st.tap]; const code = st.tap + 'Left'; await kd('keyDown', st.tap, code, vk, 0); await sleep(120); await kd('keyUp', st.tap, code, vk, 0); log('tap ' + st.tap); }
     else if (st.type) await type(st.type);
-    else if (st.click && st.in) { const r = new RegExp(st.in); const w = (await wins()).find((x) => r.test(x.title)); if (!w) return `no window /${st.in}/ to click in`; await click(w.x + st.click[0], w.y + st.click[1]); }
+    else if ((st.click || st.rel) && st.in) { const r = new RegExp(st.in); const w = (await wins()).find((x) => r.test(x.title)); if (!w) return `no window /${st.in}/ to click in`; await click(...inWin(w, st)); }
     else if (st.click) await click(...st.click);
     else if (st.dbl) await dblclick(...st.dbl);
     // the driver's console minimised (out of a desktop icon's way)
@@ -674,7 +681,7 @@ res.times.desktop = Math.round(now());
 const hid = await ev("(() => { let n = 0; for (const b of document.querySelectorAll('b')) if (/^gex diagnostics/.test(b.textContent)) { const box = b.closest('div[style*=\"position:fixed\"]') ?? b.parentElement?.parentElement; if (box) { box.style.display = 'none'; n++; } } return n; })()").catch(() => 0);
 if (hid) line(`[sweep] the page's diagnostics panel hidden (${hid})`);
 }
-{ const c = await ev("(() => { let b = null; for (const c of document.querySelectorAll('canvas')) if (!b || c.width * c.height > b[0] * b[1]) b = [c.width, c.height]; return b; })()").catch(() => null); if (c?.[0] > 0) { [W, H] = c; log(`screen ${W}x${H}`); } }
+{ const c = await ev("(() => { let b = null; for (const c of document.querySelectorAll('canvas')) { const q = c.getBoundingClientRect(); if (!b || q.width * q.height > b[0] * b[1]) b = [Math.round(q.width), Math.round(q.height), c.width, c.height]; } return b; })()").catch(() => null); if (c?.[0] > 0) { [W, H] = c; log(`screen ${W}x${H}${c[2] !== W ? ` (${c[2]}x${c[3]} device pixels)` : ''}`); } }
 // APPSWEEP_OPENED=1: the files the install opens beyond the boot's, in the order they were first opened
 // (the page's __ntOpened), into OUTDIR/opened-install.txt: a site's rest-bundle order (eject-site
 // --rest-order) from the sweep's own runs.
@@ -734,7 +741,7 @@ if (plan.tile) {
     // the program's own dialogs before its main window: the plan's answer, if it has one, and nothing else
     for (const w of programs ? big.filter((x) => !instPids.has(pidOf(x))) : []) {
       const ans = (plan.answers ?? []).find((a) => new RegExp(a.in).test(w.title));
-      if (ans) { await click(w.x + ans.click[0], w.y + ans.click[1]); log(`program dialog "${w.title}" (pid ${pidOf(w)}): answered at ${ans.click}`); }
+      if (ans) { await click(...inWin(w, ans)); log(`program dialog "${w.title}" (pid ${pidOf(w)}): answered at ${ans.rel ?? ans.click}`); }
     }
     // plan.inst_steps: the installer's first window answered by these steps instead (a page whose default is
     // not the Enter key's: Python's "Install Now" link), once
@@ -748,7 +755,7 @@ if (plan.tile) {
       // plan.answers: [{in: regex, click: [x, y] in that window}] a window's own answer (a question with no
       // default button: MuseScore's telemetry box), clicked instead of Enter
       const ans = (plan.answers ?? []).find((a) => new RegExp(a.in).test(w.title));
-      if (ans) { await click(w.x + ans.click[0], w.y + ans.click[1]); log(`installer "${w.title}": answered at ${ans.click}`); }
+      if (ans) { await click(...inWin(w, ans)); log(`installer "${w.title}": answered at ${ans.rel ?? ans.click}`); }
       else if (CONFIRM.test(w.title)) { await alt('n'); quiet = now() + 15 * ++asked; log(`installer "${w.title}": No, quiet ${15 * asked} s`); }
       else if (now() >= quiet) {
         if (plan.accept !== false) { await alt('a'); await sleep(300); }
@@ -931,12 +938,14 @@ if (!still) {
 // window still black or white), is not used, whatever changed after
 const drawn = (() => {
   if (!desk || !a || desk.w !== a.w) return null;
-  const x0 = Math.max(0, live.x), y0 = Math.max(0, live.y), x1 = Math.min(a.w, live.x + live.w), y1 = Math.min(a.h, live.y + live.h);
+  // (the readout in the output's pixels, the windows in CSS pixels: k of one per other)
+  const k = a.w / W;
+  const x0 = Math.max(0, Math.floor(live.x * k)), y0 = Math.max(0, Math.floor(live.y * k)), x1 = Math.min(a.w, Math.ceil((live.x + live.w) * k)), y1 = Math.min(a.h, Math.ceil((live.y + live.h) * k));
   // Only pixels where the desktop picture shows the bare desktop say whether the program drew: over another
   // window an unpainted one and a painted one can look the same (white over white). Too few such pixels: only the one-colour test.
   // (The desktop's own window, the whole screen, is the bare desktop, not a window over it.)
   const over = deskList.filter((w) => !(w.x <= 0 && w.y <= 0 && w.w >= W && w.h >= H));
-  const under = (x, y) => over.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
+  const under = (px, py) => { const x = px / k, y = py / k; return over.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h); };
   let walls = 0;
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (!under(x, y)) walls++;
   const wallOnly = walls >= ((x1 - x0) * (y1 - y0)) / 10;
